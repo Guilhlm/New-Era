@@ -1,11 +1,21 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 
 import { AUTH_TOAST_DURATION_MS } from '@/components/auth/auth-toast-constants';
 
 /** Toaster global: canto superior direito, sem fechar manual, barra de tempo na cor `red`. */
 export function AuthToaster() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <Toaster
       className="auth-toaster"

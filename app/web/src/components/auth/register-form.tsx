@@ -53,6 +53,7 @@ export function RegisterForm({ title }: RegisterFormProps) {
     const email = `${cpfDigits}@cpf.local`;
     const name = `Usuário ${cpfDigits}`;
     setLoading(true);
+    let resetLoading = true;
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -69,10 +70,11 @@ export function RegisterForm({ title }: RegisterFormProps) {
         toastAuthError(data.error || 'Could not create account.');
         return;
       }
+      resetLoading = false;
       router.push('/');
       router.refresh();
     } finally {
-      setLoading(false);
+      if (resetLoading) setLoading(false);
     }
   }
 

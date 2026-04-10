@@ -50,6 +50,7 @@ export function LoginForm({ title }: LoginFormProps) {
       return;
     }
     setLoading(true);
+    let resetLoading = true;
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -61,10 +62,11 @@ export function LoginForm({ title }: LoginFormProps) {
         toastAuthError(data.error || 'Invalid credentials.');
         return;
       }
+      resetLoading = false;
       router.push('/');
       router.refresh();
     } finally {
-      setLoading(false);
+      if (resetLoading) setLoading(false);
     }
   }
 

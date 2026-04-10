@@ -14,7 +14,10 @@ export function DismissToastsOnNavigate() {
       isFirstPathEffect.current = false;
       return;
     }
-    toast.dismiss();
+    const id = window.setTimeout(() => {
+      toast.dismiss();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [pathname]);
 
   return null;
