@@ -11,9 +11,28 @@ export class AuthController {
     return this.authService.register(payload);
   }
 
+  @Post('reset-password')
+  resetPassword(
+    @Body('email') email?: string,
+    @Body('cpf') cpf?: string,
+    @Body('newPassword') newPassword?: string,
+  ) {
+    return this.authService.resetPassword(
+      email ?? '',
+      cpf ?? '',
+      newPassword ?? '',
+    );
+  }
+
   @Post('login')
-  login(@Body('email') email: string, @Body('password') password: string) {
-    return this.authService.login(email, password);
+  login(
+    @Body('password') password: string,
+    @Body('identifier') identifier?: string,
+    @Body('email') email?: string,
+    @Body('cpf') cpf?: string,
+  ) {
+    const id = identifier ?? email ?? cpf ?? '';
+    return this.authService.login(id, password);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -28,6 +28,11 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  findByCpf(cpfDigits: string) {
+    if (!cpfDigits) return null;
+    return this.prisma.user.findUnique({ where: { cpf: cpfDigits } });
+  }
+
   findAll() {
     return this.prisma.user.findMany();
   }

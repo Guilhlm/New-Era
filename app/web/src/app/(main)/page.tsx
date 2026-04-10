@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import { DashboardCard } from '@/components/dashboard-card';
 import { getApiHealth } from '@/services/api';
 
@@ -15,11 +17,23 @@ export default async function Home() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">Visão geral</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Painel inicial com estado da API e atalhos para evolução do app.
-        </p>
+      <div className="grid overflow-hidden rounded-2xl border border-grey bg-layer1 md:grid-cols-5">
+        <div className="space-y-2 p-6 md:col-span-3 md:flex md:flex-col md:justify-center">
+          <h2 className="text-xl font-semibold text-text">Visão geral</h2>
+          <p className="text-sm text-text/70">
+            Painel inicial com estado da API e atalhos para evolução do app.
+          </p>
+        </div>
+        <div className="relative aspect-[4/3] min-h-[200px] md:aspect-auto md:col-span-2 md:min-h-[220px]">
+          <Image
+            src="/hero-statue.png"
+            alt="Escultura clássica em contraste dramático"
+            fill
+            priority
+            className="object-cover object-[center_20%]"
+            sizes="(max-width: 768px) 100vw, 40vw"
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -32,9 +46,9 @@ export default async function Home() {
         />
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h3 className="text-sm font-medium">Próximos passos rápidos</h3>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-600 dark:text-zinc-300">
+      <div className="rounded-xl border border-grey bg-layer2 p-4">
+        <h3 className="text-sm font-medium text-text">Próximos passos rápidos</h3>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-text/80">
           <li>Registrar usuário em <code>/auth/register</code>.</li>
           <li>Criar carteira em <code>/finance/wallet</code>.</li>
           <li>Cadastrar treino em <code>/workout</code> e refeição em <code>/diet</code>.</li>
