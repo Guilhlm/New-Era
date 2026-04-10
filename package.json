@@ -1,0 +1,21 @@
+{
+  "name": "new-era",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "app/web",
+    "app/api"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w app/web\" \"npm run start:dev -w app/api\"",
+    "db:up": "docker compose -f app/docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f app/docker/docker-compose.yml down",
+    "lint": "npm run lint -w app/web && npm run lint -w app/api",
+    "format": "prettier --check .",
+    "format:write": "prettier --write ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.6.2"
+  }
+}
