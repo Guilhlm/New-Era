@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import type { BodyMeasureDto } from './dto/body-measure.dto';
 import { BodyMeasureService } from './body-measure.service';
 
 @Controller('body-measure')
@@ -14,7 +15,7 @@ export class BodyMeasureController {
   constructor(private readonly bodyMeasureService: BodyMeasureService) {}
 
   @Post('measures')
-  createMeasure(@Body() data: Record<string, unknown>) {
+  createMeasure(@Body() data: BodyMeasureDto) {
     return this.bodyMeasureService.createMeasure(data);
   }
 
@@ -31,7 +32,7 @@ export class BodyMeasureController {
   @Patch('measures/:id')
   updateMeasure(
     @Param('id') id: string,
-    @Body() data: Record<string, unknown>,
+    @Body() data: BodyMeasureDto,
   ) {
     return this.bodyMeasureService.updateMeasure(id, data);
   }
@@ -42,7 +43,7 @@ export class BodyMeasureController {
   }
 
   @Post('vitals')
-  createVital(@Body() data: Record<string, unknown>) {
+  createVital(@Body() data: BodyMeasureDto) {
     return this.bodyMeasureService.createVital(data);
   }
 
@@ -57,7 +58,7 @@ export class BodyMeasureController {
   }
 
   @Patch('vitals/:id')
-  updateVital(@Param('id') id: string, @Body() data: Record<string, unknown>) {
+  updateVital(@Param('id') id: string, @Body() data: BodyMeasureDto) {
     return this.bodyMeasureService.updateVital(id, data);
   }
 

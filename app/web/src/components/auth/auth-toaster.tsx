@@ -26,9 +26,11 @@ export function AuthToaster() {
         classNames: {
           /* Não usar `relative`: o Sonner posiciona com `position: absolute`. */
           toast:
-            'group w-[min(100%,22rem)] rounded-[8px] border border-grey bg-layer2 text-text shadow-[0_8px_32px_rgba(0,0,0,0.45)]',
+            'group w-[min(100%,22rem)] rounded-lg border border-grey bg-layer2 text-text shadow-[0_8px_32px_rgba(0,0,0,0.5)]',
           error:
             '!border-red !bg-red/25 !text-text [&_[data-icon]]:!text-red [&_[data-title]]:!text-text [&_[data-description]]:!text-text/85',
+          success:
+            '!border-grey !bg-layer2 !text-text [&_[data-icon]]:!text-red [&_[data-title]]:!text-text [&_[data-description]]:!text-text/85',
           title: 'text-sm font-semibold',
           description: 'text-sm font-normal text-text/85',
         },

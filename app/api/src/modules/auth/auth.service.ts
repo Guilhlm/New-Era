@@ -4,10 +4,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { comparePassword, hashPassword, MIN_PASSWORD_LENGTH } from '../../common/auth/password.util';
+import { normalizeCpf, normalizeEmail } from '../../common/auth/normalize.util';
+import type { JwtPayload } from '../../common/auth/auth.types';
+import type { RegisterDto } from './dto/register.dto';
 import { UserService } from '../user/user.service';
-
-const MIN_PASSWORD_LENGTH = 6;
 
 @Injectable()
 export class AuthService {
@@ -16,7 +17,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(payload: Record<string, unknown>) {
+  async register(payload: RegisterDto) {
     const user = await this.userService.create(payload);
 
     return this.signToken(user.id, user.email);
@@ -26,8 +27,8 @@ export class AuthService {
    * Verifies email + CPF belong to the same user, then sets the new password.
    */
   async resetPassword(email: string, cpfRaw: string, newPassword: string) {
-    const emailNorm = email.trim().toLowerCase();
-    const cpfDigits = cpfRaw.replace(/\D/g, '');
+    const emailNorm = normalizeEmail(email);
+    const cpfDigits = normalizeCpf(cpfRaw);
     const pass = newPassword?.trim() ?? '';
 
     if (!emailNorm || cpfDigits.length !== 11) {
@@ -46,7 +47,7 @@ export class AuthService {
       );
     }
 
-    const passwordHash = await bcrypt.hash(pass, 10);
+    const passwordHash = await hashPassword(pass);
     await this.userService.update(user.id, { passwordHash });
 
     return { ok: true as const };
@@ -55,13 +56,13 @@ export class AuthService {
   async login(identifier: string, password: string) {
     const trimmed = identifier.trim();
     const user = trimmed.includes('@')
-      ? await this.userService.findByEmail(trimmed.toLowerCase())
-      : await this.userService.findByCpf(trimmed.replace(/\D/g, ''));
+      ? await this.userService.findByEmail(normalizeEmail(trimmed))
+      : await this.userService.findByCpf(normalizeCpf(trimmed));
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const isValid = await bcrypt.compare(password, user.passwordHash);
+    const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
@@ -69,11 +70,21 @@ export class AuthService {
     return this.signToken(user.id, user.email);
   }
 
+  async getMe(userId: string) {
+    const user = await this.userService.findOne(userId);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    const { passwordHash: _omit, ...safe } = user;
+    return safe;
+  }
+
   private signToken(userId: string, email: string) {
-    const accessToken = this.jwtService.sign({
+    const payload: JwtPayload = {
       sub: userId,
       email,
-    });
+    };
+    const accessToken = this.jwtService.sign(payload);
 
     return {
       accessToken,

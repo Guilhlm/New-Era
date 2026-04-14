@@ -7,6 +7,13 @@ import { toastAuthError } from '@/components/auth/auth-error-toast';
 
 import { AuthField } from '@/components/auth/auth-field';
 import {
+  authFieldsStackClass,
+  authLinkClass,
+  authPasswordToggleButtonClass,
+  authSubmitButtonClass,
+  formatCpfInput,
+} from '@/components/auth/auth-form-shared';
+import {
   AUTH_GRID_FORM_CLASS,
   AUTH_GRID_ROW_ACTIONS_CLASS,
   AUTH_GRID_ROW_FIELDS_CLASS,
@@ -14,20 +21,21 @@ import {
   authTitleClassName,
 } from '@/components/auth/auth-shell';
 import { IconEye, IconEyeOff, IconKey, IconUser } from '@/components/auth/icons';
-
-const linkClass =
-  'cursor-pointer transition hover:opacity-90 hover:brightness-110 active:opacity-80';
-
-function formatCpfInput(raw: string) {
-  const d = raw.replace(/\D/g, '').slice(0, 11);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-}
+import { Button } from '@/components/ui/button';
+import { usePasswordToggle } from '@/hooks/use-password-toggle';
 
 function looksLikeEmail(s: string) {
   return s.includes('@') || /[a-zA-Z]/.test(s);
+}
+
+const AUTH_INPUT_SAVED_CLASS = 'text-input-idle';
+
+function normLoginIdentifier(s: string) {
+  return looksLikeEmail(s) ? s.trim().toLowerCase() : s.replace(/\D/g, '');
+}
+
+function loginInputTone(current: string, baseline: string, normalize: (s: string) => string) {
+  return normalize(current) === normalize(baseline) ? AUTH_INPUT_SAVED_CLASS : 'text-red';
 }
 
 type LoginFormProps = {
@@ -38,8 +46,8 @@ export function LoginForm({ title }: LoginFormProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const passToggle = usePasswordToggle(false);
+  const confirmToggle = usePasswordToggle(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -77,7 +85,7 @@ export function LoginForm({ title }: LoginFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_FIELDS_CLASS}>
-        <div className="flex w-full max-w-full flex-col gap-[10px]">
+        <div className={authFieldsStackClass}>
           <AuthField
             icon={<IconUser />}
             type="text"
@@ -85,6 +93,7 @@ export function LoginForm({ title }: LoginFormProps) {
             autoComplete="username"
             placeholder="CPF 000.000.000-00"
             value={looksLikeEmail(identifier) ? identifier : formatCpfInput(identifier)}
+            inputClassName={loginInputTone(identifier, '', normLoginIdentifier)}
             onChange={(e) => {
               const v = e.target.value;
               if (looksLikeEmail(v)) setIdentifier(v);
@@ -93,46 +102,48 @@ export function LoginForm({ title }: LoginFormProps) {
           />
           <AuthField
             icon={<IconKey />}
-            type={showPass ? 'text' : 'password'}
+            type={passToggle.inputType}
             autoComplete="current-password"
             placeholder="Password"
             value={password}
+            inputClassName={loginInputTone(password, '', (s) => s)}
             onChange={(e) => setPassword(e.target.value)}
             right={
               <button
                 type="button"
-                className="cursor-pointer rounded p-1 text-grey-text transition hover:bg-white/5 hover:text-grey-text"
-                onClick={() => setShowPass((s) => !s)}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
+                className={authPasswordToggleButtonClass}
+                onClick={passToggle.toggle}
+                aria-label={passToggle.visible ? 'Hide password' : 'Show password'}
               >
-                {showPass ? <IconEyeOff /> : <IconEye />}
+                {passToggle.visible ? <IconEyeOff /> : <IconEye />}
               </button>
             }
           />
           <AuthField
             icon={<IconKey />}
-            type={showConfirm ? 'text' : 'password'}
+            type={confirmToggle.inputType}
             autoComplete="new-password"
             placeholder="Confirm Password"
             value={confirmPassword}
+            inputClassName={loginInputTone(confirmPassword, '', (s) => s)}
             onChange={(e) => setConfirmPassword(e.target.value)}
             right={
               <button
                 type="button"
-                className="cursor-pointer rounded p-1 text-grey-text transition hover:bg-white/5 hover:text-grey-text"
-                onClick={() => setShowConfirm((s) => !s)}
-                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                className={authPasswordToggleButtonClass}
+                onClick={confirmToggle.toggle}
+                aria-label={confirmToggle.visible ? 'Hide password' : 'Show password'}
               >
-                {showConfirm ? <IconEyeOff /> : <IconEye />}
+                {confirmToggle.visible ? <IconEyeOff /> : <IconEye />}
               </button>
             }
           />
         </div>
         <div className="flex w-full shrink-0 flex-col gap-0">
-          <div className="mt-[10px] flex w-full justify-end">
+          <div className="mt-2.5 flex w-full justify-end">
             <Link
               href="/forgot-password"
-              className={`${linkClass} text-sm font-bold text-red underline`}
+              className={`${authLinkClass} text-sm font-bold text-red underline`}
             >
               Forgot my Password?
             </Link>
@@ -141,16 +152,21 @@ export function LoginForm({ title }: LoginFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_ACTIONS_CLASS}>
-        <Link href="/create-account" className={`${linkClass} text-center text-sm font-bold text-text`}>
+        <Link
+          href="/create-account"
+          className={`${authLinkClass} cursor-pointer text-center text-sm font-bold text-text`}
+        >
           Create Account
         </Link>
-        <button
+        <Button
           type="submit"
+          size="lg"
+          radius="md"
           disabled={loading}
-          className="h-[67px] w-full max-w-full cursor-pointer rounded-[5px] bg-red text-[15px] font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className={authSubmitButtonClass}
         >
           {loading ? 'Signing in…' : 'Login Now'}
-        </button>
+        </Button>
       </div>
     </form>
   );

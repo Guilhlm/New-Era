@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 
 import { AuthToaster } from "@/components/auth/auth-toaster";
 import { DismissToastsOnNavigate } from "@/components/auth/dismiss-toasts-on-navigate";
+import { ThemeProvider } from "@/components/theme-provider";
+import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,12 +31,22 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-text">
-        {children}
-        <DismissToastsOnNavigate />
-        <AuthToaster />
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(t==='light')document.documentElement.classList.add('light');}catch(e){}`,
+          }}
+        />
+        <ThemeProvider>
+          {children}
+          <DismissToastsOnNavigate />
+          <AuthToaster />
+        </ThemeProvider>
       </body>
     </html>
   );

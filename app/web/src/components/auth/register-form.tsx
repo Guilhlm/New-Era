@@ -7,6 +7,13 @@ import { toastAuthError } from '@/components/auth/auth-error-toast';
 
 import { AuthField } from '@/components/auth/auth-field';
 import {
+  authFieldsStackClass,
+  authLinkClass,
+  authPasswordToggleButtonClass,
+  authSubmitButtonClass,
+  formatCpfInput,
+} from '@/components/auth/auth-form-shared';
+import {
   AUTH_GRID_FORM_CLASS,
   AUTH_GRID_ROW_ACTIONS_CLASS,
   AUTH_GRID_ROW_FIELDS_CLASS,
@@ -14,17 +21,8 @@ import {
   authTitleClassName,
 } from '@/components/auth/auth-shell';
 import { IconEye, IconEyeOff, IconKey, IconUser } from '@/components/auth/icons';
-
-const linkClass =
-  'cursor-pointer transition hover:opacity-90 hover:brightness-110 active:opacity-80';
-
-function formatCpfInput(raw: string) {
-  const d = raw.replace(/\D/g, '').slice(0, 11);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-}
+import { Button } from '@/components/ui/button';
+import { usePasswordToggle } from '@/hooks/use-password-toggle';
 
 type RegisterFormProps = {
   title: string;
@@ -34,8 +32,8 @@ export function RegisterForm({ title }: RegisterFormProps) {
   const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [show1, setShow1] = useState(false);
-  const [show2, setShow2] = useState(false);
+  const passToggle = usePasswordToggle(false);
+  const confirmToggle = usePasswordToggle(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -85,7 +83,7 @@ export function RegisterForm({ title }: RegisterFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_FIELDS_CLASS}>
-        <div className="flex w-full max-w-full flex-col gap-[10px]">
+        <div className={authFieldsStackClass}>
           <AuthField
             icon={<IconUser />}
             type="text"
@@ -97,7 +95,7 @@ export function RegisterForm({ title }: RegisterFormProps) {
           />
           <AuthField
             icon={<IconKey />}
-            type={show1 ? 'text' : 'password'}
+            type={passToggle.inputType}
             autoComplete="new-password"
             placeholder="Password"
             value={password}
@@ -105,17 +103,17 @@ export function RegisterForm({ title }: RegisterFormProps) {
             right={
               <button
                 type="button"
-                className="cursor-pointer rounded p-1 text-grey-text transition hover:bg-white/5 hover:text-grey-text"
-                onClick={() => setShow1((s) => !s)}
-                aria-label={show1 ? 'Hide password' : 'Show password'}
+                className={authPasswordToggleButtonClass}
+                onClick={passToggle.toggle}
+                aria-label={passToggle.visible ? 'Hide password' : 'Show password'}
               >
-                {show1 ? <IconEyeOff /> : <IconEye />}
+                {passToggle.visible ? <IconEyeOff /> : <IconEye />}
               </button>
             }
           />
           <AuthField
             icon={<IconKey />}
-            type={show2 ? 'text' : 'password'}
+            type={confirmToggle.inputType}
             autoComplete="new-password"
             placeholder="Confirm Password"
             value={confirm}
@@ -123,11 +121,11 @@ export function RegisterForm({ title }: RegisterFormProps) {
             right={
               <button
                 type="button"
-                className="cursor-pointer rounded p-1 text-grey-text transition hover:bg-white/5 hover:text-grey-text"
-                onClick={() => setShow2((s) => !s)}
-                aria-label={show2 ? 'Hide password' : 'Show password'}
+                className={authPasswordToggleButtonClass}
+                onClick={confirmToggle.toggle}
+                aria-label={confirmToggle.visible ? 'Hide password' : 'Show password'}
               >
-                {show2 ? <IconEyeOff /> : <IconEye />}
+                {confirmToggle.visible ? <IconEyeOff /> : <IconEye />}
               </button>
             }
           />
@@ -135,16 +133,18 @@ export function RegisterForm({ title }: RegisterFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_ACTIONS_CLASS}>
-        <Link href="/login" className={`${linkClass} text-center text-sm font-bold text-text`}>
+        <Link href="/login" className={`${authLinkClass} text-center text-sm font-bold text-text`}>
           I already have an account
         </Link>
-        <button
+        <Button
           type="submit"
+          size="lg"
+          radius="md"
           disabled={loading}
-          className="h-[67px] w-full max-w-full cursor-pointer rounded-[5px] bg-red text-[15px] font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className={authSubmitButtonClass}
         >
           {loading ? 'Creating…' : 'Create account'}
-        </button>
+        </Button>
       </div>
     </form>
   );

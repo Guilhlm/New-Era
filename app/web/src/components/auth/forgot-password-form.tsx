@@ -7,6 +7,13 @@ import { toastAuthError } from '@/components/auth/auth-error-toast';
 
 import { AuthField } from '@/components/auth/auth-field';
 import {
+  authFieldsStackClass,
+  authLinkClass,
+  authPasswordToggleButtonClass,
+  authSubmitButtonClass,
+  formatCpfInput,
+} from '@/components/auth/auth-form-shared';
+import {
   AUTH_GRID_FORM_CLASS,
   AUTH_GRID_ROW_ACTIONS_CLASS,
   AUTH_GRID_ROW_FIELDS_CLASS,
@@ -14,19 +21,10 @@ import {
   authTitleClassName,
 } from '@/components/auth/auth-shell';
 import { IconEye, IconEyeOff, IconKey, IconUser } from '@/components/auth/icons';
-
-const linkClass =
-  'cursor-pointer transition hover:opacity-90 hover:brightness-110 active:opacity-80';
+import { Button } from '@/components/ui/button';
+import { usePasswordToggle } from '@/hooks/use-password-toggle';
 
 const MIN_PASSWORD_LEN = 6;
-
-function formatCpfInput(raw: string) {
-  const d = raw.replace(/\D/g, '').slice(0, 11);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-}
 
 type ForgotPasswordFormProps = {
   title: string;
@@ -36,7 +34,7 @@ export function ForgotPasswordForm({ title }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
+  const passToggle = usePasswordToggle(false);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -91,8 +89,8 @@ export function ForgotPasswordForm({ title }: ForgotPasswordFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_FIELDS_CLASS}>
-        <div className="flex w-full max-w-full flex-col gap-[10px]">
-          <p className="m-0 text-center text-[15px] leading-relaxed text-red sm:text-base">
+        <div className={authFieldsStackClass}>
+          <p className="m-0 text-center text-sm leading-relaxed text-red sm:text-base">
             Enter the email and CPF registered on the same account. If they match, your new password
             will be saved and you can sign in with it.
           </p>
@@ -115,7 +113,7 @@ export function ForgotPasswordForm({ title }: ForgotPasswordFormProps) {
           />
           <AuthField
             icon={<IconKey />}
-            type={showPass ? 'text' : 'password'}
+            type={passToggle.inputType}
             autoComplete="new-password"
             placeholder="New password"
             value={newPassword}
@@ -123,11 +121,11 @@ export function ForgotPasswordForm({ title }: ForgotPasswordFormProps) {
             right={
               <button
                 type="button"
-                className="cursor-pointer rounded p-1 text-grey-text transition hover:bg-white/5 hover:text-grey-text"
-                onClick={() => setShowPass((s) => !s)}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
+                className={authPasswordToggleButtonClass}
+                onClick={passToggle.toggle}
+                aria-label={passToggle.visible ? 'Hide password' : 'Show password'}
               >
-                {showPass ? <IconEyeOff /> : <IconEye />}
+                {passToggle.visible ? <IconEyeOff /> : <IconEye />}
               </button>
             }
           />
@@ -135,16 +133,18 @@ export function ForgotPasswordForm({ title }: ForgotPasswordFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_ACTIONS_CLASS}>
-        <Link href="/login" className={`${linkClass} text-center text-sm font-bold text-text`}>
+        <Link href="/login" className={`${authLinkClass} text-center text-sm font-bold text-text`}>
           Back to login
         </Link>
-        <button
+        <Button
           type="submit"
+          size="lg"
+          radius="md"
           disabled={loading}
-          className="h-[67px] w-full max-w-full cursor-pointer rounded-[5px] bg-red text-[15px] font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className={authSubmitButtonClass}
         >
           {loading ? 'Resetting…' : 'Reset password'}
-        </button>
+        </Button>
       </div>
     </form>
   );

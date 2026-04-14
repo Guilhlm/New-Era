@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import type { BodyMeasureDto } from './dto/body-measure.dto';
 
 @Injectable()
 export class BodyMeasureService {
   constructor(private readonly prisma: PrismaService) {}
 
-  createMeasure(data: Record<string, unknown>) {
+  createMeasure(data: BodyMeasureDto) {
     return this.prisma.bodyMeasure.create({ data: data as any });
   }
 
@@ -17,7 +18,7 @@ export class BodyMeasureService {
     return this.prisma.bodyMeasure.findUnique({ where: { id } });
   }
 
-  updateMeasure(id: string, data: Record<string, unknown>) {
+  updateMeasure(id: string, data: BodyMeasureDto) {
     return this.prisma.bodyMeasure.update({ where: { id }, data: data as any });
   }
 
@@ -25,7 +26,7 @@ export class BodyMeasureService {
     return this.prisma.bodyMeasure.delete({ where: { id } });
   }
 
-  createVital(data: Record<string, unknown>) {
+  createVital(data: BodyMeasureDto) {
     return this.prisma.bodyVital.create({ data: data as any });
   }
 
@@ -37,7 +38,7 @@ export class BodyMeasureService {
     return this.prisma.bodyVital.findUnique({ where: { id } });
   }
 
-  updateVital(id: string, data: Record<string, unknown>) {
+  updateVital(id: string, data: BodyMeasureDto) {
     return this.prisma.bodyVital.update({ where: { id }, data: data as any });
   }
 

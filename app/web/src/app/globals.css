@@ -1,41 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
-  --foreground: #d3d2d1;
   /* Igual a AUTH_TOAST_DURATION_MS em auth-toast-constants.ts */
   --auth-toast-duration: 5000ms;
 }
 
+/* Tema claro: apenas o fundo da página */
+html.light {
+  --color-background: #ffffff;
+}
+
 @theme inline {
-  --color-text: #d3d2d1;
   --color-background: #000000;
   --color-layer1: #0f0f0f;
   --color-layer2: #242424;
   --color-layer2-half: rgb(36 36 36 / 0.35);
+  --color-text: #d3d2d1;
   --color-grey: rgb(211 210 209 / 0.15);
-  --color-grey-text: rgb(211 210 209 / 0.72);
   --color-red: #8b0838;
-  --color-purple: #52088b;
-  --color-success: #507c52;
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Texto de input alinhado ao baseline (aspecto “cinza”) usando só TEXT + BACKGROUND.
+ * Ao editar, use text-red nos componentes.
+ */
+.text-input-idle {
+  color: color-mix(in srgb, var(--color-text) 40%, var(--color-background));
+}
+
 html {
   overflow-x: hidden;
+  background-color: var(--color-background);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--color-background);
+  color: var(--color-text);
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
 }
 
-/* Sonner (auth): barra no fundo (::before evita conflito com ::after do Sonner em stack expandida).
-   overflow só para cantos arredondados; não usar `position` aqui — o Sonner controla o stack. */
+/* Esconder spinners nativos (number) e ícone de calendário (date) */
+.input-no-native-spin::-webkit-outer-spin-button,
+.input-no-native-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-no-native-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.input-no-native-date::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.input-no-native-date {
+  appearance: none;
+  color-scheme: dark;
+}
+
+/* Sonner (auth): barra no fundo */
 .auth-toaster [data-sonner-toast] {
   overflow: hidden;
   border-radius: 8px;
@@ -73,7 +102,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .auth-toaster [data-sonner-toast]::before {
     animation: none;
-    transform: scaleX(0.35);
+    transform: scaleX(0.4);
     opacity: 0.7;
   }
 }

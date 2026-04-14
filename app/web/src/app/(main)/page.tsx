@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
 import { DashboardCard } from '@/components/dashboard-card';
+import { Card } from '@/components/ui/card';
 import { getApiHealth } from '@/services/api';
 
 export default async function Home() {
@@ -24,7 +25,7 @@ export default async function Home() {
             Painel inicial com estado da API e atalhos para evolução do app.
           </p>
         </div>
-        <div className="relative aspect-[4/3] min-h-[200px] md:aspect-auto md:col-span-2 md:min-h-[220px]">
+        <div className="relative aspect-[4/3] min-h-52 md:col-span-2 md:aspect-auto md:min-h-56">
           <Image
             src="/hero-statue.png"
             alt="Escultura clássica em contraste dramático"
@@ -46,14 +47,14 @@ export default async function Home() {
         />
       </div>
 
-      <div className="rounded-xl border border-grey bg-layer2 p-4">
+      <Card variant="border" padding="sm" className="bg-layer2">
         <h3 className="text-sm font-medium text-text">Próximos passos rápidos</h3>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-text/80">
           <li>Registrar usuário em <code>/auth/register</code>.</li>
           <li>Criar carteira em <code>/finance/wallet</code>.</li>
           <li>Cadastrar treino em <code>/workout</code> e refeição em <code>/diet</code>.</li>
         </ul>
-      </div>
+      </Card>
     </section>
   );
 }

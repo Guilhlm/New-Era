@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
+import { hashPassword, hashPasswordSync } from '../../common/auth/password.util';
+import type { CreateUserDto } from './dto/create-user.dto';
+import type { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: Record<string, unknown>) {
+  create(data: CreateUserDto) {
     const {
       password: rawPassword,
       passwordHash: incomingPasswordHash,
@@ -18,7 +20,7 @@ export class UserService {
       'changeme123';
     const payload = {
       ...rest,
-      passwordHash: bcrypt.hashSync(passwordToHash, 10),
+      passwordHash: hashPasswordSync(passwordToHash),
     };
 
     return this.prisma.user.create({ data: payload as any });
@@ -41,8 +43,13 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  update(id: string, data: Record<string, unknown>) {
-    return this.prisma.user.update({ where: { id }, data: data as any });
+  async update(id: string, data: UpdateUserDto) {
+    const { password, ...rest } = data;
+    const payload: Record<string, unknown> = { ...rest };
+    if (typeof password === 'string' && password.trim().length > 0) {
+      payload.passwordHash = await hashPassword(password.trim());
+    }
+    return this.prisma.user.update({ where: { id }, data: payload as any });
   }
 
   remove(id: string) {

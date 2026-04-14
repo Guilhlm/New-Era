@@ -1,11 +1,15 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { MdOutlineRestaurant, MdOutlineTaskAlt } from 'react-icons/md';
 import { RiHome4Line, RiWallet3Line } from 'react-icons/ri';
 import { TbBell, TbReceipt, TbRulerMeasure, TbTarget, TbBarbell } from 'react-icons/tb';
+import { useSidebarUser } from '@/hooks/use-sidebar-user';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 type NavItem = {
   href: string;
@@ -28,6 +32,7 @@ const navSecondary: NavItem[] = [
   { href: '/finance-goals', label: 'Finances Goals', Icon: TbTarget },
   { href: '/notifications', label: 'Notifications', Icon: TbBell, badge: '8+' },
 ];
+const navLinkClass = 'flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition';
 
 function isActivePath(pathname: string, href: string) {
   if (href === '/') return pathname === '/' || pathname === '';
@@ -41,33 +46,47 @@ async function logout() {
 
 export function AppSidebar() {
   const pathname = usePathname() ?? '';
+  const { displayName, cpfLabel, avatarLetters, avatarPhoto } = useSidebarUser();
 
   return (
     <aside
       className="fixed left-0 top-0 z-50 flex h-screen w-[360px] flex-col bg-layer1 px-7 py-6"
       aria-label="Navegação principal"
     >
-      <div className="rounded-2xl bg-[#151515] px-4 py-6 mb-[60px]">
-        <div className="flex items-center gap-3">
+      <div
+        className="mb-14 rounded-2xl px-4 py-6"
+        style={{ backgroundColor: 'var(--color-layer2-half)' }}
+      >
+        <div className="flex items-center gap-2.5">
           <Link
             href="/perfil"
-            className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-layer2 text-sm font-semibold text-text transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/50"
+            className="relative flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-layer2 text-sm font-semibold text-text transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/50"
             aria-label="Ir para o perfil"
           >
-            GM
+            {avatarPhoto?.startsWith('data:') || avatarPhoto?.startsWith('http') ? (
+              // eslint-disable-next-line @next/next/no-img-element -- data URL e URLs externas
+              <img src={avatarPhoto} alt="" className="h-full w-full object-cover" />
+            ) : avatarPhoto ? (
+              <Image src={avatarPhoto} alt="" fill className="object-cover" sizes="48px" />
+            ) : (
+              avatarLetters
+            )}
           </Link>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold text-text">Guilherme Maia</p>
-            <p className="truncate text-xs text-grey-text">000.000.000-00</p>
+          <div className="ml-3 min-w-0 flex-1">
+            <p className="truncate font-semibold text-text">{displayName || '…'}</p>
+            <p className="truncate text-xs text-text/55">{cpfLabel || '…'}</p>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghostIcon"
+            size="icon"
+            radius="md"
             onClick={() => void logout()}
-            className="shrink-0 cursor-pointer rounded-lg p-2 text-red transition hover:bg-layer2-half hover:brightness-110"
+            className="shrink-0"
             aria-label="Sair"
           >
             <IoLogOutOutline className="h-5 w-5" aria-hidden />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -79,10 +98,10 @@ export function AppSidebar() {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                  className={`${navLinkClass} ${
                     active
                       ? 'bg-layer2 text-text'
-                      : 'text-grey-text hover:bg-layer2-half hover:text-text'
+                      : 'text-text/55 hover:bg-layer2-half hover:text-text'
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
@@ -103,20 +122,16 @@ export function AppSidebar() {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                  className={`${navLinkClass} ${
                     active
                       ? 'bg-layer2 text-text'
-                      : 'text-grey-text hover:bg-layer2-half hover:text-text'
+                      : 'text-text/55 hover:bg-layer2-half hover:text-text'
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <Icon className="h-5 w-5 shrink-0" aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{label}</span>
-                  {badge ? (
-                    <span className="shrink-0 rounded-full bg-red px-2 py-0.5 text-xs font-medium text-white">
-                      {badge}
-                    </span>
-                  ) : null}
+                  {badge ? <Badge className="shrink-0">{badge}</Badge> : null}
                 </Link>
               </li>
             );
@@ -124,7 +139,7 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      <footer className="mt-auto shrink-0 rounded-xl bg-layer2 px-4 py-6 text-center text-xs text-grey-text">
+      <footer className="mt-auto shrink-0 rounded-xl bg-layer2 px-4 py-6 text-center text-xs text-text/55">
         © Guilherme Maia / New Era
       </footer>
     </aside>

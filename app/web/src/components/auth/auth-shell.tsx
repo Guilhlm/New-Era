@@ -25,8 +25,8 @@ export const AUTH_GRID_ROW_ACTIONS_CLASS =
 export function authTitleClassName(title: string) {
   return `m-0 text-center font-extrabold leading-none tracking-tight text-red ${
     title === 'Welcome' || title === 'Create Account' || title === 'Forgot Password'
-      ? 'text-[50px]'
-      : 'text-3xl sm:text-[2rem]'
+      ? 'text-5xl'
+      : 'text-3xl sm:text-4xl'
   }`;
 }
 
@@ -47,10 +47,10 @@ export function AuthShell({ children }: AuthShellProps) {
         </div>
       </div>
 
-      <div className="relative z-20 box-border flex h-full min-h-0 w-full items-stretch justify-start py-[50px] pl-[calc(100vw/7)] pr-4 max-[480px]:pl-4">
+      <div className="relative z-20 box-border flex h-full min-h-0 w-full items-stretch justify-start py-12 pl-[calc(100vw/7)] pr-4 max-[480px]:pl-4">
         <div className="relative z-20 flex h-full min-h-0 w-full max-w-[650px] flex-col items-stretch lg:max-w-[650px]">
           <div
-            className="pointer-events-none absolute left-1/2 top-[48%] z-0 -translate-x-1/2 -translate-y-1/2 opacity-[0.62]"
+            className="pointer-events-none absolute left-1/2 top-[48%] z-0 -translate-x-1/2 -translate-y-1/2 opacity-[0.6]"
             aria-hidden
           >
             <Image
@@ -63,8 +63,8 @@ export function AuthShell({ children }: AuthShellProps) {
             />
           </div>
 
-          <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col rounded-[10px] p-[1.5px] bg-gradient-to-br from-[#600426] to-[#C6094E] shadow-[0_0_60px_rgba(0,0,0,0.65)] isolate">
-            <div className="flex min-h-0 flex-1 flex-col rounded-[8.5px] bg-layer1 px-[60px] sm:px-[80px]">
+          <div className="relative isolate z-10 flex min-h-0 w-full flex-1 flex-col rounded-xl bg-gradient-to-br from-[#600426] to-[#C6094E] p-px shadow-[0_0_60px_rgba(0,0,0,0.7)]">
+            <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-layer1 px-14 sm:px-20">
               {children}
             </div>
           </div>
