@@ -1,5 +1,6 @@
 import { HealthResponse } from '@/types/api';
 import { appConfig } from '@/config';
+import { HttpError } from '@/services/http';
 
 export const API_URL = appConfig.apiUrl.replace(/\/$/, '');
 
@@ -9,7 +10,7 @@ export async function getApiHealth(): Promise<HealthResponse> {
   });
 
   if (!response.ok) {
-    throw new Error('Falha ao consultar a API');
+    throw new HttpError('Failed to reach API', response.status);
   }
 
   return response.json() as Promise<HealthResponse>;

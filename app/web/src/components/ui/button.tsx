@@ -7,7 +7,7 @@ type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 type ButtonRadius = 'md' | 'xl';
 
 const baseClass =
-  'inline-flex items-center justify-center font-semibold transition disabled:cursor-not-allowed';
+  'inline-flex cursor-pointer items-center justify-center font-semibold transition disabled:cursor-not-allowed';
 
 const variantClass: Record<ButtonVariant, string> = {
   primary: 'bg-red text-text hover:opacity-90 disabled:opacity-60',

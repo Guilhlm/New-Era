@@ -19,7 +19,7 @@ const ALLOWED = [
 export async function PATCH(request: Request) {
   const token = (await cookies()).get('auth_token')?.value;
   if (!token) {
-    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
   const meRes = await fetch(`${API}/auth/me`, {
@@ -28,19 +28,19 @@ export async function PATCH(request: Request) {
   });
 
   if (!meRes.ok) {
-    return NextResponse.json({ error: 'Sessão inválida' }, { status: 401 });
+    return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
   }
 
   const me = (await meRes.json()) as { id?: string };
   if (!me?.id) {
-    return NextResponse.json({ error: 'Usuário inválido' }, { status: 401 });
+    return NextResponse.json({ error: 'Invalid user' }, { status: 401 });
   }
 
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
   const payload: Record<string, unknown> = {};
@@ -52,7 +52,7 @@ export async function PATCH(request: Request) {
   }
 
   if (Object.keys(payload).length === 0) {
-    return NextResponse.json({ error: 'Nada para atualizar' }, { status: 400 });
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
   const res = await fetch(`${API}/users/${me.id}`, {
@@ -66,7 +66,7 @@ export async function PATCH(request: Request) {
 
   const text = await res.text();
   if (!res.ok) {
-    let message = text || 'Falha ao atualizar';
+    let message = text || 'Failed to update';
     try {
       const j = JSON.parse(text) as { message?: string | string[] };
       if (j.message) {
@@ -85,6 +85,6 @@ export async function PATCH(request: Request) {
     delete updated.passwordHash;
     return NextResponse.json(updated);
   } catch {
-    return NextResponse.json({ error: 'Resposta inválida da API' }, { status: 502 });
+    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
   }
 }

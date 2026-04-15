@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
   const text = await res.text();
   if (!res.ok) {
-    let message = text || 'Falha no cadastro';
+    let message = text || 'Registration failed';
     try {
       const j = JSON.parse(text) as { message?: string | string[] };
       if (j.message) {
@@ -30,11 +30,11 @@ export async function POST(request: Request) {
   try {
     data = JSON.parse(text) as { accessToken?: string };
   } catch {
-    return NextResponse.json({ error: 'Resposta inválida da API' }, { status: 502 });
+    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
   }
 
   if (!data.accessToken) {
-    return NextResponse.json({ error: 'Token ausente' }, { status: 502 });
+    return NextResponse.json({ error: 'Missing token' }, { status: 502 });
   }
 
   const response = NextResponse.json({ ok: true });

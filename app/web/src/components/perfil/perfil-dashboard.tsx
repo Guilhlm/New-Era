@@ -7,7 +7,6 @@ import { WalletCard } from '@/components/perfil/wallet-card';
 import { useSiteTheme } from '@/components/theme-provider';
 import { useProfileChart } from '@/hooks/use-profile-chart';
 import { useProfileDashboardState } from '@/hooks/use-profile-dashboard-state';
-import { formatPhoneBrEditable } from '@/utils/profile';
 
 export function PerfilDashboard() {
   const profile = useProfileDashboardState();
@@ -23,7 +22,7 @@ export function PerfilDashboard() {
   }
 
   if (!profile.user) {
-    return <p className="text-sm text-text">Carregando…</p>;
+    return <p className="text-sm text-text">Loading…</p>;
   }
 
   return (
@@ -31,50 +30,34 @@ export function PerfilDashboard() {
       className="flex h-full min-h-0 flex-1 flex-col gap-2.5 lg:grid lg:min-h-0 lg:flex-1 lg:gap-2.5"
       style={{
         gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-        gridTemplateRows: 'minmax(168px, auto) minmax(280px, 1fr)',
+        gridTemplateRows: 'minmax(210px, auto) minmax(240px, 1fr)',
       }}
     >
       <ProfileFormCard
-        userName={profile.user.name}
-        isAdmin={profile.user.isAdmin}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        avatarInputRef={profile.avatarInputRef}
-        onAvatarFileChange={profile.onAvatarFileChange}
-        photoUploading={profile.photoUploading}
-        avatarPhoto={profile.avatarPhoto}
-        name={profile.name}
-        setName={profile.setName}
-        ageValue={profile.age != null ? String(profile.age) : '—'}
-        email={profile.email}
-        setEmail={profile.setEmail}
-        birthDate={profile.birthDate}
-        setBirthDate={profile.setBirthDate}
-        phone={profile.phone}
-        setPhone={(v) => profile.setPhone(formatPhoneBrEditable(v))}
-        monthlyIncome={profile.monthlyIncome}
-        setMonthlyIncome={profile.setMonthlyIncome}
-        inputBaseClass={profile.inputBaseClass}
-        savedFieldTextClass={profile.savedFieldTextClass}
-        toneUnchanged={profile.toneUnchanged}
-        editBaselineName={profile.editBaseline?.name ?? ''}
-        editBaselineEmail={profile.editBaseline?.email ?? ''}
-        editBaselineBirthDate={profile.editBaseline?.birthDate ?? ''}
-        editBaselinePhoneDigits={profile.editBaseline?.phoneDigits ?? ''}
-        editBaselineMonthlyIncome={profile.editBaseline?.monthlyIncome ?? ''}
-        pwdSurfaceMode={profile.pwdSurfaceMode}
-        setPwdSurfaceMode={profile.setPwdSurfaceMode}
-        showPass={profile.showPass}
-        setShowPass={profile.setShowPass}
-        newPassword={profile.newPassword}
-        setNewPassword={profile.setNewPassword}
-        tonePwdField={profile.tonePwdField}
-        pwdEyeRed={profile.pwdEyeRed}
-        pwdEyeEnabled={profile.pwdEyeEnabled}
-        passwordMask={profile.passwordMask}
-        onSave={profile.onSave}
-        saving={profile.saving}
-        hasUnsavedChanges={profile.hasUnsavedChanges}
+        data={{
+          userName: profile.user?.name ?? '',
+          isAdmin: Boolean(profile.user?.isAdmin),
+          form: profile.form.data,
+          formUi: profile.form.ui,
+          password: profile.form.password,
+          avatarPhoto: profile.avatar.data.avatarPhoto,
+          photoUploading: profile.avatar.data.photoUploading,
+        }}
+        actions={{
+          onSubmit: profile.form.actions.submit,
+          setName: profile.form.actions.setName,
+          setEmail: profile.form.actions.setEmail,
+          setBirthDate: profile.form.actions.setBirthDate,
+          setPhoneEditable: profile.form.actions.setPhoneEditable,
+          setMonthlyIncome: profile.form.actions.setMonthlyIncome,
+          setNewPassword: profile.form.password.actions.setNewPassword,
+          openPasswordEdit: profile.form.password.actions.openEditMode,
+          handlePasswordBlur: profile.form.password.actions.handleBlur,
+          togglePasswordVisibility: profile.form.password.actions.toggleVisibility,
+          onAvatarFileChange: profile.avatar.actions.onAvatarFileChange,
+          avatarInputRef: profile.avatar.refs.avatarInputRef,
+        }}
+        themeControls={{ theme, toggleTheme }}
       />
 
       <WalletCard balanceUsd={profile.balanceUsd} />
@@ -84,13 +67,7 @@ export function PerfilDashboard() {
         disciplineLabel={profile.disciplineLabel}
       />
 
-      <ActivityChartCard
-        chartTab={chart.chartTab}
-        setChartTab={chart.setChartTab}
-        period={chart.period}
-        setPeriod={chart.setPeriod}
-        heights={chart.heights}
-      />
+      <ActivityChartCard chart={chart} />
     </div>
   );
 }

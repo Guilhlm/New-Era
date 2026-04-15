@@ -10,7 +10,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       await this.$connect();
     } catch (error) {
       this.logger.warn(
-        `Falha ao conectar no banco durante bootstrap. A API seguirá ativa e tentará conectar sob demanda. Motivo: ${String(error)}`,
+        `Failed to connect to the database during bootstrap. The API will remain up and will try to connect on demand. Reason: ${String(error)}`,
       );
     }
   }

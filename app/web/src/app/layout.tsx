@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 
-import { AuthToaster } from "@/components/auth/auth-toaster";
+import { AuthToasterClientOnly } from "@/components/auth/auth-toaster-client-only";
 import { DismissToastsOnNavigate } from "@/components/auth/dismiss-toasts-on-navigate";
 import { ThemeProvider } from "@/components/theme-provider";
-import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'New-era',
-  description: 'Controle pessoal de academia e finanças',
+  description: 'Personal control for training and finances',
 };
 
 export default function RootLayout({
@@ -30,22 +28,15 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="pt-BR"
+      lang="en"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-text">
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(t==='light')document.documentElement.classList.add('light');}catch(e){}`,
-          }}
-        />
         <ThemeProvider>
           {children}
           <DismissToastsOnNavigate />
-          <AuthToaster />
+          <AuthToasterClientOnly />
         </ThemeProvider>
       </body>
     </html>

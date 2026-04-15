@@ -15,8 +15,11 @@ export function DisciplineCard({ disciplineRaw, disciplineLabel }: DisciplineCar
         gridRow: '1 / 2',
       }}
     >
-      <DisciplineRing percent={Math.min(100, Math.max(0, disciplineRaw))} label={disciplineLabel} />
-      <p className="mt-2 text-center text-xs font-medium text-text">Discipline Level</p>
+      <DisciplineRing
+        percent={Math.min(100, Math.max(0, disciplineRaw))}
+        value={disciplineLabel}
+        caption="Discipline Level"
+      />
     </Card>
   );
 }

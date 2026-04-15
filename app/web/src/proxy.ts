@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 const AUTH_PREFIXES = ['/login', '/forgot-password', '/create-account'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith('/api/')) {
@@ -31,3 +31,4 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
 };
+

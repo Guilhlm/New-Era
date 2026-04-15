@@ -17,3 +17,5 @@ export function useProfileChart() {
     heights,
   };
 }
+
+export type ProfileChartState = ReturnType<typeof useProfileChart>;

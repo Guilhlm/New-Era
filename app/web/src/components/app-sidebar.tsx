@@ -8,8 +8,10 @@ import { MdOutlineRestaurant, MdOutlineTaskAlt } from 'react-icons/md';
 import { RiHome4Line, RiWallet3Line } from 'react-icons/ri';
 import { TbBell, TbReceipt, TbRulerMeasure, TbTarget, TbBarbell } from 'react-icons/tb';
 import { useSidebarUser } from '@/hooks/use-sidebar-user';
+import { useLogout } from '@/hooks/use-logout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/components/ui/cn';
 
 type NavItem = {
   href: string;
@@ -39,19 +41,15 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-async function logout() {
-  await fetch('/api/auth/logout', { method: 'POST' });
-  window.location.href = '/login';
-}
-
 export function AppSidebar() {
   const pathname = usePathname() ?? '';
   const { displayName, cpfLabel, avatarLetters, avatarPhoto } = useSidebarUser();
+  const logout = useLogout();
 
   return (
     <aside
       className="fixed left-0 top-0 z-50 flex h-screen w-[360px] flex-col bg-layer1 px-7 py-6"
-      aria-label="Navegação principal"
+      aria-label="Main navigation"
     >
       <div
         className="mb-14 rounded-2xl px-4 py-6"
@@ -61,7 +59,7 @@ export function AppSidebar() {
           <Link
             href="/perfil"
             className="relative flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-layer2 text-sm font-semibold text-text transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/50"
-            aria-label="Ir para o perfil"
+            aria-label="Go to profile"
           >
             {avatarPhoto?.startsWith('data:') || avatarPhoto?.startsWith('http') ? (
               // eslint-disable-next-line @next/next/no-img-element -- data URL e URLs externas
@@ -81,9 +79,10 @@ export function AppSidebar() {
             variant="ghostIcon"
             size="icon"
             radius="md"
-            onClick={() => void logout()}
+            onClick={() => void logout.actions.runLogout()}
+            disabled={logout.data.loading}
             className="shrink-0"
-            aria-label="Sair"
+            aria-label="Sign out"
           >
             <IoLogOutOutline className="h-5 w-5" aria-hidden />
           </Button>
@@ -98,11 +97,10 @@ export function AppSidebar() {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`${navLinkClass} ${
-                    active
-                      ? 'bg-layer2 text-text'
-                      : 'text-text/55 hover:bg-layer2-half hover:text-text'
-                  }`}
+                  className={cn(
+                    navLinkClass,
+                    active ? 'bg-layer2 text-text' : 'text-text/55 hover:bg-layer2-half hover:text-text',
+                  )}
                   aria-current={active ? 'page' : undefined}
                 >
                   <Icon className="h-5 w-5 shrink-0" aria-hidden />
@@ -122,11 +120,10 @@ export function AppSidebar() {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`${navLinkClass} ${
-                    active
-                      ? 'bg-layer2 text-text'
-                      : 'text-text/55 hover:bg-layer2-half hover:text-text'
-                  }`}
+                  className={cn(
+                    navLinkClass,
+                    active ? 'bg-layer2 text-text' : 'text-text/55 hover:bg-layer2-half hover:text-text',
+                  )}
                   aria-current={active ? 'page' : undefined}
                 >
                   <Icon className="h-5 w-5 shrink-0" aria-hidden />

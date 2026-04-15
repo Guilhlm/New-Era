@@ -13,3 +13,5 @@ export function usePasswordToggle(initial = false) {
     toggle,
   };
 }
+
+export type PasswordToggleState = ReturnType<typeof usePasswordToggle>;

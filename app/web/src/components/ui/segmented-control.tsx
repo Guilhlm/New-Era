@@ -34,7 +34,7 @@ export function SegmentedControlItem({
       className={cn(
         'cursor-pointer font-medium transition',
         shape === 'md' ? 'rounded-md px-3 py-1.5' : 'rounded-full px-2.5 py-1',
-        active ? 'bg-red text-text' : 'text-text/55 hover:text-text',
+        active ? 'bg-red text-text' : 'bg-layer2 text-grey hover:text-text',
         className,
       )}
       {...props}

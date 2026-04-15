@@ -6,7 +6,7 @@ type PageHeaderProps = HTMLAttributes<HTMLElement> & {
   description?: string;
 };
 
-export function PageHeader({ title, description = 'Conteúdo em breve.', className, ...props }: PageHeaderProps) {
+export function PageHeader({ title, description = 'Content coming soon.', className, ...props }: PageHeaderProps) {
   return (
     <section className={cn('space-y-2', className)} {...props}>
       <h1 className="text-2xl font-semibold text-text">{title}</h1>

@@ -4,8 +4,8 @@ import { formatUsd } from '@/utils/profile';
 
 const WALLET_SEGMENTS = [
   { key: 'btc', label: 'BTC', pct: 55, className: 'bg-red' },
-  { key: 'usd', label: 'Dolar', pct: 30, className: 'bg-layer2' },
-  { key: 'selic', label: 'Selic', pct: 15, className: 'bg-layer1' },
+  { key: 'usd', label: 'Dolar', pct: 30, className: 'bg-wallet-usd' },
+  { key: 'selic', label: 'Selic', pct: 15, className: 'bg-wallet-selic' },
 ] as const;
 
 type WalletCardProps = {
@@ -21,9 +21,12 @@ export function WalletCard({ balanceUsd }: WalletCardProps) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-text">
           <RiLayoutGridLine className="h-4 w-4 shrink-0 text-red" aria-hidden />
-          <h2 className="text-xs font-semibold leading-tight">Investments Wallet</h2>
+          <h2 className="text-sm font-normal leading-tight text-red">Investments Wallet</h2>
         </div>
-        <p className="text-xs text-text/55">Last update + $ 213,00</p>
+        <p className="flex items-center gap-[5px] text-xs text-text/55">
+          <span>Last update</span>
+          <span className="font-semibold text-green">+ $ 213,00</span>
+        </p>
       </div>
       <p className="mt-3.5 text-2xl font-semibold tracking-tight text-text md:text-3xl">
         {formatUsd(balanceUsd || 1994.83)}

@@ -2,16 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { toastAuthError } from '@/components/auth/auth-error-toast';
-
+import { AuthPasswordField } from '@/components/auth/auth-password-field';
 import { AuthField } from '@/components/auth/auth-field';
 import {
   authFieldsStackClass,
   authLinkClass,
-  authPasswordToggleButtonClass,
   authSubmitButtonClass,
-  formatCpfInput,
 } from '@/components/auth/auth-form-shared';
 import {
   AUTH_GRID_FORM_CLASS,
@@ -20,66 +16,25 @@ import {
   AUTH_GRID_ROW_TITLE_CLASS,
   authTitleClassName,
 } from '@/components/auth/auth-shell';
-import { IconEye, IconEyeOff, IconKey, IconUser } from '@/components/auth/icons';
+import { IconUser } from '@/components/auth/icons';
 import { Button } from '@/components/ui/button';
-import { usePasswordToggle } from '@/hooks/use-password-toggle';
-
-function looksLikeEmail(s: string) {
-  return s.includes('@') || /[a-zA-Z]/.test(s);
-}
-
-const AUTH_INPUT_SAVED_CLASS = 'text-input-idle';
-
-function normLoginIdentifier(s: string) {
-  return looksLikeEmail(s) ? s.trim().toLowerCase() : s.replace(/\D/g, '');
-}
-
-function loginInputTone(current: string, baseline: string, normalize: (s: string) => string) {
-  return normalize(current) === normalize(baseline) ? AUTH_INPUT_SAVED_CLASS : 'text-red';
-}
+import { useLoginForm } from '@/hooks/use-login-form';
 
 type LoginFormProps = {
   title: string;
 };
 
 export function LoginForm({ title }: LoginFormProps) {
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const passToggle = usePasswordToggle(false);
-  const confirmToggle = usePasswordToggle(false);
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      toastAuthError('Passwords do not match.');
-      return;
-    }
-    setLoading(true);
-    let resetLoading = true;
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toastAuthError(data.error || 'Invalid credentials.');
-        return;
-      }
-      resetLoading = false;
+  const loginForm = useLoginForm({
+    onSuccess: () => {
       router.push('/');
       router.refresh();
-    } finally {
-      if (resetLoading) setLoading(false);
-    }
-  }
+    },
+  });
 
   return (
-    <form onSubmit={onSubmit} className={AUTH_GRID_FORM_CLASS}>
+    <form onSubmit={(e) => void loginForm.actions.submit(e)} className={AUTH_GRID_FORM_CLASS}>
       <div className={AUTH_GRID_ROW_TITLE_CLASS}>
         <h1 className={authTitleClassName(title)}>{title}</h1>
       </div>
@@ -89,54 +44,28 @@ export function LoginForm({ title }: LoginFormProps) {
           <AuthField
             icon={<IconUser />}
             type="text"
-            inputMode={looksLikeEmail(identifier) ? 'email' : 'numeric'}
+            inputMode={loginForm.data.identifierInputMode as 'email' | 'numeric'}
             autoComplete="username"
             placeholder="CPF 000.000.000-00"
-            value={looksLikeEmail(identifier) ? identifier : formatCpfInput(identifier)}
-            inputClassName={loginInputTone(identifier, '', normLoginIdentifier)}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (looksLikeEmail(v)) setIdentifier(v);
-              else setIdentifier(formatCpfInput(v));
-            }}
+            value={loginForm.data.identifierViewValue}
+            inputClassName={loginForm.data.tones.identifier}
+            onChange={(e) => loginForm.actions.setIdentifierValue(e.target.value)}
           />
-          <AuthField
-            icon={<IconKey />}
-            type={passToggle.inputType}
-            autoComplete="current-password"
+          <AuthPasswordField
+            value={loginForm.data.password}
+            onChange={loginForm.actions.setPassword}
             placeholder="Password"
-            value={password}
-            inputClassName={loginInputTone(password, '', (s) => s)}
-            onChange={(e) => setPassword(e.target.value)}
-            right={
-              <button
-                type="button"
-                className={authPasswordToggleButtonClass}
-                onClick={passToggle.toggle}
-                aria-label={passToggle.visible ? 'Hide password' : 'Show password'}
-              >
-                {passToggle.visible ? <IconEyeOff /> : <IconEye />}
-              </button>
-            }
+            autoComplete="current-password"
+            inputClassName={loginForm.data.tones.password}
+            toggle={loginForm.passwordToggles.passToggle}
           />
-          <AuthField
-            icon={<IconKey />}
-            type={confirmToggle.inputType}
-            autoComplete="new-password"
+          <AuthPasswordField
+            value={loginForm.data.confirmPassword}
+            onChange={loginForm.actions.setConfirmPassword}
             placeholder="Confirm Password"
-            value={confirmPassword}
-            inputClassName={loginInputTone(confirmPassword, '', (s) => s)}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            right={
-              <button
-                type="button"
-                className={authPasswordToggleButtonClass}
-                onClick={confirmToggle.toggle}
-                aria-label={confirmToggle.visible ? 'Hide password' : 'Show password'}
-              >
-                {confirmToggle.visible ? <IconEyeOff /> : <IconEye />}
-              </button>
-            }
+            autoComplete="new-password"
+            inputClassName={loginForm.data.tones.confirmPassword}
+            toggle={loginForm.passwordToggles.confirmToggle}
           />
         </div>
         <div className="flex w-full shrink-0 flex-col gap-0">
@@ -162,10 +91,10 @@ export function LoginForm({ title }: LoginFormProps) {
           type="submit"
           size="lg"
           radius="md"
-          disabled={loading}
+          disabled={loginForm.data.loading}
           className={authSubmitButtonClass}
         >
-          {loading ? 'Signing in…' : 'Login Now'}
+          {loginForm.data.loading ? 'Signing in…' : 'Login Now'}
         </Button>
       </div>
     </form>

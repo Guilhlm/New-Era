@@ -59,12 +59,12 @@ export class AuthService {
       ? await this.userService.findByEmail(normalizeEmail(trimmed))
       : await this.userService.findByCpf(normalizeCpf(trimmed));
     if (!user) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     return this.signToken(user.id, user.email);

@@ -18,6 +18,9 @@ html.light {
   --color-text: #d3d2d1;
   --color-grey: rgb(211 210 209 / 0.15);
   --color-red: #8b0838;
+  --color-green: #507C52;
+  --color-wallet-usd: #1f6feb;
+  --color-wallet-selic: #1a7f4b;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -40,6 +43,25 @@ body {
   color: var(--color-text);
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+}
+
+/* Cursores: tudo que é clicável deve indicar ação */
+a[href],
+button,
+[role='button'],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+summary,
+label[for] {
+  cursor: pointer;
+}
+
+button:disabled,
+button[aria-disabled='true'],
+input:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
 }
 
 /* Esconder spinners nativos (number) e ícone de calendário (date) */
