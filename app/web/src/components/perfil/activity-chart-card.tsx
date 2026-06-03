@@ -8,9 +8,15 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
 type ActivityChartCardProps = {
   chart: ProfileChartState;
+  className?: string;
+  style?: React.CSSProperties;
+  filters?: {
+    showTab?: boolean;
+    leftSlot?: React.ReactNode;
+  };
 };
 
-export function ActivityChartCard({ chart }: ActivityChartCardProps) {
+export function ActivityChartCard({ chart, className, style, filters }: ActivityChartCardProps) {
   const visibleHeights = chart.heights.slice(0, 7);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const bars = visibleHeights.map((height, index) => {
@@ -30,14 +36,16 @@ export function ActivityChartCard({ chart }: ActivityChartCardProps) {
 
   return (
     <Card
-      className="flex h-full min-h-0 flex-col px-6 py-5 lg:px-7 lg:py-4"
-      style={{ gridColumn: '3 / 6', gridRow: '2 / 3' }}
+      className={cn('flex h-full min-h-0 flex-col px-6 py-5 lg:px-7 lg:py-4', className)}
+      style={style}
     >
       <ActivityChartFilters
         chartTab={chart.chartTab}
         onChartTabChange={chart.setChartTab}
         period={chart.period}
         onPeriodChange={chart.setPeriod}
+        showTab={filters?.showTab}
+        leftSlot={filters?.leftSlot}
       />
 
       <div className="flex h-full w-full flex-1 flex-col pt-6 pb-4">

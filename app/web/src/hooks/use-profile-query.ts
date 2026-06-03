@@ -24,7 +24,10 @@ export function useProfileQuery() {
   }, []);
 
   useEffect(() => {
-    void reloadUser();
+    const id = window.setTimeout(() => {
+      void reloadUser();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [reloadUser]);
 
   return {

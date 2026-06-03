@@ -19,7 +19,7 @@ export function useProfileDashboardState() {
   });
 
   const balanceUsd = useMemo(() => numFromDecimal(user?.totalBalance), [user]);
-  const disciplineRaw = user?.disciplineLevel != null ? Number(user.disciplineLevel) : 25.7;
+  const disciplineRaw = user?.disciplineLevel != null ? Number(user.disciplineLevel) : 0;
   const disciplineLabel =
     Math.abs(disciplineRaw - Math.round(disciplineRaw)) < 1e-6
       ? `${Math.round(disciplineRaw)}%`

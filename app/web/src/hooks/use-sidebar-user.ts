@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { AuthMeUser } from '@/types/auth';
+import { useSiteTheme } from '@/components/theme-provider';
 import { PROFILE_UPDATED_EVENT } from '@/utils/events';
 import { formatCpfDisplay, initialsFromName } from '@/utils/person';
 
@@ -10,6 +11,7 @@ export function useSidebarUser() {
   const [cpfLabel, setCpfLabel] = useState<string>('');
   const [avatarLetters, setAvatarLetters] = useState<string>('?');
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(null);
+  const { setTheme } = useSiteTheme();
 
   useEffect(() => {
     let cancelled = false;
@@ -19,6 +21,9 @@ export function useSidebarUser() {
       if (!res.ok || cancelled) return;
       const user = (await res.json()) as AuthMeUser;
       if (cancelled) return;
+      if (user.themePreference === 'dark' || user.themePreference === 'light') {
+        setTheme(user.themePreference);
+      }
       const name = user.name?.trim() ?? '';
       if (name) {
         setDisplayName(name);
@@ -43,7 +48,7 @@ export function useSidebarUser() {
       cancelled = true;
       window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
     };
-  }, []);
+  }, [setTheme]);
 
   return {
     displayName,

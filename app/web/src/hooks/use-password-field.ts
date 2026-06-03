@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PASSWORD_MASK } from '@/utils/profile';
 
 type UsePasswordFieldParams = {
@@ -36,11 +36,8 @@ export function usePasswordField({ saving, hasChangesWithoutPassword }: UsePassw
   const hasChanges = hasChangesWithoutPassword || newPassword.length > 0;
   const eyeEnabled = !saving && hasChanges;
   const isMasked = surfaceMode === 'mask';
-  const inputType: 'text' | 'password' = showPass ? 'text' : 'password';
-
-  useEffect(() => {
-    if (!hasChanges) setShowPass(false);
-  }, [hasChanges]);
+  const effectiveShowPass = eyeEnabled ? showPass : false;
+  const inputType: 'text' | 'password' = effectiveShowPass ? 'text' : 'password';
 
   const toneClass = useMemo(() => {
     if (surfaceMode === 'mask') return 'text-grey';

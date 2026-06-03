@@ -17,6 +17,7 @@ html.light {
   --color-layer2-half: rgb(36 36 36 / 0.35);
   --color-text: #d3d2d1;
   --color-grey: rgb(211 210 209 / 0.15);
+  --color-text-60: rgb(211 210 209 / 0.6);
   --color-red: #8b0838;
   --color-green: #507C52;
   --color-wallet-usd: #1f6feb;
@@ -127,4 +128,14 @@ input:disabled,
     transform: scaleX(0.4);
     opacity: 0.7;
   }
+}
+
+/* Mantém overflow/scroll; oculta apenas a barra (Firefox, WebKit, legado IE) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

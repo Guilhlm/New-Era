@@ -4,14 +4,14 @@ import { ActivityChartCard } from '@/components/perfil/activity-chart-card';
 import { DisciplineCard } from '@/components/perfil/discipline-card';
 import { ProfileFormCard } from '@/components/perfil/profile-form-card';
 import { WalletCard } from '@/components/perfil/wallet-card';
-import { useSiteTheme } from '@/components/theme-provider';
 import { useProfileChart } from '@/hooks/use-profile-chart';
 import { useProfileDashboardState } from '@/hooks/use-profile-dashboard-state';
+import { useThemePreference } from '@/hooks/use-theme-preference';
 
 export function PerfilDashboard() {
   const profile = useProfileDashboardState();
   const chart = useProfileChart();
-  const { theme, toggleTheme } = useSiteTheme();
+  const themePref = useThemePreference({ user: profile.user });
 
   if (profile.loadError) {
     return (
@@ -57,7 +57,7 @@ export function PerfilDashboard() {
           onAvatarFileChange: profile.avatar.actions.onAvatarFileChange,
           avatarInputRef: profile.avatar.refs.avatarInputRef,
         }}
-        themeControls={{ theme, toggleTheme }}
+        themeControls={{ theme: themePref.data.theme, toggleTheme: themePref.actions.toggleTheme }}
       />
 
       <WalletCard balanceUsd={profile.balanceUsd} />
@@ -67,7 +67,7 @@ export function PerfilDashboard() {
         disciplineLabel={profile.disciplineLabel}
       />
 
-      <ActivityChartCard chart={chart} />
+      <ActivityChartCard chart={chart} style={{ gridColumn: '3 / 6', gridRow: '2 / 3' }} />
     </div>
   );
 }

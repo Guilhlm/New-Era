@@ -78,6 +78,41 @@ app/web/src/
 
 ## Convenções de frontend
 
+### Layout e Grid (padrão visual / sem scroll da página)
+
+- **Regra principal (dashboard)**: o app tem estilo **dashboard** e **não deve ter scroll lateral nem vertical na página** (sem scroll no `<body>` / viewport) em nenhuma tela do dashboard.  
+  - **Exceção**: telas de autenticação/login podem ter scroll próprio conforme necessidade.
+  - Se houver overflow de conteúdo no dashboard, ele deve acontecer **dentro dos cards/áreas internas** (ex.: listas com `overflow-auto`), mantendo o layout “travado” no limite da viewport/área de conteúdo.
+
+- **Margens/paddings globais do conteúdo**:
+  - O wrapper do conteúdo deve manter **padding simétrico** em cima/baixo e um “respiro” consistente nas laterais em **todas as resoluções** (exceto login).
+  - O dashboard usa **gutter fixo** (mesmo valor para topo/baixo e laterais). Ex.: `py-[1.5rem]` e `pr-[1.5rem]`.
+  - Com sidebar fixa, manter o deslocamento do conteúdo via `pl-[calc(<sidebarWidth>+<gutter>)]` (ex.: `360px + 1.5rem]`) para garantir o mesmo “respiro” após a sidebar.
+  - **Não usar `max-w`/`mx-auto` no wrapper do dashboard**: o conteúdo deve ocupar **100% da largura disponível** dentro do gutter, para não criar “margem extra” em telas largas e manter o espaço lateral consistente.
+
+- **Grid pai (container do dashboard)**:
+  - Deve ocupar **toda a altura disponível** do `<main>`: usar `className="flex h-full min-h-0 flex-1 flex-col ..."` e, no breakpoint `lg`, habilitar `grid`.
+  - Sempre manter `min-h-0` no container e nos filhos que precisam encolher (`flex`/`grid`), para o browser permitir o cálculo correto e evitar overflow.
+  - Preferir `gap-2.5` (padrão do projeto) para consistência visual.
+
+- **Linhas do grid**:
+  - Evitar `auto` como “máximo” quando isso puder estourar altura disponível. Padrão seguro:
+    - `gridTemplateRows: '<topPx> minmax(0, 1fr)'`
+  - Quando copiar o padrão da Home, usar:
+    - `gridTemplateRows: 'minmax(180px, auto) minmax(320px, 1fr)'`
+    - e garantir que o conteúdo que possa crescer tenha `min-h-0` + `overflow-auto` (para não empurrar o grid pai).
+
+- **Scroll interno (cards/listas)**:
+  - Para listas/tabelas dentro de cards: `min-h-0 flex-1 overflow-auto`.
+  - Se um card precisar “segurar” conteúdo sem expandir o layout: `overflow-hidden` no card + scroll em um filho interno.
+
+- **Padding vertical do conteúdo**:
+  - Manter padding consistente em cima/baixo (ex.: `py-6`) no wrapper do conteúdo.
+  - Se houver qualquer indício de scroll de página por soma de alturas, revisar o wrapper para garantir:
+    - `h-screen` + `overflow-hidden` no container raiz do layout (dashboard)
+    - `<main>` com `min-h-0 flex-1` e `overflow-hidden` (dashboard)
+    - grid pai com `h-full min-h-0 flex-1` e filhos com `min-h-0` para permitir scroll interno.
+
 ### Componentes
 
 - `components/ui/**`: componentes base e genéricos.
@@ -137,4 +172,4 @@ app/web/src/
 5. Compor a feature via container que conecta hook + UI.
 6. Garantir contratos (`data/actions`) e evitar prop drilling acoplado.
 7. Validar lint/build.
-
+8. Garantir que o grid pai respeita o limite de **height/width** do layout (sem scroll vertical na página), mantendo o mesmo padrão das páginas já criadas.

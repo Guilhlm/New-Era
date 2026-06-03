@@ -25,11 +25,11 @@ export function WalletCard({ balanceUsd }: WalletCardProps) {
         </div>
         <p className="flex items-center gap-[5px] text-xs text-text/55">
           <span>Last update</span>
-          <span className="font-semibold text-green">+ $ 213,00</span>
+          <span className="font-semibold text-green">+ $ 0,00</span>
         </p>
       </div>
       <p className="mt-3.5 text-2xl font-semibold tracking-tight text-text md:text-3xl">
-        {formatUsd(balanceUsd || 1994.83)}
+        {formatUsd(balanceUsd || 0.00)}
       </p>
       <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-layer2">
         {WALLET_SEGMENTS.map((s) => (
