@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ElementType, HTMLAttributes } from 'react';
+import type { ComponentPropsWithoutRef, ElementType } from 'react';
 import { cn } from '@/components/ui/cn';
 
 type CardVariant = 'ring' | 'border';
@@ -32,20 +32,4 @@ export function Card<T extends ElementType = 'section'>({
 }: CardProps<T>) {
   const Tag = as ?? 'section';
   return <Tag className={cn('rounded-xl', variantClass[variant], paddingClass[padding], className)} {...props} />;
-}
-
-export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('space-y-1', className)} {...props} />;
-}
-
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-sm font-semibold text-text', className)} {...props} />;
-}
-
-export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('text-sm text-text/70', className)} {...props} />;
-}
-
-export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn(className)} {...props} />;
 }

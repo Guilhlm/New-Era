@@ -70,6 +70,77 @@ async function main() {
       },
     },
   });
+
+  await prisma.workoutDayPlan.upsert({
+    where: {
+      userId_weekday: { userId: user.id, weekday: 1 },
+    },
+    update: {},
+    create: {
+      userId: user.id,
+      weekday: 1,
+      title: 'Chest | Triceps',
+      notes: null,
+      groups: {
+        create: [
+          {
+            name: 'Chest Exercicies',
+            timeMinutes: 40,
+            sortOrder: 0,
+            exercises: {
+              create: [
+                {
+                  name: 'Bench Press',
+                  equipment: 'Bar',
+                  weightKg: 100,
+                  series: 4,
+                  repsMin: 5,
+                  repsMax: 6,
+                  sortOrder: 0,
+                },
+                {
+                  name: 'Incline Dumbbell Press',
+                  equipment: 'Dumbbell',
+                  weightKg: 32,
+                  series: 3,
+                  repsMin: 8,
+                  repsMax: 10,
+                  sortOrder: 1,
+                },
+              ],
+            },
+          },
+          {
+            name: 'Triceps Exercicies',
+            timeMinutes: 40,
+            sortOrder: 1,
+            exercises: {
+              create: [
+                {
+                  name: 'Triceps Pushdown',
+                  equipment: 'Cable',
+                  weightKg: 40,
+                  series: 4,
+                  repsMin: 10,
+                  repsMax: 12,
+                  sortOrder: 0,
+                },
+                {
+                  name: 'Skull Crusher',
+                  equipment: 'Bar',
+                  weightKg: 30,
+                  series: 3,
+                  repsMin: 8,
+                  repsMax: 10,
+                  sortOrder: 1,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
 }
 
 main()

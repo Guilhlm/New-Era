@@ -4,7 +4,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { comparePassword, hashPassword, MIN_PASSWORD_LENGTH } from '../../common/auth/password.util';
+import {
+  comparePassword,
+  hashPassword,
+  MIN_PASSWORD_LENGTH,
+} from '../../common/auth/password.util';
 import { normalizeCpf, normalizeEmail } from '../../common/auth/normalize.util';
 import type { JwtPayload } from '../../common/auth/auth.types';
 import type { RegisterDto } from './dto/register.dto';
@@ -48,7 +52,7 @@ export class AuthService {
     }
 
     const passwordHash = await hashPassword(pass);
-    await this.userService.update(user.id, { passwordHash });
+    await this.userService.updatePassword(user.id, passwordHash);
 
     return { ok: true as const };
   }
@@ -71,12 +75,7 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
-    const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-    const { passwordHash: _omit, ...safe } = user;
-    return safe;
+    return this.userService.findOne(userId);
   }
 
   private signToken(userId: string, email: string) {

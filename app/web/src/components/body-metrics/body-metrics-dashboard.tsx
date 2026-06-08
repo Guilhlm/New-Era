@@ -1,9 +1,9 @@
 'use client';
 
 import { BodyMeasurementsHeaderCard } from './body-measurements-header-card';
+import { FitnessGoalsCard } from './fitness-goals-card';
 import { HealthVitalsCard } from './health-vitals-card';
 import { MeasurementsCard } from './measurements-card';
-import { WeightGoalCard } from './weight-goal-card';
 import { useBodyMetricsDashboardState } from '@/hooks/use-body-metrics-dashboard-state';
 
 export function BodyMetricsDashboard() {
@@ -11,11 +11,9 @@ export function BodyMetricsDashboard() {
 
   return (
     <section
-      className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2.5 lg:grid lg:min-h-0 lg:flex-1 lg:gap-2.5"
+      className="flex h-full min-h-0 flex-1 flex-col gap-2.5 lg:grid lg:min-h-0 lg:flex-1 lg:gap-2.5"
       style={{
-        // Left side +30% (relative) vs Home's 2:1 layout => ~2.65:1
         gridTemplateColumns: 'minmax(0, 2.65fr) minmax(0, 1fr)',
-        // ARCHITECTURE.md: 2ª linha com minmax(0, 1fr) para o grid não estourar a viewport; scroll nos cards.
         gridTemplateRows: 'minmax(180px, auto) minmax(0, 1fr)',
       }}
     >
@@ -34,6 +32,12 @@ export function BodyMetricsDashboard() {
         data={{
           title: state.ui.measurementsTitle,
           rows: state.data.measurementsUi.rows,
+          chartMeasures: state.data.chartMeasures,
+          chartVitals: state.data.chartVitals,
+          chartMeasureLoading: state.data.chartMeasureLoading,
+          chartVitalLoading: state.data.chartVitalLoading,
+          chartMeasureError: state.data.chartMeasureError,
+          chartVitalError: state.data.chartVitalError,
         }}
         ui={{
           loading: state.data.measurementsUi.loading,
@@ -55,16 +59,38 @@ export function BodyMetricsDashboard() {
         style={{ gridColumn: '2 / 3', gridRow: '1 / 3' }}
       >
         <HealthVitalsCard
-          data={{ title: state.ui.vitalsTitle, rows: state.data.vitals }}
+          data={{
+            title: state.ui.vitalsTitle,
+            rows: state.vitals.data.rows,
+            editing: state.vitals.data.editing,
+            loading: state.vitals.data.loading,
+            saving: state.vitals.data.saving,
+            hasDirty: state.vitals.data.hasDirty,
+          }}
+          actions={{
+            onToggleEdit: () => void state.vitals.actions.toggleEdit(),
+            onChange: state.vitals.actions.setVitalDraft,
+          }}
           className="flex-[2] min-h-0"
         />
-        <WeightGoalCard
-          data={state.data.goal}
-          actions={{ onEdit: state.actions.editGoal }}
+        <FitnessGoalsCard
+          data={{
+            title: state.ui.goalsTitle,
+            rows: state.goals.data.rows,
+            weightProgress: state.goals.data.weightProgress,
+            editing: state.goals.data.editing,
+            loading: state.goals.data.loading,
+            saving: state.goals.data.saving,
+            dirty: state.goals.data.dirty,
+          }}
+          actions={{
+            onToggleEdit: () => void state.goals.actions.toggleEdit(),
+            onWeightGoalChange: state.goals.actions.setWeightGoalDraft,
+            onCaloriesChange: state.goals.actions.setCaloriesDraft,
+          }}
           className="flex-1 min-h-0"
         />
       </div>
     </section>
   );
 }
-

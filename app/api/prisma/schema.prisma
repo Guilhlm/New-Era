@@ -58,7 +58,7 @@ model User {
   fitnessMacroGoals FitnessMacroGoal[]
   dietMeals         DietMeal[]
   waterLogs         WaterLog[]
-  workoutSessions   WorkoutSession[]
+  workoutDayPlans   WorkoutDayPlan[]
   wallets           Wallet[]
   cards             Card[]
   financialGoals    FinancialGoal[]
@@ -146,17 +146,23 @@ model DietMeal {
 }
 
 model DietFoodItem {
-  id        String   @id @default(cuid())
-  mealId    String
-  name      String
-  totalGrams Decimal? @db.Decimal(8, 2)
-  calories  Int?
-  fats      Decimal? @db.Decimal(8, 2)
-  protein   Decimal? @db.Decimal(8, 2)
-  carbodrate Decimal? @db.Decimal(8, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  meal      DietMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  mealId          String
+  name            String
+  totalGrams      Decimal? @db.Decimal(8, 2)
+  externalSource  String?
+  externalFoodId  String?
+  caloriesPer100g Int?
+  proteinPer100g  Decimal? @db.Decimal(8, 2)
+  carbsPer100g    Decimal? @db.Decimal(8, 2)
+  fatsPer100g     Decimal? @db.Decimal(8, 2)
+  calories        Int?
+  fats            Decimal? @db.Decimal(8, 2)
+  protein         Decimal? @db.Decimal(8, 2)
+  carbodrate      Decimal? @db.Decimal(8, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  meal            DietMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
   @@index([mealId])
 }
@@ -167,6 +173,7 @@ model WaterLog {
   logDate     DateTime
   waterTotal  Decimal? @db.Decimal(8, 2)
   waterIntake Decimal? @db.Decimal(8, 2)
+  glassCount  Int      @default(10)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -174,23 +181,54 @@ model WaterLog {
   @@index([userId, logDate])
 }
 
-model WorkoutSession {
-  id             String   @id @default(cuid())
-  userId         String
-  weekday        Int?
-  nameTraining   String
-  timeMinutes    Int?
-  nameMuscle     String?
-  totalKilos     Decimal? @db.Decimal(8, 2)
-  numberSeries   Int?
-  numberRepetions Int?
-  isPrimaryMuscle Boolean  @default(false)
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model WorkoutDayPlan {
+  id        String               @id @default(cuid())
+  userId    String
+  weekday   Int
+  title     String
+  notes     String?
+  isActive  Boolean              @default(true)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups    WorkoutMuscleGroup[]
 
+  @@unique([userId, weekday])
   @@index([userId, weekday])
+}
+
+model WorkoutMuscleGroup {
+  id          String            @id @default(cuid())
+  dayPlanId   String
+  name        String
+  timeMinutes Int?
+  sortOrder   Int               @default(0)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  dayPlan     WorkoutDayPlan    @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
+  exercises   WorkoutExercise[]
+
+  @@index([dayPlanId, sortOrder])
+}
+
+model WorkoutExercise {
+  id          String             @id @default(cuid())
+  groupId     String
+  name        String
+  equipment   String?
+  weightKg    Decimal?           @db.Decimal(8, 2)
+  series      Int?
+  repsMin     Int?
+  repsMax     Int?
+  imageUrl    String?
+  isCompleted Boolean            @default(false)
+  sortOrder   Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  group       WorkoutMuscleGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, sortOrder])
 }
 
 model Wallet {

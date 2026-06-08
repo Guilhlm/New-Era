@@ -1,0 +1,138 @@
+'use client';
+
+import { useCallback, useMemo, useRef, type ReactNode } from 'react';
+import { cn } from '@/components/ui/cn';
+import { useAccordionGridFit } from '@/hooks/use-accordion-grid-fit';
+import { normalizeSingleExpanded } from '@/utils/collapse-other-expanded';
+
+type AccordionEntityGridProps<T extends { id: string; expanded?: boolean }> = {
+  items: T[];
+  loading?: boolean;
+  loadingLabel?: string;
+  hiddenHintLabel: (count: number) => string;
+  renderEmpty: () => ReactNode;
+  renderCreateDialog: () => ReactNode;
+  renderAddSlot: () => ReactNode;
+  renderRow: (context: {
+    item: T;
+    isExpanded: boolean;
+    isHidden: boolean;
+    expandedScrolls: boolean;
+    bodyMaxHeight?: number;
+    bindHeaderRef?: React.RefObject<HTMLDivElement | null>;
+    bindBodyRef?: React.RefObject<HTMLDivElement | null>;
+  }) => ReactNode;
+  getExpandedBodyCount: (item: T) => number;
+  hasDraft: (item: T) => boolean;
+  className?: string;
+  style?: React.CSSProperties;
+};
+
+export function AccordionEntityGrid<T extends { id: string; expanded?: boolean }>({
+  items: rawItems,
+  loading = false,
+  loadingLabel = 'Loading…',
+  hiddenHintLabel,
+  renderEmpty,
+  renderCreateDialog,
+  renderAddSlot,
+  renderRow,
+  getExpandedBodyCount,
+  hasDraft,
+  className,
+  style,
+}: AccordionEntityGridProps<T>) {
+  const items = useMemo(() => normalizeSingleExpanded(rawItems), [rawItems]);
+
+  const expandedIndex = items.findIndex((item) => item.expanded);
+  const hasExpanded = expandedIndex >= 0;
+  const expandedItemId = hasExpanded ? (items[expandedIndex]?.id ?? null) : null;
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const expandedHeaderRef = useRef<HTMLDivElement>(null);
+  const expandedBodyRef = useRef<HTMLDivElement>(null);
+
+  const getBodyCount = useCallback((item: T) => getExpandedBodyCount(item), [getExpandedBodyCount]);
+  const getHasDraft = useCallback((item: T) => hasDraft(item), [hasDraft]);
+
+  const { hiddenRowIds, hideAddSlot, expandedScrolls, bodyMaxHeight } = useAccordionGridFit({
+    items,
+    expandedIndex,
+    refs: {
+      container: containerRef,
+      rows: rowRefs,
+      expandedHeader: expandedHeaderRef,
+      expandedBody: expandedBodyRef,
+    },
+    getExpandedBodyCount: getBodyCount,
+    hasDraft: getHasDraft,
+  });
+
+  const hiddenBelowCount = hiddenRowIds.size;
+
+  if (loading) {
+    return (
+      <div className={cn('flex h-full min-h-0 items-center px-6', className)} style={style}>
+        <p className="text-sm text-text/60">{loadingLabel}</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {renderCreateDialog()}
+
+      {items.length === 0 ? (
+        renderEmpty()
+      ) : (
+        <div
+          ref={containerRef}
+          className={cn(
+            'relative flex h-full min-h-0 flex-col gap-2.5',
+            hasExpanded ? 'overflow-hidden' : 'overflow-y-auto',
+            className,
+          )}
+          style={style}
+        >
+          {items.map((item) => {
+            const isHidden = hiddenRowIds.has(item.id);
+            const isExpanded = item.id === expandedItemId;
+
+            return (
+              <div
+                key={item.id}
+                ref={(element) => {
+                  if (element) rowRefs.current.set(item.id, element);
+                  else rowRefs.current.delete(item.id);
+                }}
+                className={cn(
+                  isHidden && 'hidden',
+                  isExpanded && expandedScrolls ? 'min-h-0 flex-1' : 'shrink-0',
+                )}
+              >
+                {renderRow({
+                  item,
+                  isExpanded,
+                  isHidden,
+                  expandedScrolls: isExpanded ? expandedScrolls : false,
+                  bodyMaxHeight: isExpanded ? bodyMaxHeight : undefined,
+                  bindHeaderRef: isExpanded ? expandedHeaderRef : undefined,
+                  bindBodyRef: isExpanded ? expandedBodyRef : undefined,
+                })}
+              </div>
+            );
+          })}
+
+          {!hideAddSlot ? <div className="min-h-[72px] flex-1">{renderAddSlot()}</div> : null}
+
+          {hiddenBelowCount > 0 ? (
+            <p className="pointer-events-none absolute bottom-1 left-0 right-0 text-center text-[10px] text-text/35">
+              {hiddenHintLabel(hiddenBelowCount)}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </>
+  );
+}

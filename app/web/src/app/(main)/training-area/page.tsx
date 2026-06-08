@@ -1,5 +1,9 @@
-import { PageHeader } from '@/components/ui/page-header';
+import { TrainingDashboard } from '@/components/training/training-dashboard';
 
 export default function TrainingAreaPage() {
-  return <PageHeader title="Training Area" />;
+  return (
+    <section className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
+      <TrainingDashboard />
+    </section>
+  );
 }

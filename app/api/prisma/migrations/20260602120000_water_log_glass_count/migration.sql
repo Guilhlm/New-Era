@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "WaterLog" ADD COLUMN "glassCount" INTEGER NOT NULL DEFAULT 10;

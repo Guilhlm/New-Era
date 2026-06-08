@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { AuthMeUser } from '@/types/auth';
 import { useSiteTheme } from '@/components/theme-provider';
+import { getProfile } from '@/services/profile';
 import { PROFILE_UPDATED_EVENT } from '@/utils/events';
 import { formatCpfDisplay, initialsFromName } from '@/utils/person';
 
@@ -17,24 +17,26 @@ export function useSidebarUser() {
     let cancelled = false;
 
     async function loadCard() {
-      const res = await fetch('/api/auth/me');
-      if (!res.ok || cancelled) return;
-      const user = (await res.json()) as AuthMeUser;
-      if (cancelled) return;
-      if (user.themePreference === 'dark' || user.themePreference === 'light') {
-        setTheme(user.themePreference);
+      try {
+        const user = await getProfile();
+        if (cancelled) return;
+        if (user.themePreference === 'dark' || user.themePreference === 'light') {
+          setTheme(user.themePreference);
+        }
+        const name = user.name?.trim() ?? '';
+        if (name) {
+          setDisplayName(name);
+          setAvatarLetters(initialsFromName(name));
+        }
+        const formatted = formatCpfDisplay(user.cpf ?? undefined);
+        setCpfLabel(formatted ?? '—');
+        const p = user.photoUser?.trim();
+        setAvatarPhoto(
+          p && (p.startsWith('data:') || p.startsWith('http') || p.startsWith('/')) ? p : null,
+        );
+      } catch {
+        if (cancelled) return;
       }
-      const name = user.name?.trim() ?? '';
-      if (name) {
-        setDisplayName(name);
-        setAvatarLetters(initialsFromName(name));
-      }
-      const formatted = formatCpfDisplay(user.cpf ?? undefined);
-      setCpfLabel(formatted ?? '—');
-      const p = user.photoUser?.trim();
-      setAvatarPhoto(
-        p && (p.startsWith('data:') || p.startsWith('http') || p.startsWith('/')) ? p : null,
-      );
     }
 
     void loadCard();

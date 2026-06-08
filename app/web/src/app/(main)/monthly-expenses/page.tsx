@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/ui/page-header';
+import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
 
 export default function MonthlyExpensesPage() {
-  return <PageHeader title="Monthly Expenses" />;
+  return <DashboardPlaceholder title="Monthly Expenses" />;
 }

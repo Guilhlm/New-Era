@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/ui/page-header';
+import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
 
 export default function NotificationsPage() {
-  return <PageHeader title="Notifications" />;
+  return <DashboardPlaceholder title="Notifications" />;
 }

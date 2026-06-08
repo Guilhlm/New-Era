@@ -11,6 +11,8 @@ import { WalletModule } from './modules/finance/wallet/wallet.module';
 import { TransactionModule } from './modules/finance/transaction/transaction.module';
 import { InvestmentModule } from './modules/finance/investment/investment.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { FitnessMacroGoalModule } from './modules/fitness-macro-goal/fitness-macro-goal.module';
+import { WaterLogModule } from './modules/water-log/water-log.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { AuthModule } from './modules/auth/auth.module';
     DietModule,
     WorkoutModule,
     BodyMeasureModule,
+    FitnessMacroGoalModule,
+    WaterLogModule,
     WalletModule,
     TransactionModule,
     InvestmentModule,

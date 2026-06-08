@@ -23,6 +23,22 @@ export type LatestBodyMeasure = {
   forearmLeft?: string | number | null;
 } | null;
 
+export type LatestBodyVital = {
+  id: string;
+  userId?: string;
+  recordedAt?: string;
+  updatedAt?: string;
+  bodyFat?: string | number | null;
+  bodyWater?: string | number | null;
+  leanMass?: string | number | null;
+  boneMass?: string | number | null;
+  restingHeartRate?: number | null;
+  maxHeartRate?: number | null;
+  basalMetabolicRate?: number | null;
+  hydrationLevel?: string | number | null;
+  sleepHours?: string | number | null;
+} | null;
+
 /** Campos numéricos que o PATCH da última medida aceita */
 export type UpdateLatestBodyMeasureInput = Partial<{
   weight: number | string | null;
@@ -43,6 +59,18 @@ export type UpdateLatestBodyMeasureInput = Partial<{
   forearmLeft: number | string | null;
 }>;
 
+export type UpdateLatestBodyVitalInput = Partial<{
+  bodyFat: number | string | null;
+  bodyWater: number | string | null;
+  leanMass: number | string | null;
+  boneMass: number | string | null;
+  restingHeartRate: number | null;
+  maxHeartRate: number | null;
+  basalMetabolicRate: number | null;
+  hydrationLevel: number | string | null;
+  sleepHours: number | string | null;
+}>;
+
 export function getLatestBodyMeasure() {
   return getJson<{ measure: LatestBodyMeasure }>('/api/body-measure/latest', {
     cache: 'no-store',
@@ -56,4 +84,33 @@ export function updateLatestBodyMeasure(input: UpdateLatestBodyMeasureInput) {
     input,
     { cache: 'no-store', credentials: 'include' },
   );
+}
+
+export function getBodyMeasureHistory() {
+  return getJson<{ measures: NonNullable<LatestBodyMeasure>[] }>('/api/body-measure/history', {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+}
+
+export function getLatestBodyVital() {
+  return getJson<{ vital: LatestBodyVital }>('/api/body-measure/vitals/latest', {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+}
+
+export function updateLatestBodyVital(input: UpdateLatestBodyVitalInput) {
+  return patchJson<{ vital: LatestBodyVital }, UpdateLatestBodyVitalInput>(
+    '/api/body-measure/vitals/latest',
+    input,
+    { cache: 'no-store', credentials: 'include' },
+  );
+}
+
+export function getBodyVitalHistory() {
+  return getJson<{ vitals: NonNullable<LatestBodyVital>[] }>('/api/body-measure/vitals/history', {
+    cache: 'no-store',
+    credentials: 'include',
+  });
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { toastAuthError } from '@/components/auth/auth-error-toast';
+import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 import { usePasswordField } from '@/hooks/use-password-field';
 import { updateProfile } from '@/services/profile';
 import type { EditBaseline, MeUser } from '@/types/profile';
@@ -106,7 +107,7 @@ export function useProfileForm({ user, onProfileUpdated }: UseProfileFormParams)
       };
 
       await updateProfile(payload);
-      toastAuthError('Profile updated.');
+      toastUpdated(CRUD_TOAST.profileUpdated);
       password.actions.resetToMask();
       await onProfileUpdated();
       window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));

@@ -2,6 +2,7 @@ export type MeUser = {
   id: string;
   name: string;
   email: string;
+  cpf?: string | null;
   birthDate: string | null;
   phone: string | null;
   monthlyIncome: string | number | null;

@@ -1,6 +1,6 @@
 'use client';
 
-import type { MeasurementRowVm } from '@/hooks/use-body-metrics-dashboard-state';
+import type { MeasurementRowVm } from '@/types/body-metrics';
 import { MeasurementInput } from '@/components/body-metrics/measurement-input';
 
 const ROW_GRID_COLUMNS = '8rem minmax(0, 1fr) minmax(0, min(18.7rem, 100%))';

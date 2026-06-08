@@ -6,11 +6,19 @@ const API = appConfig.apiUrl.replace(/\/$/, '');
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const res = await fetch(`${API}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return NextResponse.json(
+      { error: 'Unable to reach the API. Make sure the backend is running on port 6001.' },
+      { status: 503 },
+    );
+  }
 
   const text = await res.text();
   if (!res.ok) {

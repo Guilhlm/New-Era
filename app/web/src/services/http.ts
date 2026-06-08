@@ -73,3 +73,10 @@ export function patchJson<TResponse, TBody extends JsonLike>(input: string, body
     method: 'PATCH',
   }, body);
 }
+
+export function deleteJson<TResponse>(input: string, init?: RequestInit) {
+  return requestJson<TResponse>(input, {
+    ...init,
+    method: 'DELETE',
+  });
+}

@@ -1,5 +1,4 @@
-import { getJson, postJson } from '@/services/http';
-import type { AuthMeUser } from '@/types/auth';
+import { postJson } from '@/services/http';
 
 type AuthResult = { ok: true };
 
@@ -35,8 +34,4 @@ export function resetPassword(input: ResetPasswordInput) {
 
 export function logout() {
   return postJson<AuthResult, Record<string, never>>('/api/auth/logout', {});
-}
-
-export function getAuthMe() {
-  return getJson<AuthMeUser>('/api/auth/me');
 }

@@ -6,35 +6,44 @@ import {
   Param,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../../../common/auth/auth.types';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { TransactionService } from './transaction.service';
 
-@Controller('finance/transaction')
+@Controller('finance/transactions')
+@UseGuards(JwtAuthGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Post()
-  create(@Body() data: Record<string, unknown>) {
-    return this.transactionService.create(data);
+  create(@Req() req: AuthenticatedRequest, @Body() data: Record<string, unknown>) {
+    return this.transactionService.create(req.user.userId, data);
   }
 
   @Get()
-  findAll() {
-    return this.transactionService.findAll();
+  findAll(@Req() req: AuthenticatedRequest) {
+    return this.transactionService.findByUser(req.user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionService.findOne(id);
+  findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.transactionService.findOne(id, req.user.userId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: Record<string, unknown>) {
-    return this.transactionService.update(id, data);
+  update(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() data: Record<string, unknown>,
+  ) {
+    return this.transactionService.update(id, req.user.userId, data);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionService.remove(id);
+  remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.transactionService.remove(id, req.user.userId);
   }
 }

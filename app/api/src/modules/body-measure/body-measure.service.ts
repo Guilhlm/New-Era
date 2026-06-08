@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { assertResourceExists, assertResourceOwner } from '../../common/auth/ownership.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { BodyMeasureDto } from './dto/body-measure.dto';
 
@@ -6,43 +7,63 @@ import type { BodyMeasureDto } from './dto/body-measure.dto';
 export class BodyMeasureService {
   constructor(private readonly prisma: PrismaService) {}
 
-  createMeasure(data: BodyMeasureDto) {
-    return this.prisma.bodyMeasure.create({ data: data as any });
+  createMeasure(userId: string, data: BodyMeasureDto) {
+    return this.prisma.bodyMeasure.create({
+      data: { ...data, userId } as any,
+    });
   }
 
-  findAllMeasures() {
-    return this.prisma.bodyMeasure.findMany();
+  findMeasuresByUser(userId: string) {
+    return this.prisma.bodyMeasure.findMany({
+      where: { userId },
+      orderBy: { recordedAt: 'desc' },
+    });
   }
 
-  findOneMeasure(id: string) {
-    return this.prisma.bodyMeasure.findUnique({ where: { id } });
+  async findOneMeasure(id: string, userId: string) {
+    const measure = await this.prisma.bodyMeasure.findUnique({ where: { id } });
+    const existing = await assertResourceExists(measure, 'Measure');
+    assertResourceOwner(existing.userId, userId, 'Measure');
+    return existing;
   }
 
-  updateMeasure(id: string, data: BodyMeasureDto) {
+  async updateMeasure(id: string, userId: string, data: BodyMeasureDto) {
+    await this.findOneMeasure(id, userId);
     return this.prisma.bodyMeasure.update({ where: { id }, data: data as any });
   }
 
-  removeMeasure(id: string) {
+  async removeMeasure(id: string, userId: string) {
+    await this.findOneMeasure(id, userId);
     return this.prisma.bodyMeasure.delete({ where: { id } });
   }
 
-  createVital(data: BodyMeasureDto) {
-    return this.prisma.bodyVital.create({ data: data as any });
+  createVital(userId: string, data: BodyMeasureDto) {
+    return this.prisma.bodyVital.create({
+      data: { ...data, userId } as any,
+    });
   }
 
-  findAllVitals() {
-    return this.prisma.bodyVital.findMany();
+  findVitalsByUser(userId: string) {
+    return this.prisma.bodyVital.findMany({
+      where: { userId },
+      orderBy: { recordedAt: 'desc' },
+    });
   }
 
-  findOneVital(id: string) {
-    return this.prisma.bodyVital.findUnique({ where: { id } });
+  async findOneVital(id: string, userId: string) {
+    const vital = await this.prisma.bodyVital.findUnique({ where: { id } });
+    const existing = await assertResourceExists(vital, 'Vital');
+    assertResourceOwner(existing.userId, userId, 'Vital');
+    return existing;
   }
 
-  updateVital(id: string, data: BodyMeasureDto) {
+  async updateVital(id: string, userId: string, data: BodyMeasureDto) {
+    await this.findOneVital(id, userId);
     return this.prisma.bodyVital.update({ where: { id }, data: data as any });
   }
 
-  removeVital(id: string) {
+  async removeVital(id: string, userId: string) {
+    await this.findOneVital(id, userId);
     return this.prisma.bodyVital.delete({ where: { id } });
   }
 }

@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/ui/page-header';
+import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
 
 export default function CreateTasksPage() {
-  return <PageHeader title="Create Tasks" />;
+  return <DashboardPlaceholder title="Create Tasks" />;
 }

@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/ui/page-header';
+import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
 
 export default function FinanceGoalsPage() {
-  return <PageHeader title="Finances Goals" />;
+  return <DashboardPlaceholder title="Finances Goals" />;
 }

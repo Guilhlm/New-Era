@@ -6,64 +6,74 @@ import {
   Param,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../../common/auth/auth.types';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { BodyMeasureDto } from './dto/body-measure.dto';
 import { BodyMeasureService } from './body-measure.service';
 
 @Controller('body-measure')
+@UseGuards(JwtAuthGuard)
 export class BodyMeasureController {
   constructor(private readonly bodyMeasureService: BodyMeasureService) {}
 
   @Post('measures')
-  createMeasure(@Body() data: BodyMeasureDto) {
-    return this.bodyMeasureService.createMeasure(data);
+  createMeasure(@Req() req: AuthenticatedRequest, @Body() data: BodyMeasureDto) {
+    return this.bodyMeasureService.createMeasure(req.user.userId, data);
   }
 
   @Get('measures')
-  findAllMeasures() {
-    return this.bodyMeasureService.findAllMeasures();
+  findMeasures(@Req() req: AuthenticatedRequest) {
+    return this.bodyMeasureService.findMeasuresByUser(req.user.userId);
   }
 
   @Get('measures/:id')
-  findOneMeasure(@Param('id') id: string) {
-    return this.bodyMeasureService.findOneMeasure(id);
+  findOneMeasure(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.bodyMeasureService.findOneMeasure(id, req.user.userId);
   }
 
   @Patch('measures/:id')
   updateMeasure(
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() data: BodyMeasureDto,
   ) {
-    return this.bodyMeasureService.updateMeasure(id, data);
+    return this.bodyMeasureService.updateMeasure(id, req.user.userId, data);
   }
 
   @Delete('measures/:id')
-  removeMeasure(@Param('id') id: string) {
-    return this.bodyMeasureService.removeMeasure(id);
+  removeMeasure(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.bodyMeasureService.removeMeasure(id, req.user.userId);
   }
 
   @Post('vitals')
-  createVital(@Body() data: BodyMeasureDto) {
-    return this.bodyMeasureService.createVital(data);
+  createVital(@Req() req: AuthenticatedRequest, @Body() data: BodyMeasureDto) {
+    return this.bodyMeasureService.createVital(req.user.userId, data);
   }
 
   @Get('vitals')
-  findAllVitals() {
-    return this.bodyMeasureService.findAllVitals();
+  findVitals(@Req() req: AuthenticatedRequest) {
+    return this.bodyMeasureService.findVitalsByUser(req.user.userId);
   }
 
   @Get('vitals/:id')
-  findOneVital(@Param('id') id: string) {
-    return this.bodyMeasureService.findOneVital(id);
+  findOneVital(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.bodyMeasureService.findOneVital(id, req.user.userId);
   }
 
   @Patch('vitals/:id')
-  updateVital(@Param('id') id: string, @Body() data: BodyMeasureDto) {
-    return this.bodyMeasureService.updateVital(id, data);
+  updateVital(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() data: BodyMeasureDto,
+  ) {
+    return this.bodyMeasureService.updateVital(id, req.user.userId, data);
   }
 
   @Delete('vitals/:id')
-  removeVital(@Param('id') id: string) {
-    return this.bodyMeasureService.removeVital(id);
+  removeVital(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.bodyMeasureService.removeVital(id, req.user.userId);
   }
 }

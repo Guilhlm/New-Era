@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { toastAuthError } from '@/components/auth/auth-error-toast';
+import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { updateProfile } from '@/services/profile';
+import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 import { PROFILE_UPDATED_EVENT } from '@/utils/events';
 import { fileToResizedDataUrl } from '@/utils/profile';
 
@@ -35,7 +36,7 @@ export function useProfileAvatar({ photoUser, onProfileUpdated }: UseProfileAvat
     try {
       const dataUrl = await fileToResizedDataUrl(file);
       await updateProfile({ photoUser: dataUrl });
-      toastAuthError('Photo updated.');
+      toastUpdated(CRUD_TOAST.photoUpdated);
       await onProfileUpdated();
       window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));
     } catch (error) {

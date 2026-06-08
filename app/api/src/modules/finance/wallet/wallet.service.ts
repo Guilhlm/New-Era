@@ -1,27 +1,35 @@
 import { Injectable } from '@nestjs/common';
+import { assertResourceExists, assertResourceOwner } from '../../../common/auth/ownership.util';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class WalletService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: Record<string, unknown>) {
-    return this.prisma.wallet.create({ data: data as any });
+  create(userId: string, data: Record<string, unknown>) {
+    return this.prisma.wallet.create({
+      data: { ...data, userId } as any,
+    });
   }
 
-  findAll() {
-    return this.prisma.wallet.findMany();
+  findByUser(userId: string) {
+    return this.prisma.wallet.findMany({ where: { userId } });
   }
 
-  findOne(id: string) {
-    return this.prisma.wallet.findUnique({ where: { id } });
+  async findOne(id: string, userId: string) {
+    const wallet = await this.prisma.wallet.findUnique({ where: { id } });
+    const existing = await assertResourceExists(wallet, 'Wallet');
+    assertResourceOwner(existing.userId, userId, 'Wallet');
+    return existing;
   }
 
-  update(id: string, data: Record<string, unknown>) {
+  async update(id: string, userId: string, data: Record<string, unknown>) {
+    await this.findOne(id, userId);
     return this.prisma.wallet.update({ where: { id }, data: data as any });
   }
 
-  remove(id: string) {
+  async remove(id: string, userId: string) {
+    await this.findOne(id, userId);
     return this.prisma.wallet.delete({ where: { id } });
   }
 }

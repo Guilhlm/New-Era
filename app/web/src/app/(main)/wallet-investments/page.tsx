@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/ui/page-header';
+import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
 
 export default function WalletInvestmentsPage() {
-  return <PageHeader title="Wallet Investments" />;
+  return <DashboardPlaceholder title="Wallet & Investments" />;
 }

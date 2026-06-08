@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { toastAuthError } from '@/components/auth/auth-error-toast';
+import { toastAuthError } from '@/lib/app-toast';
 import { formatCpfInput } from '@/components/auth/auth-form-shared';
 import { usePasswordToggle } from '@/hooks/use-password-toggle';
 import { register } from '@/services/auth';

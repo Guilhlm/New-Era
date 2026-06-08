@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { toastAuthError } from '@/components/auth/auth-error-toast';
+import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { formatCpfInput } from '@/components/auth/auth-form-shared';
 import { usePasswordToggle } from '@/hooks/use-password-toggle';
 import { resetPassword } from '@/services/auth';
+import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 
 const MIN_PASSWORD_LEN = 6;
 
@@ -46,9 +46,7 @@ export function useResetPasswordForm() {
     setLoading(true);
     try {
       await resetPassword({ email: emailNormalized, cpf: cpfDigits, newPassword });
-      toast.success('Password updated. You can sign in with your new password.', {
-        duration: 6000,
-      });
+      toastUpdated(CRUD_TOAST.passwordUpdated);
       setNewPassword('');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not reset password.';

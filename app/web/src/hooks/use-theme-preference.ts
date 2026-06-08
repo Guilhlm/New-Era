@@ -1,8 +1,9 @@
 import { useCallback, useEffect } from 'react';
-import { toastAuthError } from '@/components/auth/auth-error-toast';
+import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { useSiteTheme } from '@/components/theme-provider';
 import { updateProfile } from '@/services/profile';
 import type { MeUser } from '@/types/profile';
+import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 
 type UseThemePreferenceParams = {
   user: MeUser | null;
@@ -31,6 +32,7 @@ export function useThemePreference({ user }: UseThemePreferenceParams) {
     void (async () => {
       try {
         await updateProfile({ themePreference: next });
+        toastUpdated(CRUD_TOAST.themeUpdated);
       } catch (error) {
         setTheme(prev);
         const message = error instanceof Error ? error.message : 'Não foi possível salvar o tema.';

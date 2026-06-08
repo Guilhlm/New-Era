@@ -6,35 +6,44 @@ import {
   Param,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../../../common/auth/auth.types';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { WalletService } from './wallet.service';
 
 @Controller('finance/wallet')
+@UseGuards(JwtAuthGuard)
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @Post()
-  create(@Body() data: Record<string, unknown>) {
-    return this.walletService.create(data);
+  create(@Req() req: AuthenticatedRequest, @Body() data: Record<string, unknown>) {
+    return this.walletService.create(req.user.userId, data);
   }
 
   @Get()
-  findAll() {
-    return this.walletService.findAll();
+  findAll(@Req() req: AuthenticatedRequest) {
+    return this.walletService.findByUser(req.user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.walletService.findOne(id);
+  findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.walletService.findOne(id, req.user.userId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: Record<string, unknown>) {
-    return this.walletService.update(id, data);
+  update(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() data: Record<string, unknown>,
+  ) {
+    return this.walletService.update(id, req.user.userId, data);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.walletService.remove(id);
+  remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.walletService.remove(id, req.user.userId);
   }
 }
