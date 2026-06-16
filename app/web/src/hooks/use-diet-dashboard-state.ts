@@ -1,12 +1,13 @@
 'use client';
 
-import { MOCK_WEEKLY_CHART } from '@/utils/diet-constants';
 import { useDietMacroView } from '@/hooks/use-diet-macro-view';
 import { useDietMealsState } from '@/hooks/use-diet-meals-state';
+import { useTaskDisciplineChart } from '@/hooks/use-task-discipline-chart';
 
 export function useDietDashboardState() {
   const mealsState = useDietMealsState();
   const macroView = useDietMacroView(mealsState.data.meals);
+  const disciplineChart = useTaskDisciplineChart({ days: 7, tab: 'diet', fixedPeriod: true });
 
   return {
     data: {
@@ -21,7 +22,11 @@ export function useDietDashboardState() {
       dailyMacros: macroView.dailyMacros,
       selectedWeekday: mealsState.data.selectedWeekday,
       weeklyChart: {
-        bars: MOCK_WEEKLY_CHART,
+        bars: disciplineChart.days.map((day) => ({
+          label: day.label,
+          heightPercent: day.percent,
+        })),
+        loading: disciplineChart.loading,
       },
     },
     actions: mealsState.actions,

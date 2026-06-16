@@ -1,7 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { type UpdateLatestBodyMeasureInput, updateLatestBodyMeasure } from '@/services/body-measure';
 import { HttpError } from '@/services/http';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
@@ -13,12 +15,14 @@ import {
 import {
   buildMeasurementRowsVm,
   flatMeasurementDraftsFromRecord,
+  measureNum,
   normalizeCircumferenceDraft,
   normalizeCmCompare,
 } from '@/utils/body-measure-drafts';
 import type { BodyMeasureQueryState } from '@/hooks/use-body-measure-query';
 
 export function useBodyMeasurementsForm(query: BodyMeasureQueryState) {
+  const queryClient = useQueryClient();
   const [measurementDraftsByField, setMeasurementDraftsByField] = useState<Record<string, string>>({});
   const [measurementsBaselineByField, setMeasurementsBaselineByField] = useState<Record<string, string>>({});
   const [measurementsSaving, setMeasurementsSaving] = useState(false);
@@ -53,7 +57,8 @@ export function useBodyMeasurementsForm(query: BodyMeasureQueryState) {
       const d = normalizeCmCompare(measurementDraftsByField[field] ?? '');
       const b = normalizeCmCompare(measurementsBaselineByField[field] ?? '');
       if (d === b) continue;
-      (payload as Record<string, unknown>)[field as string] = d === '' ? null : d;
+      (payload as Record<string, unknown>)[field as string] =
+        d === '' ? null : measureNum(d);
     }
     if (Object.keys(payload).length === 0) return;
 
@@ -61,6 +66,7 @@ export function useBodyMeasurementsForm(query: BodyMeasureQueryState) {
     try {
       const { measure } = await updateLatestBodyMeasure(payload);
       if (measure) query.setMeasureRecord(measure);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bodyMeasureHistory });
       toastUpdated(CRUD_TOAST.measurementsUpdated);
     } catch (error) {
       const message =

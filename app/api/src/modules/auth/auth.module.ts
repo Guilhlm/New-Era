@@ -6,6 +6,7 @@ import { UserModule } from '../user/user.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
+import { requireJwtSecret } from '../../common/config/env.util';
 
 @Module({
   imports: [
@@ -14,8 +15,8 @@ import { JwtStrategy } from './jwt.strategy';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'new-era-dev-secret'),
-        signOptions: { expiresIn: '1d' },
+        secret: requireJwtSecret(configService),
+        signOptions: { expiresIn: '1d', algorithm: 'HS256' },
       }),
     }),
   ],

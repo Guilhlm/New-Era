@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 
 type FitnessMacroGoal = {
   id: string;
@@ -28,25 +34,25 @@ async function fetchCurrentGoal(token: string) {
       cache: 'no-store',
     });
   } catch {
-    return { ok: false as const, status: 503, text: 'Unable to reach the API.' };
+    return { ok: false as const, unreachable: true as const, status: 503, text: '' };
   }
 
   const text = await res.text();
-  return { ok: res.ok, status: res.status, text };
+  return { ok: res.ok, unreachable: false as const, status: res.status, text };
 }
 
 export async function GET() {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const result = await fetchCurrentGoal(token);
   if (!result.ok) {
-    return NextResponse.json(
-      { error: result.text || 'Failed to load goals' },
-      { status: result.status },
-    );
+    if (result.unreachable) {
+      return unreachableApiResponse();
+    }
+    return upstreamErrorResponse(result.text, result.status, 'Failed to load goals');
   }
 
   if (!result.text || result.text === 'null') {
@@ -57,14 +63,14 @@ export async function GET() {
     const goal = JSON.parse(result.text) as FitnessMacroGoal | null;
     return NextResponse.json({ goal: goal ?? null });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }
 
 export async function PATCH(request: Request) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   let body: Record<string, unknown>;
@@ -81,10 +87,10 @@ export async function PATCH(request: Request) {
 
   const currentResult = await fetchCurrentGoal(token);
   if (!currentResult.ok) {
-    return NextResponse.json(
-      { error: currentResult.text || 'Failed to load goals' },
-      { status: currentResult.status },
-    );
+    if (currentResult.unreachable) {
+      return unreachableApiResponse();
+    }
+    return upstreamErrorResponse(currentResult.text, currentResult.status, 'Failed to load goals');
   }
 
   let latest: FitnessMacroGoal | null = null;
@@ -92,7 +98,7 @@ export async function PATCH(request: Request) {
     try {
       latest = JSON.parse(currentResult.text) as FitnessMacroGoal;
     } catch {
-      return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+      return invalidApiResponse();
     }
   }
 
@@ -108,51 +114,48 @@ export async function PATCH(request: Request) {
         body: JSON.stringify(updates),
       });
     } catch {
-      return NextResponse.json(
-        { error: 'Unable to reach the API. Make sure the backend is running on port 6001.' },
-        { status: 503 },
-      );
+      return unreachableApiResponse();
     }
 
     const text = await createRes.text();
     if (!createRes.ok) {
-      return NextResponse.json({ error: text || 'Failed to create goal' }, { status: createRes.status });
+      return upstreamErrorResponse(text, createRes.status, 'Failed to create goal');
     }
 
     try {
       const created = JSON.parse(text) as FitnessMacroGoal;
       return NextResponse.json({ goal: created });
     } catch {
-      return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+      return invalidApiResponse();
     }
   }
 
   let patchRes: Response;
   try {
-    patchRes = await fetch(`${backendApiUrl}/fitness-macro-goals/${latest.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    patchRes = await fetch(
+      `${backendApiUrl}/fitness-macro-goals/${encodeURIComponent(latest.id)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
       },
-      body: JSON.stringify(updates),
-    });
-  } catch {
-    return NextResponse.json(
-      { error: 'Unable to reach the API. Make sure the backend is running on port 6001.' },
-      { status: 503 },
     );
+  } catch {
+    return unreachableApiResponse();
   }
 
   const text = await patchRes.text();
   if (!patchRes.ok) {
-    return NextResponse.json({ error: text || 'Failed to update goal' }, { status: patchRes.status });
+    return upstreamErrorResponse(text, patchRes.status, 'Failed to update goal');
   }
 
   try {
     const updated = JSON.parse(text) as FitnessMacroGoal;
     return NextResponse.json({ goal: updated });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

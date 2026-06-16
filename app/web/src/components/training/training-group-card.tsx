@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { TrainingExerciseDraftRow } from '@/components/training/training-exercise-draft-row';
 import { TrainingExerciseRow } from '@/components/training/training-exercise-row';
 import { TrainingGroupCollapsedExercisesLine } from '@/components/training/training-group-collapsed-summary';
@@ -58,7 +59,7 @@ function GroupCardActions({
         type="button"
         variant="primary"
         size="md"
-        className="h-[2.7rem] shrink-0 px-[1.125rem] text-xs"
+        className={cn('h-[2.7rem] shrink-0 px-[1.125rem]', typeClass.label)}
         disabled={blocked || hasDraft}
         onClick={onAddExercise}
       >
@@ -88,7 +89,7 @@ export function TrainingGroupCard({
   const blocked = ui?.disabled || ui?.saving;
   const expandedScrolls = Boolean(ui?.expandedScrolls);
   const durationLabel = formatGroupDurationLabel(data.timeMinutes);
-  const durationClass = 'min-w-[5.75rem] shrink-0 text-sm font-semibold tabular-nums text-red';
+  const durationClass = cn('min-w-[5.75rem] shrink-0', typeClass.bodyStrong, typeToneClass.accent);
 
   return (
     <div className={cn('flex min-h-0 flex-col', isExpanded && expandedScrolls && 'h-full', className)}>
@@ -108,7 +109,7 @@ export function TrainingGroupCard({
               <button
                 type="button"
                 aria-expanded={isExpanded}
-                className="inline-flex max-w-[9rem] shrink-0 items-center gap-1 text-left text-base font-semibold text-text lg:max-w-[11rem]"
+                className={cn('inline-flex max-w-[9rem] shrink-0 items-center gap-1 text-left lg:max-w-[11rem]', typeClass.bodyStrong, typeToneClass.default)}
                 onClick={actions.onToggleExpanded}
               >
                 <span className="truncate">{data.name}</span>
@@ -177,7 +178,7 @@ export function TrainingGroupCard({
                   ))}
                 </div>
               ) : !data.draft ? (
-                <p className="shrink-0 text-sm text-text/50">
+                <p className={cn('shrink-0', typeClass.body, 'text-text/50')}>
                   No exercises yet. Use + New Exercicie to add one.
                 </p>
               ) : null}
@@ -188,7 +189,7 @@ export function TrainingGroupCard({
             <button
               type="button"
               aria-expanded={isExpanded}
-              className="inline-flex max-w-[9rem] shrink-0 items-center gap-1 text-left text-base font-semibold text-text lg:max-w-[11rem]"
+              className={cn('inline-flex max-w-[9rem] shrink-0 items-center gap-1 text-left lg:max-w-[11rem]', typeClass.bodyStrong, typeToneClass.default)}
               onClick={actions.onToggleExpanded}
             >
               <span className="truncate">{data.name}</span>

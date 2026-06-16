@@ -4,6 +4,12 @@ import { appConfig } from '@/config';
 
 const API = appConfig.apiUrl.replace(/\/$/, '');
 
+/** Reads the session cookie only — no upstream /auth/me round-trip. */
+export async function getAuthedToken() {
+  const token = (await cookies()).get('auth_token')?.value ?? null;
+  return { token };
+}
+
 export async function getAuthedUserId() {
   const token = (await cookies()).get('auth_token')?.value;
   if (!token) return { token: null, userId: null };

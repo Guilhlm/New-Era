@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { useAccordionGridFit } from '@/hooks/use-accordion-grid-fit';
 import { normalizeSingleExpanded } from '@/utils/collapse-other-expanded';
 
@@ -74,7 +75,7 @@ export function AccordionEntityGrid<T extends { id: string; expanded?: boolean }
   if (loading) {
     return (
       <div className={cn('flex h-full min-h-0 items-center px-6', className)} style={style}>
-        <p className="text-sm text-text/60">{loadingLabel}</p>
+        <p className={cn(typeClass.body, typeToneClass.muted60)}>{loadingLabel}</p>
       </div>
     );
   }
@@ -90,7 +91,7 @@ export function AccordionEntityGrid<T extends { id: string; expanded?: boolean }
           ref={containerRef}
           className={cn(
             'relative flex h-full min-h-0 flex-col gap-2.5',
-            hasExpanded ? 'overflow-hidden' : 'overflow-y-auto',
+            hasExpanded ? 'overflow-hidden' : 'overflow-y-auto [scrollbar-gutter:stable]',
             className,
           )}
           style={style}
@@ -127,7 +128,7 @@ export function AccordionEntityGrid<T extends { id: string; expanded?: boolean }
           {!hideAddSlot ? <div className="min-h-[72px] flex-1">{renderAddSlot()}</div> : null}
 
           {hiddenBelowCount > 0 ? (
-            <p className="pointer-events-none absolute bottom-1 left-0 right-0 text-center text-[10px] text-text/35">
+            <p className={cn('pointer-events-none absolute bottom-1 left-0 right-0 text-center', typeClass.overline, 'text-text/35')}>
               {hiddenHintLabel(hiddenBelowCount)}
             </p>
           ) : null}

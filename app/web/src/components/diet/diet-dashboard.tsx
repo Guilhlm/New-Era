@@ -82,8 +82,9 @@ export function DietDashboard() {
           />
           <DietWeeklyNutritionChart
             data={{
-              title: 'Weekly Nutrition Chart',
+              title: 'Weekly Discipline',
               bars: state.data.weeklyChart.bars,
+              loading: state.data.weeklyChart.loading,
             }}
             className="min-h-0 flex-1"
           />

@@ -1,6 +1,11 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
 import { appConfig } from '@/config';
 
 const API = appConfig.apiUrl.replace(/\/$/, '');
@@ -13,13 +18,20 @@ const ALLOWED = [
   'monthlyIncome',
   'password',
   'photoUser',
-  'themePreference',
 ] as const;
+
+const PHOTO_DATA_URL_PATTERN = /^data:image\/(jpeg|jpg|png|webp|gif);base64,/;
+
+/** Avatars may only be HTTPS URLs or base64 image data URLs. */
+function isSafePhotoUser(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  return value.startsWith('https://') || PHOTO_DATA_URL_PATTERN.test(value);
+}
 
 export async function PATCH(request: Request) {
   const token = (await cookies()).get('auth_token')?.value;
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const meRes = await fetch(`${API}/auth/me`, {
@@ -48,6 +60,12 @@ export async function PATCH(request: Request) {
     const v = body[key];
     if (v === undefined || v === '') continue;
     if (key === 'password' && typeof v === 'string' && v.trim().length === 0) continue;
+    if (key === 'photoUser' && !isSafePhotoUser(v)) {
+      return NextResponse.json(
+        { error: 'Avatar must be an HTTPS URL or an image data URL.' },
+        { status: 400 },
+      );
+    }
     payload[key] = v;
   }
 
@@ -55,7 +73,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
-  const res = await fetch(`${API}/users/${me.id}`, {
+  const res = await fetch(`${API}/users/${encodeURIComponent(me.id)}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -66,16 +84,7 @@ export async function PATCH(request: Request) {
 
   const text = await res.text();
   if (!res.ok) {
-    let message = text || 'Failed to update';
-    try {
-      const j = JSON.parse(text) as { message?: string | string[] };
-      if (j.message) {
-        message = Array.isArray(j.message) ? j.message.join(', ') : j.message;
-      }
-    } catch {
-      /* keep text */
-    }
-    return NextResponse.json({ error: message }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to update');
   }
 
   try {
@@ -85,6 +94,6 @@ export async function PATCH(request: Request) {
     delete updated.passwordHash;
     return NextResponse.json(updated);
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

@@ -27,7 +27,7 @@ export function MeasurementRow({
     >
       <div className="flex min-h-0 min-w-0 w-full items-center gap-2.5 overflow-hidden pr-[30px]">
         <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red" aria-hidden />
-        <span className="truncate text-base text-[color:var(--color-text-60)]">{row.label}</span>
+        <span className="type-body truncate text-[color:var(--color-text-60)]">{row.label}</span>
       </div>
 
       <div className="flex min-h-9 min-w-0 items-center">

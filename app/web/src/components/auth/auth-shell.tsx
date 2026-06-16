@@ -1,5 +1,7 @@
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 
 type AuthShellProps = {
   children: ReactNode;
@@ -23,11 +25,14 @@ export const AUTH_GRID_ROW_ACTIONS_CLASS =
 
 /** Classes do título (h1) nas páginas de auth (Welcome, Create Account, Forgot Password em destaque). */
 export function authTitleClassName(title: string) {
-  return `m-0 text-center font-extrabold leading-none tracking-tight text-red ${
-    title === 'Welcome' || title === 'Create Account' || title === 'Forgot Password'
-      ? 'text-5xl'
-      : 'text-3xl sm:text-4xl'
-  }`;
+  const isHeroTitle =
+    title === 'Welcome' || title === 'Create Account' || title === 'Forgot Password';
+
+  return cn(
+    'm-0 text-center leading-none tracking-tight',
+    isHeroTitle ? cn(typeClass.hero, 'font-extrabold') : typeClass.display,
+    typeToneClass.accent,
+  );
 }
 
 export function AuthShell({ children }: AuthShellProps) {
@@ -63,7 +68,7 @@ export function AuthShell({ children }: AuthShellProps) {
             />
           </div>
 
-          <div className="relative isolate z-10 flex min-h-0 w-full flex-1 flex-col rounded-xl bg-gradient-to-br from-[#600426] to-[#C6094E] p-px shadow-[0_0_60px_rgba(0,0,0,0.7)]">
+          <div className="relative isolate z-10 flex min-h-0 w-full flex-1 flex-col rounded-xl bg-gradient-to-br from-[#600426] to-[#C6094E] p-px shadow-[0_0_60px_var(--color-auth-shadow)]">
             <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-layer1 px-14 sm:px-20">
               {children}
             </div>

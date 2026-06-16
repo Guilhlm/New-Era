@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { CreateEntityDialog } from '@/components/ui/create-entity-dialog';
 
 type CreateGroupFormProps = {
@@ -29,8 +30,8 @@ function CreateGroupForm({ saving, onCreate, onClose }: CreateGroupFormProps) {
       }}
     >
       <div>
-        <p className="text-lg font-semibold text-text">New muscle group</p>
-        <p className="mt-1 text-sm text-text/60">Add a group for the current workout day.</p>
+        <p className={cn(typeClass.title, typeToneClass.default)}>New muscle group</p>
+        <p className={cn('mt-1', typeClass.body, typeToneClass.muted60)}>Add a group for the current workout day.</p>
       </div>
 
       <input
@@ -43,7 +44,7 @@ function CreateGroupForm({ saving, onCreate, onClose }: CreateGroupFormProps) {
         onChange={(event) => setName(event.target.value)}
       />
 
-      <label className="flex flex-col gap-2 text-sm">
+      <label className={cn('flex flex-col gap-2', typeClass.body)}>
         <span className="text-text/60">Duration (minutes)</span>
         <input
           type="text"

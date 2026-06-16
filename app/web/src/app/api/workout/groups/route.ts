@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 import { mapGroupToVm, type TrainingMuscleGroupRecord } from '@/utils/training-mapper';
 
 export async function POST(request: Request) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   let body: Record<string, unknown>;
@@ -46,17 +52,17 @@ export async function POST(request: Request) {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to create group' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to create group');
   }
 
   try {
     return NextResponse.json({ group: mapGroupToVm(JSON.parse(text) as TrainingMuscleGroupRecord) });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 import { mapDayPlanToVm, type TrainingDayPlanRecord } from '@/utils/training-mapper';
 
 type RouteContext = { params: Promise<{ weekday: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const weekday = Number((await context.params).weekday);
@@ -30,7 +36,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   let res: Response;
   try {
-    res = await fetch(`${backendApiUrl}/workout/day/${weekday}`, {
+    res = await fetch(`${backendApiUrl}/workout/day/${encodeURIComponent(weekday)}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -40,12 +46,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to update workout day' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to update workout day');
   }
 
   try {
@@ -53,6 +59,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       plan: mapDayPlanToVm(JSON.parse(text) as TrainingDayPlanRecord, weekday),
     });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

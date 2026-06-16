@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 import { mapDayPlanToVm, type TrainingDayPlanRecord } from '@/utils/training-mapper';
 
 export async function GET(request: Request) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const weekday = Number(new URL(request.url).searchParams.get('weekday'));
@@ -21,18 +27,18 @@ export async function GET(request: Request) {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to load workout day' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to load workout day');
   }
 
   try {
     const parsed = text ? (JSON.parse(text) as TrainingDayPlanRecord | null) : null;
     return NextResponse.json({ plan: mapDayPlanToVm(parsed, weekday) });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

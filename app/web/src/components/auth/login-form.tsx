@@ -72,7 +72,7 @@ export function LoginForm({ title }: LoginFormProps) {
           <div className="mt-2.5 flex w-full justify-end">
             <Link
               href="/forgot-password"
-              className={`${authLinkClass} text-sm font-bold text-red underline`}
+              className={`${authLinkClass} type-body-strong text-red underline`}
             >
               Forgot my Password?
             </Link>
@@ -83,7 +83,7 @@ export function LoginForm({ title }: LoginFormProps) {
       <div className={AUTH_GRID_ROW_ACTIONS_CLASS}>
         <Link
           href="/create-account"
-          className={`${authLinkClass} cursor-pointer text-center text-sm font-bold text-text`}
+          className={`${authLinkClass} cursor-pointer text-center type-body-strong text-text`}
         >
           Create Account
         </Link>

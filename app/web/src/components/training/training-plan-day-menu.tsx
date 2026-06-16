@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { REST_DAY_LABEL } from '@/utils/training-mapper';
 import { MdExpandMore } from 'react-icons/md';
 
@@ -13,6 +14,7 @@ type TrainingPlanDayMenuProps = {
   disabled?: boolean;
   onSelectRestDay: () => void;
   onSelectSheet: () => void;
+  onRemoveSheet: () => void;
 };
 
 export function TrainingPlanDayMenu({
@@ -22,6 +24,7 @@ export function TrainingPlanDayMenu({
   disabled = false,
   onSelectRestDay,
   onSelectSheet,
+  onRemoveSheet,
 }: TrainingPlanDayMenuProps) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
@@ -76,7 +79,8 @@ export function TrainingPlanDayMenu({
             <button
               type="button"
               className={cn(
-                'block w-full px-3 py-2 text-left text-sm hover:bg-layer2-half',
+                'block w-full px-3 py-2 text-left hover:bg-layer2-half',
+                typeClass.body,
                 !isActive ? 'text-red' : 'text-text',
               )}
               onClick={() => {
@@ -90,7 +94,8 @@ export function TrainingPlanDayMenu({
               <button
                 type="button"
                 className={cn(
-                  'block w-full px-3 py-2 text-left text-sm hover:bg-layer2-half',
+                  'block w-full px-3 py-2 text-left hover:bg-layer2-half',
+                typeClass.body,
                   isActive ? 'text-red' : 'text-text',
                 )}
                 onClick={() => {
@@ -99,6 +104,18 @@ export function TrainingPlanDayMenu({
                 }}
               >
                 {sheetTitle}
+              </button>
+            ) : null}
+            {canSelectSheet ? (
+              <button
+                type="button"
+                className={cn('block w-full border-t border-layer2-half px-3 py-2 text-left hover:bg-red/10', typeClass.body, typeToneClass.accent)}
+                onClick={() => {
+                  setOpen(false);
+                  onRemoveSheet();
+                }}
+              >
+                Remove sheet
               </button>
             ) : null}
           </div>,

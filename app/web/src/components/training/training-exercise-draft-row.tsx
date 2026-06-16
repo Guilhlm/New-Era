@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { TrainingExerciseDraftVm } from '@/types/training';
 
 type TrainingExerciseDraftRowProps = {
@@ -39,7 +40,7 @@ export function TrainingExerciseDraftRow({ data, actions, ui }: TrainingExercise
           placeholder="Exercise name"
           disabled={blocked}
           value={data.name}
-          className="rounded-md bg-layer2 px-3 py-2 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          className={cn('rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body)}
           onChange={(event) => actions.onChangeName(event.target.value)}
         />
         <input
@@ -47,7 +48,7 @@ export function TrainingExerciseDraftRow({ data, actions, ui }: TrainingExercise
           placeholder="Equipment (Bar, Cable…)"
           disabled={blocked}
           value={data.equipment ?? ''}
-          className="rounded-md bg-layer2 px-3 py-2 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          className={cn('rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body)}
           onChange={(event) => actions.onChangeEquipment(event.target.value)}
         />
         <input
@@ -56,7 +57,7 @@ export function TrainingExerciseDraftRow({ data, actions, ui }: TrainingExercise
           placeholder="Weight (kg)"
           disabled={blocked}
           value={data.weightKg ?? ''}
-          className="rounded-md bg-layer2 px-3 py-2 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          className={cn('rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body)}
           onChange={(event) => actions.onChangeWeight(parseOptionalNumber(event.target.value))}
         />
         <input
@@ -65,7 +66,7 @@ export function TrainingExerciseDraftRow({ data, actions, ui }: TrainingExercise
           placeholder="Series"
           disabled={blocked}
           value={data.series ?? ''}
-          className="rounded-md bg-layer2 px-3 py-2 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          className={cn('rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body)}
           onChange={(event) => actions.onChangeSeries(parseOptionalNumber(event.target.value))}
         />
         <input
@@ -74,7 +75,7 @@ export function TrainingExerciseDraftRow({ data, actions, ui }: TrainingExercise
           placeholder="Reps min"
           disabled={blocked}
           value={data.repsMin ?? ''}
-          className="rounded-md bg-layer2 px-3 py-2 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          className={cn('rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body)}
           onChange={(event) => actions.onChangeRepsMin(parseOptionalNumber(event.target.value))}
         />
         <input
@@ -83,7 +84,7 @@ export function TrainingExerciseDraftRow({ data, actions, ui }: TrainingExercise
           placeholder="Reps max"
           disabled={blocked}
           value={data.repsMax ?? ''}
-          className="rounded-md bg-layer2 px-3 py-2 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          className={cn('rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body)}
           onChange={(event) => actions.onChangeRepsMax(parseOptionalNumber(event.target.value))}
         />
       </div>

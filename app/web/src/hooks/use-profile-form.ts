@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { typeClass } from '@/lib/typography';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 import { usePasswordField } from '@/hooks/use-password-field';
 import { updateProfile } from '@/services/profile';
 import type { EditBaseline, MeUser } from '@/types/profile';
-import { PROFILE_UPDATED_EVENT } from '@/utils/events';
 import { ageFromBirth, formatPhoneBrEditable, numFromDecimal, toDateInput } from '@/utils/profile';
 
 const savedFieldTextClass = 'text-grey';
 const inputBaseClass =
-  'min-h-0 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-text/35';
+  `min-h-0 min-w-0 flex-1 bg-transparent ${typeClass.body} outline-none placeholder:text-text/35`;
 
 type UseProfileFormParams = {
   user: MeUser | null;
@@ -90,8 +90,8 @@ export function useProfileForm({ user, onProfileUpdated }: UseProfileFormParams)
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    if (password.data.newPassword.length > 0 && password.data.newPassword.length < 6) {
-      toastAuthError('Password must be at least 6 characters.');
+    if (password.data.newPassword.length > 0 && password.data.newPassword.length < 8) {
+      toastAuthError('Password must be at least 8 characters.');
       return;
     }
 
@@ -110,7 +110,6 @@ export function useProfileForm({ user, onProfileUpdated }: UseProfileFormParams)
       toastUpdated(CRUD_TOAST.profileUpdated);
       password.actions.resetToMask();
       await onProfileUpdated();
-      window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save.';
       toastAuthError(message);

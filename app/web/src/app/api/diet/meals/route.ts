@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 import { mapMealToVm, type DietMealRecord } from '@/utils/diet-mapper';
 
 export async function POST(request: Request) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   let body: Record<string, unknown>;
@@ -37,17 +43,17 @@ export async function POST(request: Request) {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to create meal' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to create meal');
   }
 
   try {
     return NextResponse.json({ meal: mapMealToVm(JSON.parse(text) as DietMealRecord) });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

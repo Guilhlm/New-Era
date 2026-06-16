@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/components/ui/cn';
 import { NativeDialog } from '@/components/ui/native-dialog';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { DietFoodItemVm } from '@/types/diet';
 import { scaleMacrosFrom100g } from '@/utils/food-nutrition';
 
@@ -31,11 +33,11 @@ function EditIngredientForm({ item, saving, onClose, onSave, onDelete }: EditIng
       }}
     >
       <div>
-        <p className="text-lg font-semibold text-text">Edit ingredient</p>
-        <p className="mt-1 text-sm text-text/60">{item.name}</p>
+        <p className={cn(typeClass.title, typeToneClass.default)}>Edit ingredient</p>
+        <p className={cn('mt-1', typeClass.body, typeToneClass.muted60)}>{item.name}</p>
       </div>
 
-      <label className="flex flex-col gap-2 text-sm">
+      <label className={cn('flex flex-col gap-2', typeClass.body)}>
         <span className="text-text/60">Grams</span>
         <input
           type="text"
@@ -43,7 +45,11 @@ function EditIngredientForm({ item, saving, onClose, onSave, onDelete }: EditIng
           autoComplete="off"
           disabled={saving}
           value={gramsText}
-          className="rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          className={cn(
+            'rounded-md bg-layer2 px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-red/60',
+            typeClass.body,
+            typeToneClass.default,
+          )}
           onChange={(event) => {
             const value = event.target.value;
             if (/^\d*$/.test(value)) setGramsText(value);
@@ -51,7 +57,7 @@ function EditIngredientForm({ item, saving, onClose, onSave, onDelete }: EditIng
         />
       </label>
 
-      <div className="rounded-md bg-layer2-half px-3 py-2 text-xs text-text/70">
+      <div className={cn('rounded-md bg-layer2-half px-3 py-2', typeClass.caption, 'text-text/70')}>
         {preview.calories} Kcal · {preview.protein}g Protein · {preview.carbs}g Carb · {preview.fats}g Fat
       </div>
 
@@ -67,10 +73,9 @@ function EditIngredientForm({ item, saving, onClose, onSave, onDelete }: EditIng
         </Button>
         <Button
           type="button"
-          variant="primary"
+          variant="secondary"
           size="sm"
           disabled={saving}
-          className="bg-layer2 text-text hover:bg-layer2-half"
           onClick={onClose}
         >
           Cancel
@@ -79,10 +84,10 @@ function EditIngredientForm({ item, saving, onClose, onSave, onDelete }: EditIng
 
       <Button
         type="button"
-        variant="primary"
+        variant="destructive"
         size="sm"
         disabled={saving}
-        className="w-full bg-red hover:bg-red/90"
+        className="w-full"
         onClick={onDelete}
       >
         Delete ingredient

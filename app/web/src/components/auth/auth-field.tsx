@@ -22,7 +22,7 @@ export function AuthField({
     >
       <span className="ml-4 shrink-0 text-red [&_svg]:text-current">{icon}</span>
       <input
-        className={`ml-2 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-text/40 ${inputClassName}`}
+        className={`ml-2 min-w-0 flex-1 bg-transparent type-body outline-none placeholder:text-text/40 ${inputClassName}`}
         {...props}
       />
       {right ? (

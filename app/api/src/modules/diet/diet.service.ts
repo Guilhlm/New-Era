@@ -1,13 +1,13 @@
+import { Injectable } from '@nestjs/common';
 import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  assertResourceExists,
+  assertResourceOwner,
+} from '../../common/auth/ownership.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { scaleMacrosFrom100g } from './diet-macros.util';
 import type {
   CreateDietFoodItemDto,
-  CreateDietMealDto,
+  CreateDietMealInput,
   UpdateDietFoodItemDto,
   UpdateDietMealDto,
 } from './dto/diet.dto';
@@ -24,7 +24,7 @@ export class DietService {
     });
   }
 
-  async createMeal(data: CreateDietMealDto) {
+  async createMeal(data: CreateDietMealInput) {
     return this.prisma.dietMeal.create({
       data: {
         userId: data.userId,
@@ -40,7 +40,11 @@ export class DietService {
     await this.assertMealOwner(userId, mealId);
     return this.prisma.dietMeal.update({
       where: { id: mealId },
-      data,
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.mealTime !== undefined ? { mealTime: data.mealTime } : {}),
+        ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+      },
       include: { items: { orderBy: { createdAt: 'asc' } } },
     });
   }
@@ -50,7 +54,11 @@ export class DietService {
     return this.prisma.dietMeal.delete({ where: { id: mealId } });
   }
 
-  async createItem(userId: string, mealId: string, data: CreateDietFoodItemDto) {
+  async createItem(
+    userId: string,
+    mealId: string,
+    data: CreateDietFoodItemDto,
+  ) {
     await this.assertMealOwner(userId, mealId);
 
     const scaled = scaleMacrosFrom100g(
@@ -118,18 +126,23 @@ export class DietService {
   }
 
   private async assertMealOwner(userId: string, mealId: string) {
-    const meal = await this.prisma.dietMeal.findUnique({ where: { id: mealId } });
-    if (!meal) throw new NotFoundException('Meal not found');
-    if (meal.userId !== userId) throw new ForbiddenException('Not allowed');
-    return meal;
+    const meal = await this.prisma.dietMeal.findUnique({
+      where: { id: mealId },
+    });
+    const existing = assertResourceExists(meal, 'Meal');
+    assertResourceOwner(existing.userId, userId, 'Meal');
+    return existing;
   }
 
-  private async assertItemOwner(userId: string, mealId: string, itemId: string) {
+  private async assertItemOwner(
+    userId: string,
+    mealId: string,
+    itemId: string,
+  ) {
     await this.assertMealOwner(userId, mealId);
     const item = await this.prisma.dietFoodItem.findFirst({
       where: { id: itemId, mealId },
     });
-    if (!item) throw new NotFoundException('Food item not found');
-    return item;
+    return assertResourceExists(item, 'Food item');
   }
 }

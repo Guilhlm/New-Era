@@ -14,9 +14,12 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('health', () => {
+    it('should report the service as healthy', () => {
+      const result = appController.getHealth();
+      expect(result.status).toBe('ok');
+      expect(result.service).toBe('new-era-api');
+      expect(typeof result.timestamp).toBe('string');
     });
   });
 });

@@ -11,8 +11,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../../common/auth/auth.types';
+import { ParseWeekdayPipe } from '../../common/pipes/parse-weekday.pipe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type {
+import {
   CreateWorkoutExerciseDto,
   CreateWorkoutMuscleGroupDto,
   UpdateWorkoutDayPlanDto,
@@ -32,26 +33,27 @@ export class WorkoutController {
   }
 
   @Get()
-  findByWeekday(@Req() req: AuthenticatedRequest, @Query('weekday') weekdayRaw?: string) {
-    const weekday = Number(weekdayRaw);
-    if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
-      return null;
-    }
+  findByWeekday(
+    @Req() req: AuthenticatedRequest,
+    @Query('weekday', ParseWeekdayPipe) weekday: number,
+  ) {
     return this.workoutService.findByWeekday(req.user.userId, weekday);
   }
 
   @Patch('day/:weekday')
   updateDayPlan(
     @Req() req: AuthenticatedRequest,
-    @Param('weekday') weekdayRaw: string,
+    @Param('weekday', ParseWeekdayPipe) weekday: number,
     @Body() body: UpdateWorkoutDayPlanDto,
   ) {
-    const weekday = Number(weekdayRaw);
     return this.workoutService.updateDayPlan(req.user.userId, weekday, body);
   }
 
   @Post('groups')
-  createGroup(@Req() req: AuthenticatedRequest, @Body() body: CreateWorkoutMuscleGroupDto) {
+  createGroup(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: CreateWorkoutMuscleGroupDto,
+  ) {
     return this.workoutService.createGroup(req.user.userId, body);
   }
 
@@ -85,7 +87,12 @@ export class WorkoutController {
     @Param('id') id: string,
     @Body() body: UpdateWorkoutExerciseDto,
   ) {
-    return this.workoutService.updateExercise(req.user.userId, groupId, id, body);
+    return this.workoutService.updateExercise(
+      req.user.userId,
+      groupId,
+      id,
+      body,
+    );
   }
 
   @Delete('groups/:groupId/exercises/:id')

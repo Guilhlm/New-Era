@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { GoalRowVm } from '@/hooks/use-fitness-macro-goal';
 
 type FitnessGoalRowProps = {
@@ -19,7 +20,7 @@ type FitnessGoalRowProps = {
 };
 
 const inputClass =
-  'mt-2 w-full rounded-md bg-layer2 px-3 py-2 text-center text-base font-semibold text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60';
+  'mt-2 w-full rounded-md bg-layer2 px-3 py-2 text-center type-body-strong text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60';
 
 export function FitnessGoalRow({ data, ui, actions }: FitnessGoalRowProps) {
   const { row, editing, weightProgress } = data;
@@ -27,7 +28,7 @@ export function FitnessGoalRow({ data, ui, actions }: FitnessGoalRowProps) {
 
   return (
     <div className="rounded-xl bg-layer2-half px-5 py-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-text/60">{row.label}</p>
+      <p className={cn(typeClass.overline, typeToneClass.muted60)}>{row.label}</p>
 
       {editing ? (
         <input
@@ -45,14 +46,14 @@ export function FitnessGoalRow({ data, ui, actions }: FitnessGoalRowProps) {
           }
         />
       ) : (
-        <p className="mt-2 text-base font-semibold text-text">{row.valueLabel}</p>
+        <p className={cn('mt-2', typeClass.bodyStrong, typeToneClass.default)}>{row.valueLabel}</p>
       )}
 
       {row.showProgress && !editing ? (
         <div className="mt-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-wide text-text/60">Progress</p>
-            <p className="text-xs font-medium text-text/70">{percent}%</p>
+            <p className={cn(typeClass.overline, typeToneClass.muted60)}>Progress</p>
+            <p className={cn(typeClass.label, 'text-text/70')}>{percent}%</p>
           </div>
           <div className="mt-2 h-2 w-full rounded-full bg-layer2">
             <div className="h-2 rounded-full bg-red" style={{ width: `${percent}%` }} aria-hidden />

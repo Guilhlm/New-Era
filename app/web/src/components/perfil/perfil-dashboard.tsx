@@ -6,24 +6,27 @@ import { ProfileFormCard } from '@/components/perfil/profile-form-card';
 import { WalletCard } from '@/components/perfil/wallet-card';
 import { useProfileChart } from '@/hooks/use-profile-chart';
 import { useProfileDashboardState } from '@/hooks/use-profile-dashboard-state';
-import { useThemePreference } from '@/hooks/use-theme-preference';
+import { disciplineLabelFromPercent } from '@/utils/task-mapper';
 
 export function PerfilDashboard() {
   const profile = useProfileDashboardState();
   const chart = useProfileChart();
-  const themePref = useThemePreference({ user: profile.user });
 
   if (profile.loadError) {
     return (
-      <p className="text-sm text-red" role="alert">
+      <p className="type-body text-red" role="alert">
         {profile.loadError}
       </p>
     );
   }
 
   if (!profile.user) {
-    return <p className="text-sm text-text">Loading…</p>;
+    return <p className="type-body text-text">Loading…</p>;
   }
+
+  const disciplineRaw =
+    chart.days.length > 0 ? chart.weekAverage : profile.disciplineRaw;
+  const disciplineLabel = disciplineLabelFromPercent(disciplineRaw);
 
   return (
     <div
@@ -57,15 +60,11 @@ export function PerfilDashboard() {
           onAvatarFileChange: profile.avatar.actions.onAvatarFileChange,
           avatarInputRef: profile.avatar.refs.avatarInputRef,
         }}
-        themeControls={{ theme: themePref.data.theme, toggleTheme: themePref.actions.toggleTheme }}
       />
 
       <WalletCard balanceUsd={profile.balanceUsd} />
 
-      <DisciplineCard
-        disciplineRaw={profile.disciplineRaw}
-        disciplineLabel={profile.disciplineLabel}
-      />
+      <DisciplineCard disciplineRaw={disciplineRaw} disciplineLabel={disciplineLabel} />
 
       <ActivityChartCard chart={chart} style={{ gridColumn: '3 / 6', gridRow: '2 / 3' }} />
     </div>

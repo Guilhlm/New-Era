@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { getChartTooltipDateLabel } from '@/utils/measurement-chart';
 import type { PlottedChartPoint } from '@/utils/measurement-chart';
 
@@ -18,7 +20,7 @@ export function ChartEvolutionTooltip({ data }: ChartEvolutionTooltipProps) {
 
   return (
     <div
-      className="pointer-events-none absolute z-[2] min-w-[9.5rem] rounded-lg border border-grey/40 bg-layer2/95 px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm"
+      className="pointer-events-none absolute z-[2] min-w-[9.5rem] rounded-lg border border-grey/40 bg-layer2/95 px-3 py-2 elevated-shadow backdrop-blur-sm"
       style={{
         left,
         top,
@@ -26,10 +28,10 @@ export function ChartEvolutionTooltip({ data }: ChartEvolutionTooltipProps) {
       }}
     >
       {metricLabel ? (
-        <p className="text-[0.65rem] font-medium uppercase tracking-wide text-text/50">{metricLabel}</p>
+        <p className={cn(typeClass.overline, 'text-text/50')}>{metricLabel}</p>
       ) : null}
-      <p className="mt-0.5 text-sm font-semibold text-text">{valueLabel}</p>
-      <p className="mt-0.5 text-xs text-text/60">{getChartTooltipDateLabel(point)}</p>
+      <p className={cn('mt-0.5', typeClass.bodyStrong, typeToneClass.default)}>{valueLabel}</p>
+      <p className={cn('mt-0.5', typeClass.caption, typeToneClass.muted60)}>{getChartTooltipDateLabel(point)}</p>
     </div>
   );
 }

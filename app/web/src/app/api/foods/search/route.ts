@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthedUserId } from '@/app/api/_lib/auth';
+import { unauthenticatedResponse } from '@/app/api/_lib/api-error';
+import { getAuthedToken } from '@/app/api/_lib/auth';
 import { searchFoods } from '@/app/api/foods/_lib/taco-search';
 
 function parseLimit(raw: string | null) {
@@ -10,9 +11,9 @@ function parseLimit(raw: string | null) {
 }
 
 export async function GET(request: Request) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const { searchParams } = new URL(request.url);

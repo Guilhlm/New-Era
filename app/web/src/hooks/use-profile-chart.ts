@@ -1,21 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { ChartTab, Period } from '@/types/profile';
-import { barHeights } from '@/utils/profile';
+import { useTaskDisciplineChart } from '@/hooks/use-task-discipline-chart';
+import {
+  useProfileFinancialChart,
+  type ProfileFinancialChartState,
+} from '@/hooks/use-profile-financial-chart';
 
 export function useProfileChart() {
-  const [chartTab, setChartTab] = useState<ChartTab>('training');
-  const [period, setPeriod] = useState<Period>(7);
-  const heights = useMemo(() => barHeights(chartTab, period), [chartTab, period]);
+  const discipline = useTaskDisciplineChart();
+  const financial = useProfileFinancialChart(
+    discipline.period,
+    discipline.chartTab === 'financial',
+  );
 
   return {
-    chartTab,
-    setChartTab,
-    period,
-    setPeriod,
-    heights,
+    ...discipline,
+    financial,
   };
 }
 
 export type ProfileChartState = ReturnType<typeof useProfileChart>;
+export type { ProfileFinancialChartState };

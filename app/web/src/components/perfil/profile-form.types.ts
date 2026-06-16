@@ -26,18 +26,12 @@ export type ProfileFormModel = {
   password: PasswordFieldModel;
 };
 
-export type ThemeControls = {
-  theme: 'dark' | 'light';
-  toggleTheme: () => void;
-};
-
 export type ProfileHeaderData = {
   isAdmin: boolean;
 };
 
 export type ProfileHeaderProps = {
   data: ProfileHeaderData;
-  themeControls: ThemeControls;
 };
 
 export type AvatarPickerProps = {

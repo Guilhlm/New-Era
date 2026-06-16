@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { MdInfoOutline } from 'react-icons/md';
 
 type TrainingNotesCardProps = {
@@ -23,7 +24,7 @@ export function TrainingNotesCard({ data, actions, ui, className }: TrainingNote
   return (
     <Card className={cn('flex h-full min-h-0 flex-col overflow-hidden p-5 lg:p-6', className)}>
       <div className="flex items-center gap-2">
-        <p className="text-lg font-semibold text-text">Notes:</p>
+        <p className={cn(typeClass.title, typeToneClass.default)}>Notes:</p>
         <MdInfoOutline className="h-4 w-4 text-red" aria-hidden />
       </div>
 
@@ -31,7 +32,7 @@ export function TrainingNotesCard({ data, actions, ui, className }: TrainingNote
         value={data.notesDraft}
         disabled={ui?.saving}
         placeholder="Add post workout pre-workout notes…"
-        className="scrollbar-none mt-4 min-h-0 flex-1 resize-none rounded-lg bg-layer2 px-4 py-3 text-sm text-text outline-none placeholder:text-text/40 focus-visible:ring-2 focus-visible:ring-red/60"
+        className={cn('scrollbar-none mt-4 min-h-0 flex-1 resize-none rounded-lg bg-layer2 px-4 py-3 text-text outline-none placeholder:text-text/40 focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body)}
         onChange={(event) => actions.onNotesChange(event.target.value)}
       />
 

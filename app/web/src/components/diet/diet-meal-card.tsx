@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { DietFoodItemRow } from '@/components/diet/diet-food-item-row';
 import { DietIngredientDraftRow } from '@/components/diet/diet-ingredient-draft-row';
 import {
@@ -60,7 +61,7 @@ function MealCardActions({
         type="button"
         variant="primary"
         size="md"
-        className="h-[2.7rem] shrink-0 px-[1.125rem] text-xs"
+        className={cn('h-[2.7rem] shrink-0 px-[1.125rem]', typeClass.label)}
         disabled={blocked || hasDraft}
         onClick={onAddIngredient}
       >
@@ -102,7 +103,7 @@ export function DietMealCard({ data, actions, ui, bindHeaderRef, bindIngredients
               <button
                 type="button"
                 aria-expanded={isExpanded}
-                className="inline-flex min-w-0 flex-1 items-center gap-1 text-left text-base font-semibold text-text"
+                className={cn('inline-flex min-w-0 flex-1 items-center gap-1 text-left', typeClass.bodyStrong, typeToneClass.default)}
                 onClick={actions.onToggleExpanded}
               >
                 <span className="truncate">{data.name}</span>
@@ -163,7 +164,7 @@ export function DietMealCard({ data, actions, ui, bindHeaderRef, bindIngredients
                   ))}
                 </div>
               ) : !data.draft ? (
-                <p className="shrink-0 text-sm text-text/50">
+                <p className={cn('shrink-0', typeClass.body, 'text-text/50')}>
                   Nenhum ingrediente ainda. Use New Ingredient + para adicionar.
                 </p>
               ) : null}
@@ -174,14 +175,14 @@ export function DietMealCard({ data, actions, ui, bindHeaderRef, bindIngredients
             <button
               type="button"
               aria-expanded={isExpanded}
-              className="inline-flex max-w-[9rem] shrink-0 items-center gap-1 text-left text-base font-semibold text-text lg:max-w-[11rem]"
+              className={cn('inline-flex max-w-[9rem] shrink-0 items-center gap-1 text-left lg:max-w-[11rem]', typeClass.bodyStrong, typeToneClass.default)}
               onClick={actions.onToggleExpanded}
             >
               <span className="truncate">{data.name}</span>
               <MdExpandMore className="h-5 w-5 shrink-0 text-text/70" aria-hidden />
             </button>
 
-            <span className="shrink-0 text-sm font-semibold tabular-nums text-red">{kcalLabel}</span>
+            <span className={cn('shrink-0', typeClass.bodyStrong, typeToneClass.accent)}>{kcalLabel}</span>
 
             <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center px-1">
               <div className="w-full min-w-0 text-center">

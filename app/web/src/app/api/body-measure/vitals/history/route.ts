@@ -1,19 +1,23 @@
 import { NextResponse } from 'next/server';
 
-import { getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  unauthenticatedResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { getAuthedToken } from '@/app/api/_lib/auth';
 import { byVitalRecordedAtAsc, fetchUserVitals } from '@/app/api/body-measure/_lib/vitals';
 
 export async function GET() {
-  const { token, userId } = await getAuthedUserId();
-  if (!token || !userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const { token } = await getAuthedToken();
+  if (!token) {
+    return unauthenticatedResponse();
   }
 
   try {
-    const vitals = await fetchUserVitals(token, userId);
+    const vitals = await fetchUserVitals(token, '');
     return NextResponse.json({ vitals: vitals.sort(byVitalRecordedAtAsc) });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load vitals';
-    return NextResponse.json({ error: message }, { status: 502 });
+    const message = error instanceof Error ? error.message : '';
+    return upstreamErrorResponse(message, 502, 'Failed to load vitals');
   }
 }

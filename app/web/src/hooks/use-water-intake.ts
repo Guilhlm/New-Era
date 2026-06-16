@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { HttpError } from '@/services/http';
 import { getWaterLogDay, upsertWaterLogDay, type WaterLogVm } from '@/services/water-log';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
@@ -17,34 +19,28 @@ function draftFromLog(log: WaterLogVm) {
 }
 
 export function useWaterIntake(selectedWeekday: number) {
+  const queryClient = useQueryClient();
   const date = useMemo(() => weekdayToDateString(selectedWeekday), [selectedWeekday]);
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [log, setLog] = useState<WaterLogVm | null>(null);
   const [savedDraft, setSavedDraft] = useState('3');
   const [draft, setDraft] = useState('3');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const next = await getWaterLogDay(date);
-      setLog(next);
-      const nextDraft = draftFromLog(next);
-      setSavedDraft(nextDraft);
-      setDraft(nextDraft);
-    } catch (error) {
-      toastAuthError(error instanceof HttpError ? error.message : 'Could not load water intake.');
-      setLog(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [date]);
+  const query = useQuery({
+    queryKey: queryKeys.waterLogDay(date),
+    queryFn: () => getWaterLogDay(date),
+    retry: 3,
+  });
+
+  const log = query.data ?? null;
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!log) return;
+    const nextDraft = draftFromLog(log);
+    setSavedDraft(nextDraft);
+    if (!editing) setDraft(nextDraft);
+  }, [log, editing]);
 
   const activeLog = log ?? {
     id: null,
@@ -64,23 +60,32 @@ export function useWaterIntake(selectedWeekday: number) {
     [draft, savedDraft],
   );
 
+  const upsertMutation = useMutation({
+    mutationFn: (patch: { waterTotal?: number; waterIntake?: number }) =>
+      upsertWaterLogDay({ date, ...patch }),
+    onSuccess: (next) => {
+      queryClient.setQueryData(queryKeys.waterLogDay(date), next);
+      const nextDraft = draftFromLog(next);
+      setSavedDraft(nextDraft);
+      setDraft(nextDraft);
+    },
+    onError: (error) => {
+      toastAuthError(error instanceof HttpError ? error.message : 'Could not save water intake.');
+    },
+  });
+
   async function persist(
     patch: { waterTotal?: number; waterIntake?: number },
     options?: { showUpdatedToast?: boolean },
   ) {
     setSaving(true);
     try {
-      const next = await upsertWaterLogDay({ date, ...patch });
-      setLog(next);
-      const nextDraft = draftFromLog(next);
-      setSavedDraft(nextDraft);
-      setDraft(nextDraft);
+      const next = await upsertMutation.mutateAsync(patch);
       if (options?.showUpdatedToast) {
         toastUpdated(CRUD_TOAST.waterIntakeUpdated);
       }
       return next;
-    } catch (error) {
-      toastAuthError(error instanceof HttpError ? error.message : 'Could not save water intake.');
+    } catch {
       return null;
     } finally {
       setSaving(false);
@@ -88,7 +93,7 @@ export function useWaterIntake(selectedWeekday: number) {
   }
 
   async function clickGlass(index: number) {
-    if (editing || saving || loading) return;
+    if (editing || saving || query.isPending) return;
 
     const isFilled = index < filledCount;
     const isNextEmpty = index === filledCount;
@@ -99,7 +104,7 @@ export function useWaterIntake(selectedWeekday: number) {
         Number((activeLog.waterIntake + perGlass).toFixed(2)),
       );
       if (nextIntake <= activeLog.waterIntake) return;
-      await persist({ waterIntake: nextIntake });
+      await persist({ waterIntake: nextIntake }, { showUpdatedToast: true });
       return;
     }
 
@@ -107,22 +112,22 @@ export function useWaterIntake(selectedWeekday: number) {
 
     const nextIntake = Math.max(0, Number((index * perGlass).toFixed(2)));
     if (nextIntake >= activeLog.waterIntake) return;
-    await persist({ waterIntake: nextIntake });
+    await persist({ waterIntake: nextIntake }, { showUpdatedToast: true });
   }
 
   function cancelEdit() {
-    if (loading || saving) return;
+    if (query.isPending || saving) return;
     setDraft(savedDraft);
     setEditing(false);
   }
 
   function startEdit() {
-    if (loading || saving || editing) return;
+    if (query.isPending || saving || editing) return;
     setEditing(true);
   }
 
   async function saveEdit() {
-    if (loading || saving || !editing) return;
+    if (query.isPending || saving || !editing) return;
 
     const waterTotalValue = Number(normalizeWaterTotalDraft(draft));
     if (!waterTotalValue) return;
@@ -154,9 +159,9 @@ export function useWaterIntake(selectedWeekday: number) {
       draft,
     },
     ui: {
-      loading,
+      loading: query.isPending,
       saving,
-      disabled: loading || saving,
+      disabled: query.isPending || saving,
     },
     actions: {
       clickGlass,

@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { MdAdd } from 'react-icons/md';
 
 type AddEntitySlotProps = {
@@ -26,7 +27,7 @@ export function AddEntitySlot({ label, onAdd, className }: AddEntitySlotProps) {
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-layer2-half">
           <MdAdd className="h-6 w-6" aria-hidden />
         </span>
-        <span className="text-sm font-medium">{label}</span>
+        <span className={cn(typeClass.bodyStrong, typeToneClass.muted)}>{label}</span>
       </button>
     </Card>
   );

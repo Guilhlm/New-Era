@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/components/ui/cn';
+import { typeClass } from '@/lib/typography';
 import { formatSavedMeasurementInputDisplay, type MeasurementInputSide } from '@/utils/body-measure';
 
 type MeasurementInputProps = {
@@ -17,7 +18,7 @@ type MeasurementInputProps = {
   onChange: (field: string, value: string) => void;
 };
 
-const cellClass = 'w-full min-w-0 rounded-md bg-layer2 px-3 py-3 text-center text-sm leading-snug';
+const cellClass = cn('w-full min-w-0 rounded-md bg-layer2 px-3 py-3 text-center leading-snug', typeClass.body);
 
 /**
  * Input de circunferência alinhado ao padrão dos demais formulários (`inputBaseClass` injetado pelo hook).

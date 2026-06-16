@@ -12,7 +12,7 @@ type DashboardTwoColumnLayoutProps = {
 export function DashboardTwoColumnLayout({
   children,
   className,
-  topRowMinHeight = '180px',
+  topRowMinHeight = '14rem',
 }: DashboardTwoColumnLayoutProps) {
   return (
     <section
@@ -22,7 +22,7 @@ export function DashboardTwoColumnLayout({
       )}
       style={{
         gridTemplateColumns: 'minmax(0, 2.65fr) minmax(0, 1fr)',
-        gridTemplateRows: `minmax(${topRowMinHeight}, auto) minmax(0, 1fr)`,
+        gridTemplateRows: `${topRowMinHeight} minmax(0, 1fr)`,
       }}
     >
       {children}

@@ -11,7 +11,10 @@ import {
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../../common/auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { BodyMeasureDto } from './dto/body-measure.dto';
+import {
+  CreateBodyMeasureDto,
+  CreateBodyVitalDto,
+} from './dto/body-measure.dto';
 import { BodyMeasureService } from './body-measure.service';
 
 @Controller('body-measure')
@@ -20,13 +23,21 @@ export class BodyMeasureController {
   constructor(private readonly bodyMeasureService: BodyMeasureService) {}
 
   @Post('measures')
-  createMeasure(@Req() req: AuthenticatedRequest, @Body() data: BodyMeasureDto) {
+  createMeasure(
+    @Req() req: AuthenticatedRequest,
+    @Body() data: CreateBodyMeasureDto,
+  ) {
     return this.bodyMeasureService.createMeasure(req.user.userId, data);
   }
 
   @Get('measures')
   findMeasures(@Req() req: AuthenticatedRequest) {
     return this.bodyMeasureService.findMeasuresByUser(req.user.userId);
+  }
+
+  @Get('measures/latest')
+  findLatestMeasure(@Req() req: AuthenticatedRequest) {
+    return this.bodyMeasureService.findLatestMeasure(req.user.userId);
   }
 
   @Get('measures/:id')
@@ -38,7 +49,7 @@ export class BodyMeasureController {
   updateMeasure(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() data: BodyMeasureDto,
+    @Body() data: CreateBodyMeasureDto,
   ) {
     return this.bodyMeasureService.updateMeasure(id, req.user.userId, data);
   }
@@ -49,13 +60,21 @@ export class BodyMeasureController {
   }
 
   @Post('vitals')
-  createVital(@Req() req: AuthenticatedRequest, @Body() data: BodyMeasureDto) {
+  createVital(
+    @Req() req: AuthenticatedRequest,
+    @Body() data: CreateBodyVitalDto,
+  ) {
     return this.bodyMeasureService.createVital(req.user.userId, data);
   }
 
   @Get('vitals')
   findVitals(@Req() req: AuthenticatedRequest) {
     return this.bodyMeasureService.findVitalsByUser(req.user.userId);
+  }
+
+  @Get('vitals/latest')
+  findLatestVital(@Req() req: AuthenticatedRequest) {
+    return this.bodyMeasureService.findLatestVital(req.user.userId);
   }
 
   @Get('vitals/:id')
@@ -67,7 +86,7 @@ export class BodyMeasureController {
   updateVital(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() data: BodyMeasureDto,
+    @Body() data: CreateBodyVitalDto,
   ) {
     return this.bodyMeasureService.updateVital(id, req.user.userId, data);
   }

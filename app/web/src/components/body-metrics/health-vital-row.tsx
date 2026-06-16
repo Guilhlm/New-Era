@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { HealthVitalField, HealthVitalRow } from '@/types/body-metrics';
 
 type HealthVitalRowProps = {
@@ -17,14 +18,14 @@ type HealthVitalRowProps = {
 };
 
 const inputClass =
-  'mt-2 w-full rounded-md bg-layer2 px-3 py-2 text-base font-semibold text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60';
+  'mt-2 w-full rounded-md bg-layer2 px-3 py-2 text-center type-body-strong text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60';
 
 export function HealthVitalRow({ data, ui, actions }: HealthVitalRowProps) {
   const { row, editing } = data;
 
   return (
     <div className="rounded-xl bg-layer2-half px-5 py-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-text/60">{row.label}</p>
+      <p className={cn(typeClass.overline, typeToneClass.muted60)}>{row.label}</p>
 
       {editing ? (
         <input
@@ -38,7 +39,7 @@ export function HealthVitalRow({ data, ui, actions }: HealthVitalRowProps) {
           onChange={(event) => actions.onChange(row.field, event.target.value)}
         />
       ) : (
-        <p className="mt-2 text-base font-semibold text-text">{row.valueLabel}</p>
+        <p className={cn('mt-2', typeClass.bodyStrong, typeToneClass.default)}>{row.valueLabel}</p>
       )}
     </div>
   );

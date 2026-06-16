@@ -17,7 +17,7 @@ export function toastAuthError(message: string) {
 
 /** Sucesso de update/save CRUD — mesmo visual do perfil (`Profile updated.`). */
 export function toastUpdated(message: string) {
-  toast.error(message, {
+  toast.success(message, {
     id: APP_TOAST_ID,
     duration: APP_TOAST_DURATION_MS,
   });

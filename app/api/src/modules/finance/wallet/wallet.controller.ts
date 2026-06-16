@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../../../common/auth/auth.types';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { CreateWalletDto, UpdateWalletDto } from './dto/wallet.dto';
 import { WalletService } from './wallet.service';
 
 @Controller('finance/wallet')
@@ -19,7 +20,7 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @Post()
-  create(@Req() req: AuthenticatedRequest, @Body() data: Record<string, unknown>) {
+  create(@Req() req: AuthenticatedRequest, @Body() data: CreateWalletDto) {
     return this.walletService.create(req.user.userId, data);
   }
 
@@ -37,7 +38,7 @@ export class WalletController {
   update(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() data: Record<string, unknown>,
+    @Body() data: UpdateWalletDto,
   ) {
     return this.walletService.update(id, req.user.userId, data);
   }

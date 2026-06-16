@@ -1,34 +1,37 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 import {
   buildMeasureSnapshot,
-  byRecordedAtDesc,
-  fetchUserMeasures,
+  fetchLatestMeasure,
   pickMeasurePatch,
   type BodyMeasureRecord,
 } from '@/app/api/body-measure/_lib/measures';
 
 export async function GET() {
-  const { token, userId } = await getAuthedUserId();
-  if (!token || !userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const { token } = await getAuthedToken();
+  if (!token) {
+    return unauthenticatedResponse();
   }
 
   try {
-    const measures = await fetchUserMeasures(token, userId);
-    const latest = measures.sort(byRecordedAtDesc)[0];
+    const latest = await fetchLatestMeasure(token);
     return NextResponse.json({ measure: latest ?? null });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load measures';
-    return NextResponse.json({ error: message }, { status: 502 });
+    const message = error instanceof Error ? error.message : '';
+    return upstreamErrorResponse(message, 502, 'Failed to load measures');
   }
 }
 
 export async function PATCH(request: Request) {
-  const { token, userId } = await getAuthedUserId();
-  if (!token || !userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const { token } = await getAuthedToken();
+  if (!token) {
+    return unauthenticatedResponse();
   }
 
   let body: Record<string, unknown>;
@@ -43,16 +46,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
-  let measures: BodyMeasureRecord[];
+  let latest: BodyMeasureRecord | null;
   try {
-    measures = await fetchUserMeasures(token, userId);
+    latest = await fetchLatestMeasure(token);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load measures';
-    return NextResponse.json({ error: message }, { status: 502 });
+    const message = error instanceof Error ? error.message : '';
+    return upstreamErrorResponse(message, 502, 'Failed to load measures');
   }
 
-  const latest = measures.sort(byRecordedAtDesc)[0];
-  const payload = buildMeasureSnapshot(userId, latest, updates);
+  const payload = buildMeasureSnapshot('', latest ?? undefined, updates);
 
   const createRes = await fetch(`${backendApiUrl}/body-measure/measures`, {
     method: 'POST',
@@ -64,13 +66,13 @@ export async function PATCH(request: Request) {
   });
   const text = await createRes.text();
   if (!createRes.ok) {
-    return NextResponse.json({ error: text || 'Failed to save measure' }, { status: createRes.status });
+    return upstreamErrorResponse(text, createRes.status, 'Failed to save measure');
   }
 
   try {
     const created = JSON.parse(text) as BodyMeasureRecord;
     return NextResponse.json({ measure: created });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

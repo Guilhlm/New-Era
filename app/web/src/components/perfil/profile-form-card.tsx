@@ -2,17 +2,16 @@
 import { ProfileHeader } from '@/components/perfil/profile-header';
 import { ProfileIdentityFields } from '@/components/perfil/profile-identity-fields';
 import { ProfilePasswordField } from '@/components/perfil/profile-password-field';
-import type { ProfileFormCardActions, ProfileFormCardData, ThemeControls } from '@/components/perfil/profile-form.types';
+import type { ProfileFormCardActions, ProfileFormCardData } from '@/components/perfil/profile-form.types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 type ProfileFormCardProps = {
   data: ProfileFormCardData;
   actions: ProfileFormCardActions;
-  themeControls: ThemeControls;
 };
 
-export function ProfileFormCard({ data, actions, themeControls }: ProfileFormCardProps) {
+export function ProfileFormCard({ data, actions }: ProfileFormCardProps) {
   const passwordFieldData = {
     inputType: data.password.data.inputType as 'text' | 'password',
     readOnly: data.password.data.readOnly,
@@ -29,7 +28,7 @@ export function ProfileFormCard({ data, actions, themeControls }: ProfileFormCar
       className="flex h-full min-h-0 flex-col px-6 py-5 shadow-sm lg:px-7 lg:py-6"
       style={{ gridColumn: '1 / 3', gridRow: '1 / 3' }}
     >
-      <ProfileHeader data={{ isAdmin: data.isAdmin }} themeControls={themeControls} />
+      <ProfileHeader data={{ isAdmin: data.isAdmin }} />
 
       <AvatarPicker
         userName={data.userName}

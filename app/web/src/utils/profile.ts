@@ -1,5 +1,3 @@
-import type { ChartTab, Period } from '@/types/profile';
-
 export const PASSWORD_MASK = '\u2022'.repeat(8);
 
 export function numFromDecimal(v: string | number | null | undefined): number {
@@ -37,16 +35,6 @@ export function formatPhoneBrEditable(raw: string): string {
   if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
-
-export function barHeights(tab: ChartTab, period: Period): number[] {
-  const base =
-    tab === 'training'
-      ? [88, 42, 92, 85, 38, 35, 90]
-      : [55, 70, 48, 62, 58, 75, 50];
-  if (period === 7) return base;
-  if (period === 14) return base.map((h, i) => (h + (i % 3) * 12) % 100 || 20);
-  return base.map((h) => Math.min(100, h + period / 3));
 }
 
 export function fileToResizedDataUrl(file: File, maxW = 512, quality = 0.78): Promise<string> {

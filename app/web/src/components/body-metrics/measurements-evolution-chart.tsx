@@ -1,16 +1,11 @@
 'use client';
 
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { ChartEvolutionTooltip } from '@/components/body-metrics/chart-evolution-tooltip';
 import type { MeasurementChartPoint } from '@/utils/measurement-chart';
 import type { PlottedChartPoint } from '@/utils/measurement-chart';
 import { useMeasurementsEvolutionChart } from '@/hooks/use-measurements-evolution-chart';
-
-const GRID_STYLE = {
-  backgroundImage:
-    'repeating-linear-gradient(to top, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 30px)',
-  backgroundPosition: 'left bottom',
-} as const;
 
 type MeasurementsEvolutionChartProps = {
   data: {
@@ -71,21 +66,17 @@ export function MeasurementsEvolutionChart({ data, className }: MeasurementsEvol
           >
             {data.loading ? (
               <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-text/60">Carregando histórico…</p>
+                <p className={cn(typeClass.body, typeToneClass.muted60)}>Carregando histórico…</p>
               </div>
             ) : !hasRawPoints ? (
               <div className="flex h-full items-center justify-center px-4">
-                <p className="text-center text-sm text-text/60">
+                <p className={cn('text-center', typeClass.body, typeToneClass.muted60)}>
                   {data.emptyMessage ?? 'Salve medidas para ver a evolução.'}
                 </p>
               </div>
             ) : (
               <>
-                <div
-                  className="pointer-events-none absolute inset-0"
-                  style={GRID_STYLE}
-                  aria-hidden
-                />
+                <div className="chart-grid-bg pointer-events-none absolute inset-0" aria-hidden />
 
                 <svg
                   viewBox="0 0 100 100"
@@ -160,7 +151,8 @@ export function MeasurementsEvolutionChart({ data, className }: MeasurementsEvol
                 <span
                   key={`${point.id}-label`}
                   className={cn(
-                    'absolute top-0 max-w-[5rem] truncate text-xs text-text/55',
+                    'absolute top-0 max-w-[5rem] truncate',
+                    typeClass.caption,
                     point.isFirst && 'left-0 text-left',
                     point.isLast && !point.isFirst && 'right-0 text-right',
                     !point.isFirst && !point.isLast && '-translate-x-1/2 text-center',

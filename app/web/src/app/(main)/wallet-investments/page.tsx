@@ -1,5 +1,5 @@
-import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
+import { WalletDashboard } from '@/components/dashboards-lazy';
 
 export default function WalletInvestmentsPage() {
-  return <DashboardPlaceholder title="Wallet & Investments" />;
+  return <WalletDashboard />;
 }

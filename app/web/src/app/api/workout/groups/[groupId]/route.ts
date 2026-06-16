@@ -1,17 +1,27 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
+import { invalidIdResponse, isValidResourceId } from '@/app/api/_lib/params';
 import { mapGroupToVm, type TrainingMuscleGroupRecord } from '@/utils/training-mapper';
 
 type RouteContext = { params: Promise<{ groupId: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const { groupId } = await context.params;
+  if (!isValidResourceId(groupId)) {
+    return invalidIdResponse();
+  }
 
   let body: Record<string, unknown>;
   try {
@@ -29,7 +39,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   let res: Response;
   try {
-    res = await fetch(`${backendApiUrl}/workout/groups/${groupId}`, {
+    res = await fetch(`${backendApiUrl}/workout/groups/${encodeURIComponent(groupId)}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -39,43 +49,46 @@ export async function PATCH(request: Request, context: RouteContext) {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to update group' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to update group');
   }
 
   try {
     return NextResponse.json({ group: mapGroupToVm(JSON.parse(text) as TrainingMuscleGroupRecord) });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const { groupId } = await context.params;
+  if (!isValidResourceId(groupId)) {
+    return invalidIdResponse();
+  }
 
   let res: Response;
   try {
-    res = await fetch(`${backendApiUrl}/workout/groups/${groupId}`, {
+    res = await fetch(`${backendApiUrl}/workout/groups/${encodeURIComponent(groupId)}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   if (!res.ok) {
     const text = await res.text();
-    return NextResponse.json({ error: text || 'Failed to delete group' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to delete group');
   }
 
   return NextResponse.json({ ok: true });

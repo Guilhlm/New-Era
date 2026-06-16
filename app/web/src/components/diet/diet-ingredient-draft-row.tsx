@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { DietFoodSearchInput } from '@/components/diet/diet-food-search-input';
 import { DietIngredientMacroStrip } from '@/components/diet/diet-ingredient-macro-strip';
 import { useGramsInput } from '@/hooks/use-grams-input';
@@ -65,7 +66,7 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
           placeholder="Buscar ingrediente…"
           onSelect={actions.onSelectFood}
         />
-        <p className="mt-2 text-xs text-text/50">Busque e selecione um ingrediente.</p>
+        <p className={cn('mt-2', typeClass.caption, 'text-text/50')}>Busque e selecione um ingrediente.</p>
       </div>
     );
   }
@@ -73,7 +74,7 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
   return (
     <div className="flex items-center gap-3 rounded-xl border border-red/30 bg-layer2-half px-4 py-3">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-text">{data.name}</p>
+        <p className={cn('truncate', typeClass.bodyStrong, typeToneClass.default)}>{data.name}</p>
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
@@ -90,7 +91,9 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
           placeholder="100"
           value={text}
           className={cn(
-            'w-16 rounded-md bg-layer2 px-2.5 py-1.5 text-sm font-semibold tabular-nums text-text outline-none',
+            'w-16 rounded-md bg-layer2 px-2.5 py-1.5 outline-none',
+            typeClass.body,
+            typeToneClass.default,
             'placeholder:text-text/35 focus-visible:ring-2 focus-visible:ring-red/60',
             blocked && 'opacity-60',
           )}
@@ -107,7 +110,7 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
             }
           }}
         />
-        <span className="text-sm font-semibold text-text/60">g</span>
+        <span className={cn(typeClass.bodyStrong, typeToneClass.muted60)}>g</span>
       </div>
 
       {canConfirm ? (
@@ -125,8 +128,8 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
           aria-label="Salvar ingrediente"
           disabled={blocked || !canConfirm}
           className={cn(
-            'inline-flex h-9 w-9 items-center justify-center rounded-md bg-layer2 text-text/70',
-            !blocked && canConfirm && 'text-red hover:bg-layer2-half',
+            'inline-flex h-9 w-9 items-center justify-center rounded-md bg-layer2 text-text/70 transition',
+            !blocked && canConfirm && 'text-red hover:bg-layer2-half hover:text-text',
           )}
           onClick={handleConfirm}
         >
@@ -136,7 +139,7 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
           type="button"
           aria-label="Cancelar ingrediente"
           disabled={blocked}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-layer2 text-text/70 hover:text-red"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-layer2 text-text/70 transition hover:bg-layer2-half"
           onClick={actions.onCancel}
         >
           <MdClose className="h-5 w-5" aria-hidden />

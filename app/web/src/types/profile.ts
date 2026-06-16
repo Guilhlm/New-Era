@@ -10,7 +10,6 @@ export type MeUser = {
   disciplineLevel: number | null;
   isAdmin: boolean;
   photoUser: string | null;
-  themePreference?: 'dark' | 'light' | null;
 };
 
 export type EditBaseline = {

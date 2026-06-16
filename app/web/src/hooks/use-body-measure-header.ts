@@ -1,7 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { type UpdateLatestBodyMeasureInput, updateLatestBodyMeasure } from '@/services/body-measure';
 import { HttpError } from '@/services/http';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
@@ -10,6 +12,7 @@ import { normalizeInt3Draft, normalizeWeightDraft, toDraftString } from '@/utils
 import type { BodyMeasureQueryState } from '@/hooks/use-body-measure-query';
 
 export function useBodyMeasureHeader(query: BodyMeasureQueryState) {
+  const queryClient = useQueryClient();
   const [editingHeader, setEditingHeader] = useState(false);
   const [drafts, setDrafts] = useState({ weight: '', height: '' });
 
@@ -66,9 +69,9 @@ export function useBodyMeasureHeader(query: BodyMeasureQueryState) {
       const { measure } = await updateLatestBodyMeasure(payload);
       const nextWeight = toDraftString(measure?.weight ?? payload.weight);
       const nextHeight = toDraftString(measure?.height ?? payload.height);
-      query.setSaved((s) => ({ ...s, weight: nextWeight, height: nextHeight }));
       setDrafts({ weight: nextWeight, height: nextHeight });
       if (measure) query.setMeasureRecord(measure);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bodyMeasureHistory });
       setEditingHeader(false);
       toastUpdated(CRUD_TOAST.measurementsUpdated);
     } catch (error) {

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { toastAuthError } from '@/lib/app-toast';
+import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { formatCpfInput } from '@/components/auth/auth-form-shared';
 import { usePasswordToggle } from '@/hooks/use-password-toggle';
 import { login } from '@/services/auth';
+import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 
 function looksLikeEmail(value: string) {
   return value.includes('@') || /[a-zA-Z]/.test(value);
@@ -51,6 +52,7 @@ export function useLoginForm({ onSuccess }: UseLoginFormParams) {
     setLoading(true);
     try {
       await login({ identifier, password });
+      toastUpdated(CRUD_TOAST.loggedIn);
       onSuccess();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Invalid credentials.';

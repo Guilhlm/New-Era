@@ -68,7 +68,7 @@ export function RegisterForm({ title }: RegisterFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_ACTIONS_CLASS}>
-        <Link href="/login" className={`${authLinkClass} text-center text-sm font-bold text-text`}>
+        <Link href="/login" className={`${authLinkClass} text-center type-body-strong text-text`}>
           I already have an account
         </Link>
         <Button

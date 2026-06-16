@@ -1,7 +1,9 @@
 import * as bcrypt from 'bcrypt';
 
 export const BCRYPT_ROUNDS = 10;
-export const MIN_PASSWORD_LENGTH = 6;
+export const MIN_PASSWORD_LENGTH = 8;
+/** bcrypt truncates inputs above 72 bytes; reject anything longer. */
+export const MAX_PASSWORD_LENGTH = 72;
 
 export function hashPasswordSync(value: string) {
   return bcrypt.hashSync(value, BCRYPT_ROUNDS);

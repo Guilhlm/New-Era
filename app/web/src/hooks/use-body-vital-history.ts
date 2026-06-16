@@ -1,30 +1,29 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBodyVitalHistory, type LatestBodyVital } from '@/services/body-measure';
+import { queryKeys } from '@/lib/query-keys';
 
-export function useBodyVitalHistory(refreshKey: string) {
-  const [vitals, setVitals] = useState<NonNullable<LatestBodyVital>[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useBodyVitalHistory(_refreshKey?: string) {
+  const queryClient = useQueryClient();
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { vitals: next } = await getBodyVitalHistory();
-      setVitals(next.filter(Boolean));
-    } catch {
-      setVitals([]);
-      setError('Não foi possível carregar o histórico de vitals.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const query = useQuery({
+    queryKey: queryKeys.bodyVitalHistory,
+    queryFn: async () => {
+      const { vitals } = await getBodyVitalHistory();
+      return vitals.filter(Boolean) as NonNullable<LatestBodyVital>[];
+    },
+    retry: 3,
+  });
 
-  useEffect(() => {
-    void reload();
-  }, [reload, refreshKey]);
+  async function reload() {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.bodyVitalHistory });
+  }
 
-  return { vitals, loading, error, reload };
+  return {
+    vitals: query.data ?? [],
+    loading: query.isPending,
+    error: query.isError ? 'Não foi possível carregar o histórico de vitals.' : null,
+    reload,
+  };
 }

@@ -17,11 +17,7 @@ export function DietMacroSummaryCard({ data, className }: DietMacroSummaryCardPr
         valueLabel: data.consumedLabel,
         percent: data.percent,
         barClassName: data.barClassName,
-        footerLeft: 'Tot Target',
-        footerRight: data.targetLabel,
-        labelClassName: 'text-sm tracking-wide text-text',
-        valueClassName: 'font-semibold',
-        barHeightClassName: 'h-2',
+        footerRight: `Target ${data.targetLabel}`,
       }}
     />
   );

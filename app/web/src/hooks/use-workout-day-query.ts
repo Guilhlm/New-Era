@@ -1,7 +1,9 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { toastAuthError } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { getWorkoutDay } from '@/services/workout';
 import { HttpError } from '@/services/http';
 import type { TrainingDayPlanVm } from '@/types/training';
@@ -24,35 +26,46 @@ type UseWorkoutDayQueryParams = {
 };
 
 export function useWorkoutDayQuery({ selectedWeekday }: UseWorkoutDayQueryParams) {
+  const queryClient = useQueryClient();
   const [plan, setPlan] = useState<TrainingDayPlanVm>(emptyPlan(selectedWeekday));
-  const [loading, setLoading] = useState(false);
 
   const weekday = TRAINING_WEEKDAYS.find((day) => day.index === selectedWeekday);
 
-  const loadDay = useCallback(async (weekdayIndex: number) => {
-    setLoading(true);
-    try {
-      const { plan: nextPlan } = await getWorkoutDay(weekdayIndex);
-      setPlan({
-        ...nextPlan,
-        groups: nextPlan.groups.map((group) => ({
-          ...group,
-          expanded: false,
-          draft: null,
-        })),
-      });
-    } catch (error) {
-      const message = error instanceof HttpError ? error.message : 'Could not load workout day.';
-      toastAuthError(message);
-      setPlan(emptyPlan(weekdayIndex));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const query = useQuery({
+    queryKey: queryKeys.workoutDay(selectedWeekday),
+    queryFn: async () => {
+      const { plan: nextPlan } = await getWorkoutDay(selectedWeekday);
+      return nextPlan;
+    },
+    retry: 3,
+  });
 
   useEffect(() => {
-    void loadDay(selectedWeekday);
-  }, [loadDay, selectedWeekday]);
+    if (!query.data || !Array.isArray(query.data.groups)) return;
+    setPlan({
+      ...query.data,
+      groups: query.data.groups.map((group) => ({
+        ...group,
+        expanded: false,
+        draft: null,
+      })),
+    });
+  }, [query.data]);
+
+  useEffect(() => {
+    if (!query.isError) return;
+    const message =
+      query.error instanceof HttpError ? query.error.message : 'Could not load workout day.';
+    toastAuthError(message);
+    setPlan(emptyPlan(selectedWeekday));
+  }, [query.isError, query.error, selectedWeekday]);
+
+  const loadDay = useCallback(
+    async (weekdayIndex: number) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.workoutDay(weekdayIndex) });
+    },
+    [queryClient],
+  );
 
   function applySavedNotes(notes: string | null) {
     setPlan((prev) => ({ ...prev, notes }));
@@ -87,7 +100,7 @@ export function useWorkoutDayQuery({ selectedWeekday }: UseWorkoutDayQueryParams
       applySavedPlanTitle,
     },
     ui: {
-      loading,
+      loading: query.isPending,
     },
   };
 }

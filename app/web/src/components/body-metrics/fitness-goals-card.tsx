@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { GoalRowVm } from '@/hooks/use-fitness-macro-goal';
 import { FitnessGoalRow } from '@/components/body-metrics/fitness-goal-row';
 import { MdCheck, MdEdit } from 'react-icons/md';
@@ -34,12 +35,12 @@ export function FitnessGoalsCard({ data, actions, className }: FitnessGoalsCardP
   return (
     <Card className={cn('flex h-full min-h-0 flex-col p-5 lg:p-6', className)}>
       <div className="flex items-start gap-3">
-        <p className="text-lg font-semibold text-text">{data.title}</p>
+        <p className={cn(typeClass.title, typeToneClass.default)}>{data.title}</p>
 
         <button
           type="button"
           className={cn(
-            'ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-layer2-half focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60',
+            'ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-layer2-half transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60 hover:bg-layer2 hover:text-text',
             data.editing ? (hasDirty ? 'text-red' : 'text-text/70') : 'text-text/70',
           )}
           aria-label={data.editing ? 'Save goals' : 'Edit goals'}
@@ -57,7 +58,7 @@ export function FitnessGoalsCard({ data, actions, className }: FitnessGoalsCardP
       <div className="scrollbar-none mt-4 min-h-0 flex-1 overflow-auto pr-1">
         <div className="grid grid-cols-1 gap-2.5">
           {data.loading ? (
-            <div className="rounded-xl bg-layer2-half px-5 py-4 text-sm text-text/60">Loading…</div>
+            <div className={cn('rounded-xl bg-layer2-half px-5 py-4', typeClass.body, typeToneClass.muted60)}>Loading…</div>
           ) : (
             data.rows.map((row) => (
               <FitnessGoalRow

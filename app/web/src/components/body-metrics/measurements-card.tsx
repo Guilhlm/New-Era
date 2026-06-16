@@ -10,12 +10,16 @@ import { MeasurementsEvolutionChart } from '@/components/body-metrics/measuremen
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { useEvolutionChartFilters } from '@/hooks/use-evolution-chart-filters';
 
 type MeasurementsView = 'list' | 'chart';
 
 const FILTER_SELECT_CLASS =
-  'evolution-filter-select w-full min-w-0 rounded-lg px-3 py-2 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60 disabled:cursor-not-allowed disabled:opacity-40';
+  cn(
+    'evolution-filter-select w-full min-w-0 rounded-lg px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60 disabled:cursor-not-allowed disabled:opacity-40',
+    typeClass.body,
+  );
 
 type MeasurementsCardProps = {
   data: {
@@ -74,7 +78,7 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
       style={style}
     >
       <div className="ml-2.5 mt-0 mb-[22px] flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-lg font-semibold text-[color:var(--color-text-60)]">
+        <p className={cn('min-w-0 truncate', typeClass.title, 'text-[color:var(--color-text-60)]')}>
           {view === 'chart' ? 'Evolution' : data.title}
         </p>
 
@@ -88,8 +92,8 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
             className={cn(
               'h-10 w-10 shrink-0 p-0',
               view === 'chart'
-                ? 'bg-red text-text hover:opacity-90'
-                : 'bg-layer2 text-text hover:bg-red/15 hover:text-red',
+                ? 'bg-red text-on-accent hover:bg-layer2-half hover:text-text'
+                : 'bg-layer2 text-text hover:bg-layer2-half',
             )}
             onClick={() => setView('chart')}
           >
@@ -105,8 +109,8 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
             className={cn(
               'h-10 w-10 shrink-0 p-0',
               view === 'list'
-                ? 'bg-red text-text hover:opacity-90'
-                : 'bg-layer2 text-text hover:bg-red/15 hover:text-red',
+                ? 'bg-red text-on-accent hover:bg-layer2-half hover:text-text'
+                : 'bg-layer2 text-text hover:bg-layer2-half',
             )}
             onClick={() => setView('list')}
           >
@@ -133,7 +137,7 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
             <div className="flex min-w-0 flex-col gap-1.5">
               <label
                 htmlFor="evolution-measure-filter"
-                className="text-xs font-medium uppercase tracking-wide text-text/55"
+                className={cn(typeClass.overline, typeToneClass.muted)}
               >
                 Measurements
               </label>
@@ -158,7 +162,7 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
             <div className="flex min-w-0 flex-col gap-1.5">
               <label
                 htmlFor="evolution-vital-filter"
-                className="text-xs font-medium uppercase tracking-wide text-text/55"
+                className={cn(typeClass.overline, typeToneClass.muted)}
               >
                 Health Vitals
               </label>
@@ -188,7 +192,7 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
           </div>
 
           {chart.data.chartError ? (
-            <p className="px-2 text-sm text-red" role="alert">
+            <p className={cn('px-2', typeClass.body, typeToneClass.accent)} role="alert">
               {chart.data.chartError}
             </p>
           ) : null}

@@ -1,44 +1,50 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
+import { useWeekdayNavigation } from '@/hooks/use-weekday-navigation';
 import { toastAuthError } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { getDietDay } from '@/services/diet';
 import { HttpError } from '@/services/http';
 import type { DietMealVm } from '@/types/diet';
 import { DIET_WEEKDAYS } from '@/utils/diet-constants';
 
-export function useDietDayQuery(initialWeekday = 1) {
-  const [selectedWeekday, setSelectedWeekday] = useState(initialWeekday);
+export function useDietDayQuery() {
+  const queryClient = useQueryClient();
+  const { selectedWeekday, prevDay, nextDay, selectWeekday } = useWeekdayNavigation();
   const [meals, setMeals] = useState<DietMealVm[]>([]);
-  const [loading, setLoading] = useState(false);
 
   const weekday = DIET_WEEKDAYS.find((day) => day.index === selectedWeekday);
 
-  const loadDay = useCallback(async (weekdayIndex: number) => {
-    setLoading(true);
-    try {
-      const { meals: nextMeals } = await getDietDay(weekdayIndex);
-      setMeals(nextMeals.map((meal) => ({ ...meal, expanded: false, draft: null })));
-    } catch (error) {
-      const message = error instanceof HttpError ? error.message : 'Could not load diet day.';
-      toastAuthError(message);
-      setMeals([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const query = useQuery({
+    queryKey: queryKeys.dietDay(selectedWeekday),
+    queryFn: async () => {
+      const { meals: nextMeals } = await getDietDay(selectedWeekday);
+      return nextMeals;
+    },
+    retry: 3,
+  });
 
   useEffect(() => {
-    void loadDay(selectedWeekday);
-  }, [loadDay, selectedWeekday]);
+    if (!Array.isArray(query.data)) return;
+    setMeals(query.data.map((meal) => ({ ...meal, expanded: false, draft: null })));
+  }, [query.data]);
 
-  function prevDay() {
-    setSelectedWeekday((day) => (day === 0 ? 6 : day - 1));
-  }
+  useEffect(() => {
+    if (!query.isError) return;
+    const message =
+      query.error instanceof HttpError ? query.error.message : 'Could not load diet day.';
+    toastAuthError(message);
+    setMeals([]);
+  }, [query.isError, query.error]);
 
-  function nextDay() {
-    setSelectedWeekday((day) => (day === 6 ? 0 : day + 1));
-  }
+  const loadDay = useCallback(
+    async (weekdayIndex: number) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.dietDay(weekdayIndex) });
+    },
+    [queryClient],
+  );
 
   return {
     data: {
@@ -52,9 +58,10 @@ export function useDietDayQuery(initialWeekday = 1) {
       loadDay,
       prevDay,
       nextDay,
+      selectWeekday,
     },
     ui: {
-      loading,
+      loading: query.isPending,
     },
   };
 }

@@ -1,8 +1,8 @@
+import { Injectable } from '@nestjs/common';
 import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  assertResourceExists,
+  assertResourceOwner,
+} from '../../common/auth/ownership.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
   CreateWorkoutExerciseDto,
@@ -43,7 +43,11 @@ export class WorkoutService {
     });
   }
 
-  async updateDayPlan(userId: string, weekday: number, data: UpdateWorkoutDayPlanDto) {
+  async updateDayPlan(
+    userId: string,
+    weekday: number,
+    data: UpdateWorkoutDayPlanDto,
+  ) {
     const existing = await this.prisma.workoutDayPlan.findUnique({
       where: { userId_weekday: { userId, weekday } },
     });
@@ -51,7 +55,11 @@ export class WorkoutService {
     if (existing) {
       return this.prisma.workoutDayPlan.update({
         where: { id: existing.id },
-        data,
+        data: {
+          ...(data.title !== undefined ? { title: data.title } : {}),
+          ...(data.notes !== undefined ? { notes: data.notes } : {}),
+          ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+        },
         include: dayPlanInclude,
       });
     }
@@ -87,7 +95,11 @@ export class WorkoutService {
     });
   }
 
-  async updateGroup(userId: string, groupId: string, data: UpdateWorkoutMuscleGroupDto) {
+  async updateGroup(
+    userId: string,
+    groupId: string,
+    data: UpdateWorkoutMuscleGroupDto,
+  ) {
     await this.assertGroupOwner(userId, groupId);
     return this.prisma.workoutMuscleGroup.update({
       where: { id: groupId },
@@ -101,7 +113,11 @@ export class WorkoutService {
     return this.prisma.workoutMuscleGroup.delete({ where: { id: groupId } });
   }
 
-  async createExercise(userId: string, groupId: string, data: CreateWorkoutExerciseDto) {
+  async createExercise(
+    userId: string,
+    groupId: string,
+    data: CreateWorkoutExerciseDto,
+  ) {
     await this.assertGroupOwner(userId, groupId);
 
     const maxSort = await this.prisma.workoutExercise.aggregate({
@@ -164,28 +180,22 @@ export class WorkoutService {
       include: { dayPlan: true },
     });
 
-    if (!group) {
-      throw new NotFoundException('Muscle group not found');
-    }
-
-    if (group.dayPlan.userId !== userId) {
-      throw new ForbiddenException('Not allowed');
-    }
-
-    return group;
+    const existing = assertResourceExists(group, 'Muscle group');
+    assertResourceOwner(existing.dayPlan.userId, userId, 'Muscle group');
+    return existing;
   }
 
-  private async assertExerciseOwner(userId: string, groupId: string, exerciseId: string) {
+  private async assertExerciseOwner(
+    userId: string,
+    groupId: string,
+    exerciseId: string,
+  ) {
     await this.assertGroupOwner(userId, groupId);
 
     const exercise = await this.prisma.workoutExercise.findFirst({
       where: { id: exerciseId, groupId },
     });
 
-    if (!exercise) {
-      throw new NotFoundException('Exercise not found');
-    }
-
-    return exercise;
+    return assertResourceExists(exercise, 'Exercise');
   }
 }

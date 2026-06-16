@@ -60,6 +60,20 @@ export function byRecordedAtAsc(a: BodyMeasureRecord, b: BodyMeasureRecord) {
   return -byRecordedAtDesc(a, b);
 }
 
+export async function fetchLatestMeasure(token: string) {
+  const res = await fetch(`${backendApiUrl}/body-measure/measures/latest`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Failed to load latest measure');
+  }
+
+  const latest = (await res.json()) as BodyMeasureRecord | null;
+  return latest;
+}
+
 export async function fetchUserMeasures(token: string, _userId: string) {
   const res = await fetch(`${backendApiUrl}/body-measure/measures`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -73,15 +87,28 @@ export async function fetchUserMeasures(token: string, _userId: string) {
   return (await res.json()) as BodyMeasureRecord[];
 }
 
+function toOptionalNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  const n = typeof value === 'number' ? value : Number(String(value).replace(',', '.'));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** Builds a NestJS-safe payload (no userId; numeric fields coerced). */
 export function buildMeasureSnapshot(
-  userId: string,
+  _userId: string,
   latest: BodyMeasureRecord | undefined,
   updates: Record<string, unknown>,
 ) {
-  const payload: Record<string, unknown> = { userId };
+  const payload: Record<string, unknown> = {};
   for (const key of MEASURE_PATCH_KEYS) {
-    if (key in updates) payload[key] = updates[key];
-    else if (latest && key in latest) payload[key] = latest[key as keyof BodyMeasureRecord];
+    const fromUpdate = key in updates;
+    const raw = fromUpdate ? updates[key] : latest?.[key as keyof BodyMeasureRecord];
+    if (fromUpdate && updates[key] === null) {
+      payload[key] = null;
+      continue;
+    }
+    const n = toOptionalNumber(raw);
+    if (n !== undefined) payload[key] = n;
   }
   return payload;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { IconType } from 'react-icons';
 
 export type StatProgressCardVm = {
@@ -26,13 +27,15 @@ export function StatProgressCard({ data, className }: StatProgressCardProps) {
   const Icon = data.icon;
 
   return (
-    <div className={cn('rounded-[5px] bg-layer2-half px-4 py-3.5', className)}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+    <div className={cn('min-w-0 w-full rounded-[5px] bg-layer2-half px-4 py-3.5', className)}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {Icon ? <Icon className="h-4 w-4 shrink-0 text-red/80" aria-hidden /> : null}
           <p
             className={cn(
-              'truncate text-xs font-semibold uppercase tracking-wider text-text/60',
+              'truncate uppercase tracking-wider',
+              typeClass.overline,
+              typeToneClass.muted60,
               data.labelClassName,
             )}
           >
@@ -41,7 +44,9 @@ export function StatProgressCard({ data, className }: StatProgressCardProps) {
         </div>
         <p
           className={cn(
-            'shrink-0 truncate text-xl font-bold tabular-nums text-text',
+            'max-w-[50%] shrink-0 truncate text-right',
+            typeClass.title,
+            typeToneClass.default,
             data.valueClassName,
           )}
         >
@@ -61,12 +66,14 @@ export function StatProgressCard({ data, className }: StatProgressCardProps) {
       </div>
 
       {data.footerLeft ? (
-        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-text/60">
-          <span className="truncate">{data.footerLeft}</span>
-          <span className="truncate font-semibold text-text/80">{data.footerRight}</span>
+        <div className={cn('mt-2 flex min-w-0 items-center justify-between gap-2', typeClass.caption)}>
+          <span className="min-w-0 truncate">{data.footerLeft}</span>
+          <span className={cn('min-w-0 truncate text-right', typeClass.body, 'text-text/75')}>
+            {data.footerRight}
+          </span>
         </div>
       ) : (
-        <p className="mt-2 truncate text-sm font-medium text-text/75">{data.footerRight}</p>
+        <p className={cn('mt-2 min-w-0 truncate', typeClass.caption, 'text-text/75')}>{data.footerRight}</p>
       )}
     </div>
   );

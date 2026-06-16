@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { assertResourceExists, assertResourceOwner } from '../../common/auth/ownership.util';
+import {
+  assertResourceExists,
+  assertResourceOwner,
+} from '../../common/auth/ownership.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { FitnessMacroGoalDto } from './dto/fitness-macro-goal.dto';
 
@@ -28,8 +31,10 @@ export class FitnessMacroGoalService {
   }
 
   async findOne(id: string, userId: string) {
-    const goal = await this.prisma.fitnessMacroGoal.findUnique({ where: { id } });
-    const existing = await assertResourceExists(goal, 'Fitness macro goal');
+    const goal = await this.prisma.fitnessMacroGoal.findUnique({
+      where: { id },
+    });
+    const existing = assertResourceExists(goal, 'Fitness macro goal');
     assertResourceOwner(existing.userId, userId, 'Fitness macro goal');
     return existing;
   }

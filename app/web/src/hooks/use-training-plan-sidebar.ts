@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { getWorkoutPlanSummary, updateWorkoutDay } from '@/services/workout';
 import { HttpError } from '@/services/http';
 import type { TrainingPlanSummaryVm } from '@/types/training';
@@ -28,30 +30,24 @@ export function useTrainingPlanSidebar({
   onPlanTitleSaved,
   onDayModeChanged,
 }: UseTrainingPlanSidebarParams) {
-  const [planDays, setPlanDays] = useState<TrainingPlanSummaryVm[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [notesDraft, setNotesDraft] = useState(notes ?? '');
   const [editPlanOpen, setEditPlanOpen] = useState(false);
 
-  const loadPlan = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { days } = await getWorkoutPlanSummary();
-      setPlanDays(days);
-    } catch (error) {
-      toastAuthError(
-        error instanceof HttpError ? error.message : 'Could not load workout plan.',
-      );
-      setPlanDays([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const query = useQuery({
+    queryKey: queryKeys.workoutPlan,
+    queryFn: getWorkoutPlanSummary,
+    select: (data) => data.days,
+    retry: 3,
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    void loadPlan();
-  }, [loadPlan]);
+  const planDays = query.data ?? [];
+
+  const loadPlan = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.workoutPlan });
+  };
 
   useEffect(() => {
     setNotesDraft(notes ?? '');
@@ -120,6 +116,23 @@ export function useTrainingPlanSidebar({
     }
   }
 
+  async function removeSheet(weekday: number) {
+    const day = sidebarDays.find((entry) => entry.weekday === weekday);
+    if (!day?.sheetTitle) return;
+
+    setSaving(true);
+    try {
+      await updateWorkoutDay(weekday, { title: REST_DAY_LABEL, isActive: false });
+      await loadPlan();
+      if (weekday === selectedWeekday) onDayModeChanged(weekday);
+      toastUpdated(CRUD_TOAST.workoutPlanUpdated);
+    } catch (error) {
+      toastAuthError(error instanceof HttpError ? error.message : 'Could not update plan.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function selectSheet(weekday: number) {
     const day = sidebarDays.find((entry) => entry.weekday === weekday);
     if (!day?.sheetTitle || day.isActive) return;
@@ -148,6 +161,7 @@ export function useTrainingPlanSidebar({
       selectWeekday: onSelectWeekday,
       selectRestDay,
       selectSheet,
+      removeSheet,
       setNotesDraft,
       saveNotes,
       savePlanTitle,
@@ -156,7 +170,7 @@ export function useTrainingPlanSidebar({
       closeEditPlan: () => setEditPlanOpen(false),
     },
     ui: {
-      loading,
+      loading: query.isPending,
       saving,
       selectedWeekday,
     },

@@ -28,8 +28,8 @@ export function DisciplineRing({
         />
       </svg>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-semibold text-text">{value}</span>
-        <span className="mt-1 text-xs font-normal text-red">{caption}</span>
+        <span className="type-stat-lg text-text">{value}</span>
+        <span className="type-caption mt-1 text-red">{caption}</span>
       </div>
     </div>
   );

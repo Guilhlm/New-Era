@@ -3,6 +3,7 @@
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
 import { DisciplineRing } from '@/components/perfil/discipline-ring';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { MdInfoOutline } from 'react-icons/md';
 
 type DisciplineOverviewCardProps = {
@@ -20,7 +21,7 @@ export function DisciplineOverviewCard({
   percent,
   label,
   subtitle = 'Almost there',
-  segments = { total: 10, filled: 1 },
+  segments = { total: 0, filled: 0 },
   style,
 }: DisciplineOverviewCardProps) {
   const filled = Math.min(segments.total, Math.max(0, segments.filled));
@@ -36,8 +37,8 @@ export function DisciplineOverviewCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-3">
           <div className="min-w-0">
-            <p className="truncate text-lg font-semibold text-[color:var(--color-text-60)]">Discipline Level</p>
-            <p className="text-sm text-red">{subtitle}</p>
+            <p className={cn('truncate', typeClass.title, 'text-[color:var(--color-text-60)]')}>Discipline Level</p>
+            <p className={cn(typeClass.body, typeToneClass.accent)}>{subtitle}</p>
           </div>
           <div className="group relative ml-auto -translate-y-3">
             <button
@@ -45,8 +46,6 @@ export function DisciplineOverviewCard({
               className="flex h-9 w-9 items-center justify-center rounded-full bg-layer2-half text-text/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60"
               aria-label="Informações sobre Discipline"
               aria-describedby={tooltipId}
-              tabIndex={-1}
-              onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -54,7 +53,7 @@ export function DisciplineOverviewCard({
             >
               <MdInfoOutline className="h-5 w-5" aria-hidden />
             </button>
-            <div className="pointer-events-none absolute right-0 top-11 z-50 hidden w-56 rounded-md bg-layer2 px-5 py-5 text-xs text-grey shadow-md group-hover:block">
+            <div className={cn('pointer-events-none absolute right-0 top-11 z-50 hidden w-56 rounded-md bg-layer2 px-5 py-5 shadow-md group-hover:block group-focus-within:block', typeClass.caption, 'text-grey')}>
               <div id={tooltipId} role="tooltip" className="leading-relaxed">
                 The level of discipline reflects the proportion of daily tasks completed.
               </div>

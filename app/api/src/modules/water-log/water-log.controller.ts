@@ -1,7 +1,15 @@
-import { Body, Controller, Get, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import type { AuthenticatedRequest } from '../../common/auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { UpsertWaterLogDto } from './dto/water-log.dto';
+import { UpsertWaterLogDto } from './dto/water-log.dto';
 import { WaterLogService } from './water-log.service';
 
 @Controller('water-logs')
@@ -21,7 +29,10 @@ export class WaterLogController {
   }
 
   @Patch('day')
-  upsertDayLog(@Req() req: AuthenticatedRequest, @Body() body: UpsertWaterLogDto) {
+  upsertDayLog(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpsertWaterLogDto,
+  ) {
     return this.waterLogService.upsertDayLog(req.user.userId, body);
   }
 }

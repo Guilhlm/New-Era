@@ -1,5 +1,6 @@
 import { ProfileField } from '@/components/perfil/profile-field';
 import { cn } from '@/components/ui/cn';
+import { typeClass } from '@/lib/typography';
 
 type ProfileIdentityFieldsProps = {
   data: {
@@ -90,7 +91,7 @@ export function ProfileIdentityFields({ data, ui, actions }: ProfileIdentityFiel
 
       <ProfileField label="Monthly income:">
         <div className="flex min-w-0 flex-1 items-center">
-          <span className={cn('pointer-events-none text-sm', ui.tones.monthlyIncome)}>R$</span>
+          <span className={cn('pointer-events-none', typeClass.body, ui.tones.monthlyIncome)}>R$</span>
           <input
             type="number"
             step="0.01"

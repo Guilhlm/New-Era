@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { DietMacroSegmentVm } from '@/types/diet';
 
 type DietMacroDonutProps = {
@@ -48,9 +50,9 @@ export function DietMacroDonut({ data }: DietMacroDonutProps) {
         ))}
       </svg>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
-        <span className="text-xl font-semibold leading-tight text-text">
+        <span className={cn('leading-tight', typeClass.title, typeToneClass.default)}>
           {data.totalKcalLabel.replace(/\s*Kcal$/i, '')}
-          <span className="text-base">Kcal</span>
+          <span className={typeClass.caption}>Kcal</span>
         </span>
       </div>
     </div>

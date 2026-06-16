@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { EditModeFooterButton } from '@/components/ui/edit-mode-footer-button';
 import { DietWaterGlassGrid } from '@/components/diet/diet-water-glass-grid';
 import { normalizeWaterTotalDraft } from '@/utils/water-intake';
@@ -39,11 +40,11 @@ export function DietWaterIntakeCard({ data, actions, ui, className }: DietWaterI
   return (
     <Card className={cn('flex min-h-0 flex-col p-5 lg:p-6', className)}>
       <div className="flex items-center gap-3">
-        <p className="shrink-0 text-lg font-semibold text-text">{data.title}</p>
+        <p className={cn('shrink-0', typeClass.title, typeToneClass.default)}>{data.title}</p>
 
-        <p className="ml-auto min-w-0 truncate text-sm text-text/70">
+        <p className={cn('ml-auto min-w-0 truncate', typeClass.body, 'text-text/70')}>
           Consumed{' '}
-          <span className="font-semibold text-red">{data.consumedLabel}</span>
+          <span className={cn(typeClass.bodyStrong, typeToneClass.accent)}>{data.consumedLabel}</span>
           {' / '}
           {data.targetLabel}
         </p>
@@ -64,14 +65,14 @@ export function DietWaterIntakeCard({ data, actions, ui, className }: DietWaterI
       {data.editing ? (
         <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
           <label className="block rounded-xl bg-layer2-half px-4 py-3">
-            <span className="block text-xs text-text/55">Meta (L) · copos de 300ml</span>
+            <span className={cn('block', typeClass.caption)}>Meta (L) · copos de 300ml</span>
             <input
               type="text"
               inputMode="decimal"
               autoFocus
               value={data.draft}
               disabled={blocked}
-              className="mt-1 w-full bg-transparent text-sm font-semibold text-text outline-none"
+              className={cn('mt-1 w-full bg-transparent outline-none', typeClass.bodyStrong, typeToneClass.default)}
               onChange={(event) => actions.onWaterTotalChange(event.target.value)}
             />
           </label>
@@ -89,7 +90,7 @@ export function DietWaterIntakeCard({ data, actions, ui, className }: DietWaterI
       ) : (
         <div className="mt-4 min-h-0 flex-1">
           {ui?.loading ? (
-            <p className="text-sm text-text/60">Loading…</p>
+            <p className={cn(typeClass.body, typeToneClass.muted60)}>Loading…</p>
           ) : (
             <DietWaterGlassGrid
               data={{ glassCount: data.glassCount, filledCount: data.filledCount }}

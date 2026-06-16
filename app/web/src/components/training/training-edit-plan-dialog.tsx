@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { NativeDialog } from '@/components/ui/native-dialog';
 
 type TrainingEditPlanDialogProps = {
@@ -41,8 +42,8 @@ export function TrainingEditPlanDialog({
           }}
         >
           <div>
-            <p className="text-lg font-semibold text-text">Edit plan</p>
-            <p className="mt-1 text-sm text-text/60">{weekdayLabel}</p>
+            <p className={cn(typeClass.title, typeToneClass.default)}>Edit plan</p>
+            <p className={cn('mt-1', typeClass.body, typeToneClass.muted60)}>{weekdayLabel}</p>
           </div>
 
           <input

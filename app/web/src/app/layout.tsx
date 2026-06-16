@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { AuthToasterClientOnly } from "@/components/auth/auth-toaster-client-only";
 import { DismissToastsOnNavigate } from "@/components/auth/dismiss-toasts-on-navigate";
-import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,15 +28,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-background text-text">
-        <ThemeProvider>
-          {children}
-          <DismissToastsOnNavigate />
-          <AuthToasterClientOnly />
-        </ThemeProvider>
+      <body className="min-h-full bg-background font-sans text-text">
+        {children}
+        <DismissToastsOnNavigate />
+        <AuthToasterClientOnly />
       </body>
     </html>
   );

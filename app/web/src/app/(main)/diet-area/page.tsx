@@ -1,4 +1,4 @@
-import { DietDashboard } from '@/components/diet/diet-dashboard';
+import { DietDashboard } from '@/components/dashboards-lazy';
 
 export default function DietAreaPage() {
   return (

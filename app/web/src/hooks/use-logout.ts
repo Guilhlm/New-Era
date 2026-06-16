@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { toastUpdated } from '@/lib/app-toast';
 import { logout } from '@/services/auth';
+import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 
 export function useLogout() {
   const [loading, setLoading] = useState(false);
@@ -11,6 +13,7 @@ export function useLogout() {
     setLoading(true);
     try {
       await logout();
+      toastUpdated(CRUD_TOAST.loggedOut);
     } finally {
       window.location.href = '/login';
     }

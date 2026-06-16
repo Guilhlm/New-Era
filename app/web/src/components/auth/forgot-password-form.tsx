@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { cn } from '@/components/ui/cn';
+import { typeToneClass } from '@/lib/typography';
 import { AuthPasswordField } from '@/components/auth/auth-password-field';
 import { AuthField } from '@/components/auth/auth-field';
 import {
@@ -34,7 +36,7 @@ export function ForgotPasswordForm({ title }: ForgotPasswordFormProps) {
 
       <div className={AUTH_GRID_ROW_FIELDS_CLASS}>
         <div className={authFieldsStackClass}>
-          <p className="m-0 text-center text-sm leading-relaxed text-red sm:text-base">
+          <p className={cn('type-body m-0 text-center leading-relaxed', typeToneClass.accent)}>
             Enter the email and CPF registered on the same account. If they match, your new password
             will be saved and you can sign in with it.
           </p>
@@ -66,7 +68,7 @@ export function ForgotPasswordForm({ title }: ForgotPasswordFormProps) {
       </div>
 
       <div className={AUTH_GRID_ROW_ACTIONS_CLASS}>
-        <Link href="/login" className={`${authLinkClass} text-center text-sm font-bold text-text`}>
+        <Link href="/login" className={`${authLinkClass} text-center type-body-strong text-text`}>
           Back to login
         </Link>
         <Button

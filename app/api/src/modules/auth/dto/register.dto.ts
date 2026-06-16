@@ -1,1 +1,3 @@
-export type RegisterDto = Record<string, unknown>;
+import { CreateUserDto } from '../../user/dto/create-user.dto';
+
+export class RegisterDto extends CreateUserDto {}

@@ -1,4 +1,4 @@
-import { TrainingDashboard } from '@/components/training/training-dashboard';
+import { TrainingDashboard } from '@/components/dashboards-lazy';
 
 export default function TrainingAreaPage() {
   return (

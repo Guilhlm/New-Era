@@ -1,13 +1,20 @@
 'use client';
 
 import { useMemo, useCallback, useState } from 'react';
+import { getCalendarWeekday, useCalendarDayChange } from '@/hooks/use-calendar-day-change';
 import { useTrainingGroupsState } from '@/hooks/use-training-groups-state';
 import { useTrainingPlanSidebar } from '@/hooks/use-training-plan-sidebar';
 import { buildTrainingDaySummary } from '@/utils/training-day-summary';
 
 export function useTrainingDashboardState() {
-  const [selectedWeekday, setSelectedWeekday] = useState(1);
+  const [selectedWeekday, setSelectedWeekday] = useState(getCalendarWeekday);
   const groupsState = useTrainingGroupsState({ selectedWeekday });
+
+  useCalendarDayChange(
+    useCallback((weekdayIndex) => {
+      setSelectedWeekday(weekdayIndex);
+    }, []),
+  );
 
   const handleNotesSaved = useCallback(
     (notes: string | null) => {

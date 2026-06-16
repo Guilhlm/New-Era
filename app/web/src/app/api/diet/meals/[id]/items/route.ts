@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
+import { invalidIdResponse, isValidResourceId } from '@/app/api/_lib/params';
 import { mapFoodItemToVm, type DietFoodItemRecord } from '@/utils/diet-mapper';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -25,12 +32,16 @@ function pickItemBody(body: Record<string, unknown>) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const { id: mealId } = await context.params;
+  if (!isValidResourceId(mealId)) {
+    return invalidIdResponse();
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -45,7 +56,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   let res: Response;
   try {
-    res = await fetch(`${backendApiUrl}/diet/${mealId}/items`, {
+    res = await fetch(`${backendApiUrl}/diet/${encodeURIComponent(mealId)}/items`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,18 +66,18 @@ export async function POST(request: Request, context: RouteContext) {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to create item' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to create item');
   }
 
   try {
     const item = JSON.parse(text) as DietFoodItemRecord;
     return NextResponse.json({ item: mapFoodItemToVm({ ...item, mealId }) });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

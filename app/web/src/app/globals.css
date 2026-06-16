@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  /* Igual a AUTH_TOAST_DURATION_MS em auth-toast-constants.ts */
   --auth-toast-duration: 5000ms;
-}
-
-/* Tema claro: apenas o fundo da página */
-html.light {
-  --color-background: #ffffff;
+  --color-on-accent: #f5f5f4;
+  --color-chart-grid: rgba(255, 255, 255, 0.08);
+  --color-backdrop: rgb(0 0 0 / 0.55);
+  --color-hover-ghost: rgb(255 255 255 / 0.05);
+  --color-auth-shadow: rgba(0, 0, 0, 0.7);
+  --color-elevated-shadow: rgba(0, 0, 0, 0.45);
 }
 
 @theme inline {
@@ -19,17 +19,127 @@ html.light {
   --color-grey: rgb(211 210 209 / 0.15);
   --color-text-60: rgb(211 210 209 / 0.6);
   --color-red: #8b0838;
-  --color-green: #507C52;
+  --color-green: #507c52;
   --color-wallet-usd: #1f6feb;
   --color-wallet-selic: #1a7f4b;
+  --color-on-accent: #f5f5f4;
+  --color-backdrop: rgb(0 0 0 / 0.55);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --text-display: 1.875rem;
+  --text-display--line-height: 2.25rem;
+  --text-page: 1.5rem;
+  --text-page--line-height: 2rem;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.5rem;
+  --text-stat-lg: 1.5rem;
+  --text-stat-lg--line-height: 2rem;
+  --text-stat: 1.25rem;
+  --text-stat--line-height: 1.75rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-overline: 0.625rem;
+  --text-overline--line-height: 0.875rem;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
 }
 
-/*
- * Texto de input alinhado ao baseline (aspecto “cinza”) usando só TEXT + BACKGROUND.
- * Ao editar, use text-red nos componentes.
- */
+@utility type-display {
+  font-size: var(--text-display);
+  line-height: var(--text-display--line-height);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@utility type-page {
+  font-size: var(--text-page);
+  line-height: var(--text-page--line-height);
+  font-weight: 600;
+}
+
+@utility type-title {
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  font-weight: 600;
+}
+
+@utility type-stat-lg {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@utility type-stat {
+  font-size: 1.35rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@utility type-body {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: 400;
+}
+
+@utility type-body-strong {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: 600;
+}
+
+@utility type-label {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  font-weight: 500;
+}
+
+@utility type-caption {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  font-weight: 400;
+  color: rgb(211 210 209 / 0.55);
+}
+
+@utility type-overline {
+  font-size: var(--text-overline);
+  line-height: var(--text-overline--line-height);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@utility type-micro {
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-hero {
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  @media (min-width: 640px) {
+    .type-display {
+      font-size: 2.25rem;
+      line-height: 2.5rem;
+    }
+  }
+}
+
 .text-input-idle {
   color: color-mix(in srgb, var(--color-text) 40%, var(--color-background));
 }
@@ -37,16 +147,33 @@ html.light {
 html {
   overflow-x: hidden;
   background-color: var(--color-background);
+  color-scheme: dark;
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
   overflow-x: hidden;
 }
 
-/* Cursores: tudo que é clicável deve indicar ação */
+.chart-grid-bg {
+  background-image: repeating-linear-gradient(
+    to top,
+    var(--color-chart-grid) 0px,
+    var(--color-chart-grid) 1px,
+    transparent 1px,
+    transparent 30px
+  );
+  background-position: left bottom;
+}
+
+.elevated-shadow {
+  box-shadow: 0 8px 24px var(--color-elevated-shadow);
+}
+
 a[href],
 button,
 [role='button'],
@@ -65,7 +192,6 @@ input:disabled,
   cursor: not-allowed;
 }
 
-/* Esconder spinners nativos (number) e ícone de calendário (date) */
 .input-no-native-spin::-webkit-outer-spin-button,
 .input-no-native-spin::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -87,10 +213,16 @@ input:disabled,
   color-scheme: dark;
 }
 
-/* Sonner (auth): barra no fundo */
 .auth-toaster [data-sonner-toast] {
   overflow: hidden;
   border-radius: 8px;
+  background: color-mix(in srgb, var(--color-red) 25%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.auth-toaster [data-sonner-toast] [data-icon] {
+  color: var(--color-red);
 }
 
 .auth-toaster [data-sonner-toast]::before {
@@ -130,7 +262,6 @@ input:disabled,
   }
 }
 
-/* Mantém overflow/scroll; oculta apenas a barra (Firefox, WebKit, legado IE) */
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;

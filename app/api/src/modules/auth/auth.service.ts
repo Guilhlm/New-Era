@@ -1,14 +1,11 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  comparePassword,
-  hashPassword,
-  MIN_PASSWORD_LENGTH,
-} from '../../common/auth/password.util';
+import { comparePassword, hashPassword } from '../../common/auth/password.util';
 import { normalizeCpf, normalizeEmail } from '../../common/auth/normalize.util';
 import type { JwtPayload } from '../../common/auth/auth.types';
 import type { RegisterDto } from './dto/register.dto';
@@ -16,6 +13,8 @@ import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
@@ -29,30 +28,30 @@ export class AuthService {
 
   /**
    * Verifies email + CPF belong to the same user, then sets the new password.
+   * Responses are intentionally generic to avoid account enumeration.
+   * NOTE: a single-use emailed token flow should replace this once an
+   * e-mail provider is available (documented as a remaining risk).
    */
   async resetPassword(email: string, cpfRaw: string, newPassword: string) {
     const emailNorm = normalizeEmail(email);
     const cpfDigits = normalizeCpf(cpfRaw);
-    const pass = newPassword?.trim() ?? '';
+    const pass = newPassword.trim();
 
     if (!emailNorm || cpfDigits.length !== 11) {
       throw new BadRequestException('Enter a valid email and CPF.');
     }
-    if (pass.length < MIN_PASSWORD_LENGTH) {
-      throw new BadRequestException(
-        `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
-      );
-    }
 
     const user = await this.userService.findByEmail(emailNorm);
     if (!user?.cpf || user.cpf !== cpfDigits) {
+      this.logger.warn('Failed password reset attempt (email/CPF mismatch).');
       throw new UnauthorizedException(
-        'Email and CPF do not match the same account.',
+        'Unable to reset password with the provided information.',
       );
     }
 
     const passwordHash = await hashPassword(pass);
     await this.userService.updatePassword(user.id, passwordHash);
+    this.logger.log(`Password reset completed for user ${user.id}`);
 
     return { ok: true as const };
   }

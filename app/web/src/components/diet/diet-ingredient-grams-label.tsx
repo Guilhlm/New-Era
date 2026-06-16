@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 
 type DietIngredientGramsLabelProps = {
   name: string;
@@ -23,7 +24,7 @@ export function DietIngredientGramsLabel({
 }: DietIngredientGramsLabelProps) {
   if (!editable) {
     return (
-      <p className="min-w-0 truncate text-sm font-semibold text-text">
+      <p className={cn('min-w-0 truncate', typeClass.bodyStrong, typeToneClass.default)}>
         {grams}g - {name}
       </p>
     );
@@ -42,7 +43,9 @@ export function DietIngredientGramsLabel({
         value={text}
         style={{ width: `${Math.max(2, text.length || 1)}ch` }}
         className={cn(
-          'min-w-[2ch] max-w-[5rem] bg-transparent text-sm font-semibold text-text outline-none',
+          'min-w-[2ch] max-w-[5rem] bg-transparent outline-none',
+          typeClass.bodyStrong,
+          typeToneClass.default,
           'border-b border-transparent focus:border-red/50',
           disabled && 'opacity-60',
         )}
@@ -56,7 +59,7 @@ export function DietIngredientGramsLabel({
           }
         }}
       />
-      <span className="truncate text-sm font-semibold text-text">g - {name}</span>
+      <span className={cn('truncate', typeClass.bodyStrong, typeToneClass.default)}>g - {name}</span>
     </div>
   );
 }

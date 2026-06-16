@@ -63,6 +63,7 @@ export function TrainingDashboard() {
               onSelectDay: state.actions.selectWeekday,
               onSelectRestDay: state.actions.selectRestDay,
               onSelectSheet: state.actions.selectSheet,
+              onRemoveSheet: state.actions.removeSheet,
               onEditPlan: state.actions.openEditPlan,
             }}
             ui={{ loading: state.ui.sidebarLoading, saving: state.ui.sidebarSaving }}

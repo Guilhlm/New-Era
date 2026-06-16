@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
 import { NativeDialog } from '@/components/ui/native-dialog';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import type { TrainingExerciseVm } from '@/types/training';
 
 type EditExerciseFormProps = {
@@ -54,12 +55,12 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
       }}
     >
       <div>
-        <p className="text-lg font-semibold text-text">Edit exercise</p>
-        <p className="mt-1 text-sm text-text/60">{item.name}</p>
+        <p className={cn(typeClass.title, typeToneClass.default)}>Edit exercise</p>
+        <p className={cn('mt-1', typeClass.body, typeToneClass.muted60)}>{item.name}</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-2 text-sm sm:col-span-2">
+        <label className={cn('flex flex-col gap-2', typeClass.body, 'sm:col-span-2')}>
           <span className="text-text/60">Name</span>
           <input
             type="text"
@@ -69,7 +70,7 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
             onChange={(event) => setName(event.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm">
+        <label className={cn('flex flex-col gap-2', typeClass.body)}>
           <span className="text-text/60">Equipment</span>
           <input
             type="text"
@@ -79,7 +80,7 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
             onChange={(event) => setEquipment(event.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm">
+        <label className={cn('flex flex-col gap-2', typeClass.body)}>
           <span className="text-text/60">Weight (kg)</span>
           <input
             type="text"
@@ -90,7 +91,7 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
             onChange={(event) => setWeightKg(event.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm">
+        <label className={cn('flex flex-col gap-2', typeClass.body)}>
           <span className="text-text/60">Series</span>
           <input
             type="text"
@@ -101,7 +102,7 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
             onChange={(event) => setSeries(event.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm">
+        <label className={cn('flex flex-col gap-2', typeClass.body)}>
           <span className="text-text/60">Reps min</span>
           <input
             type="text"
@@ -112,7 +113,7 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
             onChange={(event) => setRepsMin(event.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm">
+        <label className={cn('flex flex-col gap-2', typeClass.body)}>
           <span className="text-text/60">Reps max</span>
           <input
             type="text"
@@ -131,10 +132,9 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
         </Button>
         <Button
           type="button"
-          variant="primary"
+          variant="secondary"
           size="sm"
           disabled={saving}
-          className="bg-layer2 text-text hover:bg-layer2-half"
           onClick={onClose}
         >
           Cancel
@@ -143,10 +143,9 @@ function EditExerciseForm({ item, saving, onClose, onSave, onDelete }: EditExerc
 
       <Button
         type="button"
-        variant="primary"
+        variant="destructive"
         size="sm"
         disabled={saving}
-        className={cn('bg-red hover:bg-red/90')}
         onClick={onDelete}
       >
         Delete exercise

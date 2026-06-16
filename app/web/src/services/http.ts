@@ -26,7 +26,11 @@ function toHttpError(response: Response, payload: unknown) {
     return new HttpError(message || 'Request failed', response.status);
   }
   if (typeof payload === 'string' && payload.trim()) {
-    return new HttpError(payload, response.status);
+    const trimmed = payload.trim();
+    if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+      return new HttpError('Unexpected server response. Check if you are logged in.', response.status);
+    }
+    return new HttpError(trimmed.slice(0, 200), response.status);
   }
   return new HttpError('Request failed', response.status);
 }

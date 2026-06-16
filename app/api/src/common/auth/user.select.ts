@@ -7,12 +7,14 @@ export const USER_PUBLIC_SELECT = {
   birthDate: true,
   monthlyIncome: true,
   photoUser: true,
-  themePreference: true,
   createdAt: true,
   updatedAt: true,
 } as const;
 
-export function omitPasswordHash<T extends { passwordHash?: unknown }>(user: T) {
+export function omitPasswordHash<T extends { passwordHash?: unknown }>(
+  user: T,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { passwordHash: _removed, ...rest } = user;
   return rest;
 }

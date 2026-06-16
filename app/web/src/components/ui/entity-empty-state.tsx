@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 
 type EntityEmptyStateProps = {
   title: string;
@@ -38,8 +39,8 @@ export function EntityEmptyState({
         </div>
       ) : null}
       <div className="max-w-sm space-y-2">
-        <p className="text-lg font-semibold text-text">{title}</p>
-        <p className="text-sm text-text/60">{description}</p>
+        <p className={cn(typeClass.title, typeToneClass.default)}>{title}</p>
+        <p className={cn(typeClass.body, typeToneClass.muted60)}>{description}</p>
       </div>
       <Button type="button" variant="primary" size="sm" className="h-auto px-6 py-2.5" onClick={onAction}>
         {actionLabel}

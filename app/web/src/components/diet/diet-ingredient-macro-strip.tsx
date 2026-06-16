@@ -1,3 +1,6 @@
+import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
+
 type DietIngredientMacroStripProps = {
   calories: number;
   protein: number;
@@ -7,8 +10,8 @@ type DietIngredientMacroStripProps = {
 
 function MacroCell({ amount, unit }: { amount: string; unit: string }) {
   return (
-    <span className="whitespace-nowrap text-sm">
-      <span className="font-medium text-text">{amount}</span>
+    <span className={cn('whitespace-nowrap', typeClass.body)}>
+      <span className={cn(typeClass.bodyStrong, typeToneClass.default)}>{amount}</span>
       <span className="text-text/45"> {unit}</span>
     </span>
   );

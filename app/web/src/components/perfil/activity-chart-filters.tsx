@@ -24,7 +24,7 @@ export function ActivityChartFilters({
   return (
     <div className="flex w-full items-center justify-between gap-3 pt-8">
       {leftSlot ? (
-        <div className="flex h-10 flex-1 items-center pl-4 text-sm font-semibold text-text">
+        <div className="type-body-strong flex h-10 flex-1 items-center pl-4 text-text">
           {leftSlot}
         </div>
       ) : showTab ? (

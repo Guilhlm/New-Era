@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import Image from 'next/image';
 import { MdCheck, MdEdit } from 'react-icons/md';
 
@@ -57,7 +58,7 @@ export function BodyMeasurementsHeaderCard({
 
       <div className="relative flex h-full min-h-0 flex-col pl-2.5 pr-[clamp(12rem,40vw,25rem)] pb-[clamp(1rem,3vh,1.875rem)]">
         <div className="flex items-start gap-3 pt-[clamp(1rem,3vh,1.875rem)]">
-          <p className="truncate text-lg font-semibold text-red">{data.title}</p>
+          <p className={cn('truncate', typeClass.title, typeToneClass.accent)}>{data.title}</p>
 
           <button
             type="button"
@@ -83,7 +84,7 @@ export function BodyMeasurementsHeaderCard({
         <div className="mt-auto grid grid-cols-3 gap-2.5 pt-4">
           <div className="rounded-[5px] bg-layer2-half px-4 py-3">
             <div className="flex justify-center">
-              <p className="inline-flex min-w-0 items-center gap-1.5 text-center text-sm">
+              <p className={cn('inline-flex min-w-0 items-center gap-1.5 text-center', typeClass.body)}>
                 <span className="shrink-0 text-[color:var(--color-text-60)]">Date:</span>
                 <span className="w-[10ch] truncate text-center text-[color:var(--color-text-60)]">
                   {data.dateLabel}
@@ -93,7 +94,7 @@ export function BodyMeasurementsHeaderCard({
           </div>
           <div className="rounded-[5px] bg-layer2-half px-4 py-3">
             <div className="flex justify-center">
-              <div className="inline-flex min-w-0 items-center gap-1.5 text-center text-sm">
+              <div className={cn('inline-flex min-w-0 items-center gap-1.5 text-center', typeClass.body)}>
                 <span className="shrink-0 text-[color:var(--color-text-60)]">Weight:</span>
                 {data.editing ? (
                   <input
@@ -102,7 +103,8 @@ export function BodyMeasurementsHeaderCard({
                     pattern="\\d{0,3}(\\.\\d{0,2})?"
                     maxLength={6}
                     className={cn(
-                      'w-[10ch] bg-transparent text-center text-sm outline-none',
+                      'w-[10ch] bg-transparent text-center outline-none',
+                      typeClass.body,
                       data.dirty.weight ? 'text-red' : 'text-[color:var(--color-text-60)]',
                     )}
                     value={data.drafts.weight}
@@ -118,7 +120,7 @@ export function BodyMeasurementsHeaderCard({
           </div>
           <div className="rounded-[5px] bg-layer2-half px-4 py-3">
             <div className="flex justify-center">
-              <div className="inline-flex min-w-0 items-center gap-1.5 text-center text-sm">
+              <div className={cn('inline-flex min-w-0 items-center gap-1.5 text-center', typeClass.body)}>
                 <span className="shrink-0 text-[color:var(--color-text-60)]">Height:</span>
                 {data.editing ? (
                   <input
@@ -127,7 +129,8 @@ export function BodyMeasurementsHeaderCard({
                     pattern="\\d{0,3}"
                     maxLength={3}
                     className={cn(
-                      'w-[10ch] bg-transparent text-center text-sm outline-none',
+                      'w-[10ch] bg-transparent text-center outline-none',
+                      typeClass.body,
                       data.dirty.height ? 'text-red' : 'text-[color:var(--color-text-60)]',
                     )}
                     value={data.drafts.height}

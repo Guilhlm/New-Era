@@ -28,9 +28,9 @@ export function AvatarPicker({
           aria-label="Change profile photo"
         >
           <AvatarContent userName={userName} avatarPhoto={avatarPhoto} />
-          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-backdrop opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
             {photoUploading ? (
-              <span className="text-xs text-text">…</span>
+              <span className="type-label text-text">…</span>
             ) : (
               <MdOutlineCameraAlt className="h-9 w-9 text-text" aria-hidden />
             )}
@@ -42,13 +42,15 @@ export function AvatarPicker({
 }
 
 function AvatarContent({ userName, avatarPhoto }: { userName: string; avatarPhoto: string | null }) {
+  const altText = userName ? `${userName} profile photo` : 'Profile photo';
+
   if (avatarPhoto?.startsWith('data:') || avatarPhoto?.startsWith('http')) {
     // eslint-disable-next-line @next/next/no-img-element -- data URL e URLs externas
-    return <img src={avatarPhoto} alt="" className="h-full w-full object-cover" />;
+    return <img src={avatarPhoto} alt={altText} className="h-full w-full object-cover" />;
   }
 
   if (avatarPhoto) {
-    return <NextImage src={avatarPhoto} alt="" fill className="object-cover" sizes="224px" />;
+    return <NextImage src={avatarPhoto} alt={altText} fill className="object-cover" sizes="224px" />;
   }
 
   const initials =
@@ -62,7 +64,7 @@ function AvatarContent({ userName, avatarPhoto }: { userName: string; avatarPhot
       .slice(0, 2) || '?';
 
   return (
-    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-text/80">
+    <div className="type-stat-lg flex h-full w-full items-center justify-center text-text/80">
       {initials}
     </div>
   );

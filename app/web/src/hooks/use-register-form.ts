@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { toastAuthError } from '@/lib/app-toast';
+import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { formatCpfInput } from '@/components/auth/auth-form-shared';
 import { usePasswordToggle } from '@/hooks/use-password-toggle';
 import { register } from '@/services/auth';
+import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 
 type UseRegisterFormParams = {
   onSuccess: () => void;
@@ -42,6 +43,7 @@ export function useRegisterForm({ onSuccess }: UseRegisterFormParams) {
         password,
         cpf: cpfDigits,
       });
+      toastUpdated(CRUD_TOAST.accountCreated);
       onSuccess();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not create account.';

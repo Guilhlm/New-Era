@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import {
   type UpdateLatestBodyVitalInput,
@@ -7,6 +8,7 @@ import {
   updateLatestBodyVital,
 } from '@/services/body-measure';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { HttpError } from '@/services/http';
 import {
   HEALTH_VITAL_DEFS,
@@ -61,38 +63,45 @@ function toPayloadValue(field: HealthVitalField, draft: string): number | null {
 }
 
 export function useHealthVitals() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState<VitalDrafts>(emptyVitalDrafts());
   const [drafts, setDrafts] = useState<VitalDrafts>(emptyVitalDrafts());
   const [syncSignature, setSyncSignature] = useState('');
 
+  const query = useQuery({
+    queryKey: queryKeys.bodyVitalLatest,
+    queryFn: getLatestBodyVital,
+    retry: 3,
+  });
+
+  const vitalRecord = query.data?.vital ?? null;
+
   useEffect(() => {
-    let alive = true;
-    const run = async () => {
-      try {
-        const { vital } = await getLatestBodyVital();
-        if (!alive) return;
-        const next = draftsFromVital(vital);
-        setSaved(next);
-        setDrafts(next);
-      } catch {
-        if (!alive) return;
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
+    if (query.isPending) return;
+    const next = draftsFromVital(vitalRecord);
+    setSaved(next);
+    if (!editing) setDrafts(next);
+  }, [vitalRecord, query.isPending, editing]);
 
-    const id = window.setTimeout(() => {
-      void run();
-    }, 0);
-
-    return () => {
-      alive = false;
-      window.clearTimeout(id);
-    };
-  }, []);
+  const saveMutation = useMutation({
+    mutationFn: (payload: UpdateLatestBodyVitalInput) => updateLatestBodyVital(payload),
+    onSuccess: ({ vital }) => {
+      queryClient.setQueryData(queryKeys.bodyVitalLatest, { vital });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bodyVitalHistory });
+      const next = draftsFromVital(vital);
+      setSaved(next);
+      setDrafts(next);
+      setEditing(false);
+      setSyncSignature(String(Date.now()));
+      toastUpdated(CRUD_TOAST.healthVitalsUpdated);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof HttpError && error.message ? error.message : 'Não foi possível salvar os vitals.';
+      toastAuthError(message);
+    },
+  });
 
   const dirty = useMemo(() => {
     const result = {} as Record<HealthVitalField, boolean>;
@@ -119,23 +128,7 @@ export function useHealthVitals() {
       payload[field] = toPayloadValue(field, drafts[field]);
     }
     if (Object.keys(payload).length === 0) return;
-
-    setSaving(true);
-    try {
-      const { vital } = await updateLatestBodyVital(payload);
-      const next = draftsFromVital(vital);
-      setSaved(next);
-      setDrafts(next);
-      setEditing(false);
-      setSyncSignature(String(Date.now()));
-      toastUpdated(CRUD_TOAST.healthVitalsUpdated);
-    } catch (error) {
-      const message =
-        error instanceof HttpError && error.message ? error.message : 'Não foi possível salvar os vitals.';
-      toastAuthError(message);
-    } finally {
-      setSaving(false);
-    }
+    await saveMutation.mutateAsync(payload);
   }
 
   async function toggleEdit() {
@@ -157,8 +150,8 @@ export function useHealthVitals() {
     data: {
       rows,
       editing,
-      loading,
-      saving,
+      loading: query.isPending,
+      saving: saveMutation.isPending,
       dirty,
       hasDirty,
       syncSignature,

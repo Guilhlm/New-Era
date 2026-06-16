@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
+import { typeClass, typeToneClass } from '@/lib/typography';
 import { CreateEntityDialog } from '@/components/ui/create-entity-dialog';
 
 type CreateMealFormProps = {
@@ -25,8 +26,8 @@ function CreateMealForm({ saving, onCreate, onClose }: CreateMealFormProps) {
       }}
     >
       <div>
-        <p className="text-lg font-semibold text-text">Create meal</p>
-        <p className="mt-1 text-sm text-text/60">Give your meal a name for this day.</p>
+        <p className={cn(typeClass.title, typeToneClass.default)}>Create meal</p>
+        <p className={cn('mt-1', typeClass.body, typeToneClass.muted60)}>Give your meal a name for this day.</p>
       </div>
 
       <input

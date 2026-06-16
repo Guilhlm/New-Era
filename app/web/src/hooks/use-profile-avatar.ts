@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { updateProfile } from '@/services/profile';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
-import { PROFILE_UPDATED_EVENT } from '@/utils/events';
 import { fileToResizedDataUrl } from '@/utils/profile';
 
 type UseProfileAvatarParams = {
@@ -38,7 +37,6 @@ export function useProfileAvatar({ photoUser, onProfileUpdated }: UseProfileAvat
       await updateProfile({ photoUser: dataUrl });
       toastUpdated(CRUD_TOAST.photoUpdated);
       await onProfileUpdated();
-      window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not process the image.';
       toastAuthError(message);

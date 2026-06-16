@@ -11,9 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../../common/auth/auth.types';
+import { ParseWeekdayPipe } from '../../common/pipes/parse-weekday.pipe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DietService } from './diet.service';
-import type {
+import {
   CreateDietFoodItemDto,
   CreateDietMealDto,
   UpdateDietFoodItemDto,
@@ -26,16 +27,15 @@ export class DietController {
   constructor(private readonly dietService: DietService) {}
 
   @Get()
-  findByWeekday(@Req() req: AuthenticatedRequest, @Query('weekday') weekdayRaw?: string) {
-    const weekday = Number(weekdayRaw);
-    if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
-      return [];
-    }
+  findByWeekday(
+    @Req() req: AuthenticatedRequest,
+    @Query('weekday', ParseWeekdayPipe) weekday: number,
+  ) {
     return this.dietService.findByWeekday(req.user.userId, weekday);
   }
 
   @Post()
-  create(@Req() req: AuthenticatedRequest, @Body() body: Omit<CreateDietMealDto, 'userId'>) {
+  create(@Req() req: AuthenticatedRequest, @Body() body: CreateDietMealDto) {
     return this.dietService.createMeal({
       userId: req.user.userId,
       name: body.name,

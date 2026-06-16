@@ -12,15 +12,18 @@ export function AuthToaster() {
       position="top-right"
       closeButton={false}
       duration={APP_TOAST_DURATION_MS}
+      theme="dark"
       toastOptions={{
         classNames: {
           /* Não usar `relative`: o Sonner posiciona com `position: absolute`. */
           toast:
-            'group w-[min(100%,22rem)] rounded-lg border border-grey bg-layer2/70 text-text backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)]',
+            'group w-[min(100%,22rem)] rounded-lg border border-red/40 bg-red/40 text-on-accent backdrop-blur-md elevated-shadow [&_[data-icon]]:!text-red [&_[data-title]]:!text-on-accent [&_[data-description]]:!text-on-accent/90',
+          success:
+            '!border-red/40 !bg-red/40 !text-on-accent [&_[data-icon]]:!text-red [&_[data-title]]:!text-on-accent [&_[data-description]]:!text-on-accent/90',
           error:
-            '!border-red !bg-red/25 !text-text [&_[data-icon]]:!text-red [&_[data-title]]:!text-text [&_[data-description]]:!text-text/85',
-          title: 'text-sm font-semibold',
-          description: 'text-sm font-normal text-text/85',
+            '!border-red/40 !bg-red/40 !text-on-accent [&_[data-icon]]:!text-red [&_[data-title]]:!text-on-accent [&_[data-description]]:!text-on-accent/90',
+          title: 'type-body-strong text-on-accent',
+          description: 'type-body text-on-accent/90',
         },
       }}
     />

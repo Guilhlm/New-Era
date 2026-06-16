@@ -9,7 +9,6 @@ export type UpdateProfileInput = {
   monthlyIncome?: number | null;
   password?: string;
   photoUser?: string;
-  themePreference?: 'dark' | 'light';
 };
 
 export function getProfile() {

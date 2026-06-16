@@ -1,17 +1,28 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
+import { invalidIdResponse, isValidResourceId } from '@/app/api/_lib/params';
 import { mapMealToVm, type DietMealRecord } from '@/utils/diet-mapper';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const { id } = await context.params;
+  if (!isValidResourceId(id)) {
+    return invalidIdResponse();
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -26,7 +37,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   let res: Response;
   try {
-    res = await fetch(`${backendApiUrl}/diet/${id}`, {
+    res = await fetch(`${backendApiUrl}/diet/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -36,43 +47,46 @@ export async function PATCH(request: Request, context: RouteContext) {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to update meal' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to update meal');
   }
 
   try {
     return NextResponse.json({ meal: mapMealToVm(JSON.parse(text) as DietMealRecord) });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   const { id } = await context.params;
+  if (!isValidResourceId(id)) {
+    return invalidIdResponse();
+  }
 
   let res: Response;
   try {
-    res = await fetch(`${backendApiUrl}/diet/${id}`, {
+    res = await fetch(`${backendApiUrl}/diet/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   if (!res.ok) {
     const text = await res.text();
-    return NextResponse.json({ error: text || 'Failed to delete meal' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to delete meal');
   }
 
   return NextResponse.json({ ok: true });

@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 import { mapPlanSummaryToVm, type TrainingPlanSummaryRecord } from '@/utils/training-mapper';
 
 export async function GET() {
-  const { token } = await getAuthedUserId();
+  const { token } = await getAuthedToken();
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return unauthenticatedResponse();
   }
 
   let res: Response;
@@ -16,18 +22,18 @@ export async function GET() {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json({ error: 'Unable to reach the API.' }, { status: 503 });
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    return NextResponse.json({ error: text || 'Failed to load workout plan' }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Failed to load workout plan');
   }
 
   try {
     const records = JSON.parse(text) as TrainingPlanSummaryRecord[];
     return NextResponse.json({ days: records.map(mapPlanSummaryToVm) });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

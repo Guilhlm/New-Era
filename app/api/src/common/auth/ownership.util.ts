@@ -1,15 +1,21 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
-export function assertResourceOwner(resourceUserId: string, requestUserId: string, label = 'Resource') {
+export function assertResourceOwner(
+  resourceUserId: string,
+  requestUserId: string,
+  label = 'Resource',
+) {
   if (resourceUserId !== requestUserId) {
-    throw new ForbiddenException(`${label} does not belong to the current user.`);
+    throw new ForbiddenException(
+      `${label} does not belong to the current user.`,
+    );
   }
 }
 
-export async function assertResourceExists<T>(
+export function assertResourceExists<T>(
   resource: T | null | undefined,
   label = 'Resource',
-): Promise<T> {
+): T {
   if (!resource) {
     throw new NotFoundException(`${label} not found.`);
   }

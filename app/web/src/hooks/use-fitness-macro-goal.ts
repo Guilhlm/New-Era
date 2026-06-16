@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { queryKeys } from '@/lib/query-keys';
 import { HttpError } from '@/services/http';
 import {
   type FitnessMacroGoal,
@@ -37,7 +39,7 @@ type GoalDrafts = {
   calories: string;
 };
 
-function draftsFromGoal(goal: FitnessMacroGoal): GoalDrafts {
+function draftsFromGoal(goal: FitnessMacroGoal | null): GoalDrafts {
   return {
     weightGoal: normalizeWeightGoalDraft(toDraftString(goal?.weightGoal)),
     calories: normalizeCaloriesDraft(toDraftString(goal?.calories)),
@@ -67,37 +69,41 @@ function buildRows(saved: GoalDrafts, editing: boolean, drafts: GoalDrafts): Goa
 }
 
 export function useFitnessMacroGoal({ currentWeightKg }: UseFitnessMacroGoalParams) {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState<GoalDrafts>({ weightGoal: '', calories: '' });
   const [drafts, setDrafts] = useState<GoalDrafts>({ weightGoal: '', calories: '' });
 
+  const query = useQuery({
+    queryKey: queryKeys.fitnessMacroGoal,
+    queryFn: getCurrentFitnessMacroGoal,
+    retry: 3,
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
-    let alive = true;
-    const run = async () => {
-      try {
-        const { goal } = await getCurrentFitnessMacroGoal();
-        if (!alive) return;
-        const next = draftsFromGoal(goal);
-        setSaved(next);
-        setDrafts(next);
-      } catch {
-        if (!alive) return;
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
+    if (query.isPending) return;
+    const next = draftsFromGoal(query.data?.goal ?? null);
+    setSaved(next);
+    if (!editing) setDrafts(next);
+  }, [query.data, query.isPending, editing]);
 
-    const id = window.setTimeout(() => {
-      void run();
-    }, 0);
-
-    return () => {
-      alive = false;
-      window.clearTimeout(id);
-    };
-  }, []);
+  const saveMutation = useMutation({
+    mutationFn: (payload: UpdateFitnessMacroGoalInput) => updateCurrentFitnessMacroGoal(payload),
+    onSuccess: ({ goal }) => {
+      queryClient.setQueryData(queryKeys.fitnessMacroGoal, { goal });
+      const next = draftsFromGoal(goal);
+      setSaved(next);
+      setDrafts(next);
+      setEditing(false);
+      toastUpdated(CRUD_TOAST.goalsUpdated);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof HttpError && error.message ? error.message : 'Could not save goals.';
+      toastAuthError(message);
+    },
+  });
 
   const dirty = useMemo(
     () => ({
@@ -123,22 +129,7 @@ export function useFitnessMacroGoal({ currentWeightKg }: UseFitnessMacroGoalPara
       weightGoal: drafts.weightGoal.trim() ? normalizeWeightGoalDraft(drafts.weightGoal) : null,
       calories: drafts.calories.trim() ? Number(normalizeCaloriesDraft(drafts.calories)) : null,
     };
-
-    setSaving(true);
-    try {
-      const { goal } = await updateCurrentFitnessMacroGoal(payload);
-      const next = draftsFromGoal(goal);
-      setSaved(next);
-      setDrafts(next);
-      setEditing(false);
-      toastUpdated(CRUD_TOAST.goalsUpdated);
-    } catch (error) {
-      const message =
-        error instanceof HttpError && error.message ? error.message : 'Could not save goals.';
-      toastAuthError(message);
-    } finally {
-      setSaving(false);
-    }
+    await saveMutation.mutateAsync(payload);
   }
 
   async function toggleEdit() {
@@ -161,8 +152,8 @@ export function useFitnessMacroGoal({ currentWeightKg }: UseFitnessMacroGoalPara
       rows,
       weightProgress,
       editing,
-      loading,
-      saving,
+      loading: query.isPending,
+      saving: saveMutation.isPending,
       dirty,
     },
     actions: {

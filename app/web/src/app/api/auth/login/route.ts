@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 
+import {
+  invalidApiResponse,
+  unreachableApiResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
 import { appConfig } from '@/config';
 
 const API = appConfig.apiUrl.replace(/\/$/, '');
@@ -14,31 +19,19 @@ export async function POST(request: Request) {
       body: JSON.stringify(body),
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Unable to reach the API. Make sure the backend is running on port 6001.' },
-      { status: 503 },
-    );
+    return unreachableApiResponse();
   }
 
   const text = await res.text();
   if (!res.ok) {
-    let message = text || 'Login failed';
-    try {
-      const j = JSON.parse(text) as { message?: string | string[] };
-      if (j.message) {
-        message = Array.isArray(j.message) ? j.message.join(', ') : j.message;
-      }
-    } catch {
-      /* keep text */
-    }
-    return NextResponse.json({ error: message }, { status: res.status });
+    return upstreamErrorResponse(text, res.status, 'Login failed');
   }
 
   let data: { accessToken?: string };
   try {
     data = JSON.parse(text) as { accessToken?: string };
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 
   if (!data.accessToken) {

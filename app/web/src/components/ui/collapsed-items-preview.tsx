@@ -1,5 +1,8 @@
 'use client';
 
+import { cn } from '@/components/ui/cn';
+import { typeClass } from '@/lib/typography';
+
 const SEP = <span className="text-text/35"> · </span>;
 
 type CollapsedItemsPreviewProps = {
@@ -20,7 +23,7 @@ export function CollapsedItemsPreview({
   fullTitle,
 }: CollapsedItemsPreviewProps) {
   if (count === 0) {
-    return <span className="truncate text-xs text-text/45">{emptyLabel}</span>;
+    return <span className={cn('truncate', typeClass.caption, 'text-text/45')}>{emptyLabel}</span>;
   }
 
   const preview = previewNames.slice(0, 2).join(' · ');
@@ -31,7 +34,7 @@ export function CollapsedItemsPreview({
     [countLabel, ...metaSegments, ...previewNames].filter(Boolean).join(' · ');
 
   return (
-    <span className="truncate text-xs tabular-nums text-text/55" title={title}>
+    <span className={cn('truncate', typeClass.caption)} title={title}>
       {countLabel}
       {metaSegments.map((segment) => (
         <span key={segment}>

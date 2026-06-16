@@ -46,6 +46,20 @@ export function byVitalRecordedAtAsc(a: BodyVitalRecord, b: BodyVitalRecord) {
   return -byVitalRecordedAtDesc(a, b);
 }
 
+export async function fetchLatestVital(token: string) {
+  const res = await fetch(`${backendApiUrl}/body-measure/vitals/latest`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Failed to load latest vital');
+  }
+
+  const latest = (await res.json()) as BodyVitalRecord | null;
+  return latest;
+}
+
 export async function fetchUserVitals(token: string, _userId: string) {
   const res = await fetch(`${backendApiUrl}/body-measure/vitals`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -59,15 +73,34 @@ export async function fetchUserVitals(token: string, _userId: string) {
   return (await res.json()) as BodyVitalRecord[];
 }
 
+function toOptionalNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  const n = typeof value === 'number' ? value : Number(String(value).replace(',', '.'));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function toOptionalInt(value: unknown): number | undefined {
+  const n = toOptionalNumber(value);
+  return n === undefined ? undefined : Math.trunc(n);
+}
+
+/** Builds a NestJS-safe payload (no userId; numeric fields coerced). */
 export function buildVitalSnapshot(
-  userId: string,
+  _userId: string,
   latest: BodyVitalRecord | undefined,
   updates: Record<string, unknown>,
 ) {
-  const payload: Record<string, unknown> = { userId };
+  const payload: Record<string, unknown> = {};
+  const intKeys = new Set(['restingHeartRate', 'maxHeartRate', 'basalMetabolicRate']);
+
   for (const key of VITAL_PATCH_KEYS) {
-    if (key in updates) payload[key] = updates[key];
-    else if (latest && key in latest) payload[key] = latest[key as keyof BodyVitalRecord];
+    const raw = key in updates ? updates[key] : latest?.[key as keyof BodyVitalRecord];
+    if (raw === null) {
+      payload[key] = null;
+      continue;
+    }
+    const n = intKeys.has(key) ? toOptionalInt(raw) : toOptionalNumber(raw);
+    if (n !== undefined) payload[key] = n;
   }
   return payload;
 }

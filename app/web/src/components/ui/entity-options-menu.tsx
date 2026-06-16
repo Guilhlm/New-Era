@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
 import { NativeDialog } from '@/components/ui/native-dialog';
 import { useAnchoredMenu } from '@/hooks/use-anchored-menu';
+import { typeClass, typeToneClass } from '@/lib/typography';
 
 export type EntityOptionsMenuLabels = {
   triggerAriaLabel: string;
@@ -51,7 +52,7 @@ export function EntityOptionsMenu({
           >
             <button
               type="button"
-              className="block w-full px-3 py-2 text-left text-sm text-text hover:bg-layer2-half"
+              className={cn('block w-full px-3 py-2 text-left hover:bg-layer2-half', typeClass.body, typeToneClass.default)}
               onClick={() => {
                 setOpen(false);
                 setDraftName(entityName);
@@ -62,7 +63,7 @@ export function EntityOptionsMenu({
             </button>
             <button
               type="button"
-              className="block w-full px-3 py-2 text-left text-sm text-red hover:bg-layer2-half"
+              className={cn('block w-full px-3 py-2 text-left hover:bg-layer2-half', typeClass.body, typeToneClass.accent)}
               onClick={() => {
                 setOpen(false);
                 setDeleteOpen(true);
@@ -85,7 +86,7 @@ export function EntityOptionsMenu({
         className="inline-flex h-[2.7rem] w-[2.7rem] shrink-0 items-center justify-center rounded-md bg-layer2-half text-text/70 disabled:opacity-60"
         onClick={() => setOpen((value) => !value)}
       >
-        <span className="text-lg leading-none">···</span>
+        <span className={cn(typeClass.title, 'leading-none')}>···</span>
       </button>
 
       {menu}
@@ -103,12 +104,12 @@ export function EntityOptionsMenu({
             }
           }}
         >
-          <p className="text-lg font-semibold text-text">{labels.renameTitle}</p>
+          <p className={cn(typeClass.title, typeToneClass.default)}>{labels.renameTitle}</p>
           <input
             type="text"
             value={draftName}
             disabled={disabled}
-            className="rounded-md bg-layer2 px-3 py-2 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+            className={cn('rounded-md bg-layer2 px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body, typeToneClass.default)}
             onChange={(event) => setDraftName(event.target.value)}
           />
           <div className="flex gap-2">
@@ -123,9 +124,9 @@ export function EntityOptionsMenu({
             </Button>
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               size="sm"
-              className={cn('bg-layer2 text-text hover:bg-layer2-half')}
+              className="flex-1"
               onClick={() => setRenameOpen(false)}
             >
               {labels.cancel}
@@ -145,25 +146,24 @@ export function EntityOptionsMenu({
           }}
         >
           <div>
-            <p className="text-lg font-semibold text-text">{labels.deleteTitle}</p>
-            <p className="mt-2 text-sm text-text/60">{labels.deleteDescription(entityName)}</p>
+            <p className={cn(typeClass.title, typeToneClass.default)}>{labels.deleteTitle}</p>
+            <p className={cn('mt-2', typeClass.body, typeToneClass.muted60)}>{labels.deleteDescription(entityName)}</p>
           </div>
           <div className="flex gap-2">
             <Button
               type="submit"
-              variant="primary"
+              variant="destructive"
               size="sm"
               disabled={disabled}
-              className="flex-1 bg-red hover:bg-red/90"
+              className="flex-1"
             >
               {labels.confirmDelete}
             </Button>
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               size="sm"
               disabled={disabled}
-              className={cn('bg-layer2 text-text hover:bg-layer2-half')}
               onClick={() => setDeleteOpen(false)}
             >
               {labels.cancel}

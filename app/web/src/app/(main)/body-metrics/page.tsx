@@ -1,4 +1,4 @@
-import { BodyMetricsDashboard } from '../../../components/body-metrics/body-metrics-dashboard';
+import { BodyMetricsDashboard } from '@/components/dashboards-lazy';
 
 export default function BodyMetricsPage() {
   return (

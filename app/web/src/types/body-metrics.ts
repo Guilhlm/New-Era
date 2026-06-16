@@ -177,7 +177,7 @@ export const BODY_MEASUREMENT_DEFS: MeasurementDef[] = [
 
 export const MEASUREMENT_SAVED_FIELD_TEXT = 'text-text-60';
 export const MEASUREMENT_INPUT_BASE_CLASS =
-  'input-no-native-spin min-h-0 min-w-0 flex-1 cursor-text text-sm outline-none placeholder:text-text/35';
+  'input-no-native-spin min-h-0 min-w-0 flex-1 cursor-text type-body outline-none placeholder:text-text/35';
 
 export const MEASUREMENT_FORM_FIELDS: MetricField[] = BODY_MEASUREMENT_DEFS.flatMap((def) =>
   def.layout === 'single' ? [def.field] : [def.leftField, def.rightField],

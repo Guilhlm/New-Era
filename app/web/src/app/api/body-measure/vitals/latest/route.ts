@@ -1,34 +1,37 @@
 import { NextResponse } from 'next/server';
 
-import { backendApiUrl, getAuthedUserId } from '@/app/api/_lib/auth';
+import {
+  invalidApiResponse,
+  unauthenticatedResponse,
+  upstreamErrorResponse,
+} from '@/app/api/_lib/api-error';
+import { backendApiUrl, getAuthedToken } from '@/app/api/_lib/auth';
 import {
   buildVitalSnapshot,
-  byVitalRecordedAtDesc,
-  fetchUserVitals,
+  fetchLatestVital,
   pickVitalPatch,
   type BodyVitalRecord,
 } from '@/app/api/body-measure/_lib/vitals';
 
 export async function GET() {
-  const { token, userId } = await getAuthedUserId();
-  if (!token || !userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const { token } = await getAuthedToken();
+  if (!token) {
+    return unauthenticatedResponse();
   }
 
   try {
-    const vitals = await fetchUserVitals(token, userId);
-    const latest = vitals.sort(byVitalRecordedAtDesc)[0];
+    const latest = await fetchLatestVital(token);
     return NextResponse.json({ vital: latest ?? null });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load vitals';
-    return NextResponse.json({ error: message }, { status: 502 });
+    const message = error instanceof Error ? error.message : '';
+    return upstreamErrorResponse(message, 502, 'Failed to load vitals');
   }
 }
 
 export async function PATCH(request: Request) {
-  const { token, userId } = await getAuthedUserId();
-  if (!token || !userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const { token } = await getAuthedToken();
+  if (!token) {
+    return unauthenticatedResponse();
   }
 
   let body: Record<string, unknown>;
@@ -43,16 +46,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
-  let vitals: BodyVitalRecord[];
+  let latest: BodyVitalRecord | null;
   try {
-    vitals = await fetchUserVitals(token, userId);
+    latest = await fetchLatestVital(token);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load vitals';
-    return NextResponse.json({ error: message }, { status: 502 });
+    const message = error instanceof Error ? error.message : '';
+    return upstreamErrorResponse(message, 502, 'Failed to load vitals');
   }
 
-  const latest = vitals.sort(byVitalRecordedAtDesc)[0];
-  const payload = buildVitalSnapshot(userId, latest, updates);
+  const payload = buildVitalSnapshot('', latest ?? undefined, updates);
 
   const createRes = await fetch(`${backendApiUrl}/body-measure/vitals`, {
     method: 'POST',
@@ -64,13 +66,13 @@ export async function PATCH(request: Request) {
   });
   const text = await createRes.text();
   if (!createRes.ok) {
-    return NextResponse.json({ error: text || 'Failed to save vitals' }, { status: 502 });
+    return upstreamErrorResponse(text, 502, 'Failed to save vitals');
   }
 
   try {
     const created = JSON.parse(text) as BodyVitalRecord;
     return NextResponse.json({ vital: created });
   } catch {
-    return NextResponse.json({ error: 'Invalid API response' }, { status: 502 });
+    return invalidApiResponse();
   }
 }

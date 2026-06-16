@@ -11,6 +11,10 @@ import {
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../../../common/auth/auth.types';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import {
+  CreateTransactionDto,
+  UpdateTransactionDto,
+} from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 
 @Controller('finance/transactions')
@@ -19,7 +23,7 @@ export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Post()
-  create(@Req() req: AuthenticatedRequest, @Body() data: Record<string, unknown>) {
+  create(@Req() req: AuthenticatedRequest, @Body() data: CreateTransactionDto) {
     return this.transactionService.create(req.user.userId, data);
   }
 
@@ -37,7 +41,7 @@ export class TransactionController {
   update(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() data: Record<string, unknown>,
+    @Body() data: UpdateTransactionDto,
   ) {
     return this.transactionService.update(id, req.user.userId, data);
   }
