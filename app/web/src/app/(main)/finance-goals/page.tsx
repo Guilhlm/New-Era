@@ -1,5 +1,10 @@
-import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
+import { FinanceGoalsDashboard } from '@/components/dashboards-lazy';
+import { FinanceIncomeGate } from '@/components/finance/finance-income-gate';
 
 export default function FinanceGoalsPage() {
-  return <DashboardPlaceholder title="Finances Goals" />;
+  return (
+    <FinanceIncomeGate>
+      <FinanceGoalsDashboard />
+    </FinanceIncomeGate>
+  );
 }

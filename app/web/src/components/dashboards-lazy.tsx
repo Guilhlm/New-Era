@@ -29,3 +29,27 @@ export const WalletDashboard = dynamic(
   () => import('@/components/wallet/wallet-dashboard').then((m) => m.WalletDashboard),
   { loading: () => <DashboardSkeleton /> },
 );
+
+export const MonthlyExpensesDashboard = dynamic(
+  () =>
+    import('@/components/monthly-expenses/monthly-expenses-dashboard').then(
+      (m) => m.MonthlyExpensesDashboard,
+    ),
+  { loading: () => <DashboardSkeleton /> },
+);
+
+export const FinanceGoalsDashboard = dynamic(
+  () =>
+    import('@/components/finance-goals/finance-goals-dashboard').then(
+      (m) => m.FinanceGoalsDashboard,
+    ),
+  { loading: () => <DashboardSkeleton /> },
+);
+
+export const NotificationsDashboard = dynamic(
+  () =>
+    import('@/components/notifications/notifications-dashboard').then(
+      (m) => m.NotificationsDashboard,
+    ),
+  { loading: () => <DashboardSkeleton /> },
+);

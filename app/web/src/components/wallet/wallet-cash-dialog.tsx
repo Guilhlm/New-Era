@@ -31,7 +31,12 @@ type WalletCashDialogProps = {
   fxRate?: number;
   availableBalanceUsdt?: number;
   onClose: () => void;
-  onSubmit: (input: { amount: number; currency: QuoteCurrency; mode: WalletCashMode }) => void;
+  onSubmit: (input: {
+    amount: number;
+    currency: QuoteCurrency;
+    mode: WalletCashMode;
+    source?: 'MONTHLY_SALARY' | 'EXTRA_INCOME';
+  }) => void;
 };
 
 export function WalletCashDialog({
@@ -46,43 +51,45 @@ export function WalletCashDialog({
 }: WalletCashDialogProps) {
   const [mode, setMode] = useState<WalletCashMode>(defaultMode);
   const [currency, setCurrency] = useState<QuoteCurrency>(defaultCurrency);
+  const [source, setSource] = useState<'MONTHLY_SALARY' | 'EXTRA_INCOME'>('EXTRA_INCOME');
   const [amount, setAmount] = useState('');
 
   useEffect(() => {
     if (!open) return;
     setMode(defaultMode);
     setCurrency(defaultCurrency);
+    setSource('EXTRA_INCOME');
     setAmount('');
   }, [open, defaultMode, defaultCurrency]);
 
   const parsedAmount = parseLocaleAmount(amount) ?? 0;
+  const conversionFxRate = currency === 'BRL' ? fxRate : 1;
   const amountUsdt = roundUsdt(
-    currency === 'BRL' && fxRate > 0 ? parsedAmount / fxRate : parsedAmount,
+    currency === 'BRL' && conversionFxRate > 0 ? parsedAmount / conversionFxRate : parsedAmount,
   );
   const isWithdraw = mode === 'withdraw';
-  const fxUnavailable = currency === 'BRL' && fxRate <= 0;
-  const maxWithdrawDisplay = convertUsdtToDisplay(availableBalanceUsdt, { currency, fxRate });
+  const fxUnavailable = currency === 'BRL' && conversionFxRate <= 1;
+  const maxWithdrawDisplay = convertUsdtToDisplay(availableBalanceUsdt, { currency, fxRate: conversionFxRate });
   const submitAmount =
     parsedAmount > 0
       ? resolveCashSubmitAmount(parsedAmount, {
           currency,
-          fxRate,
+          fxRate: conversionFxRate,
           mode,
           availableUsdt: availableBalanceUsdt,
         })
       : null;
-  const amountTooLarge =
-    parsedAmount > 0 && submitAmount == null && !fxUnavailable && !insufficientBalance;
   const insufficientBalance =
     isWithdraw &&
     !fxUnavailable &&
     isInsufficientWalletBalance(amountUsdt, availableBalanceUsdt, {
       currency,
-      fxRate,
+      fxRate: conversionFxRate,
       requiredDisplay: Math.round(parsedAmount * 100) / 100,
     });
-  const amountOpts = { currency, alreadyConverted: true as const };
-  const balanceOpts = { currency, fxRate };
+  const amountTooLarge =
+    parsedAmount > 0 && submitAmount == null && !fxUnavailable && !insufficientBalance;
+  const balanceOpts = { currency, fxRate: conversionFxRate };
 
   return (
     <NativeDialog
@@ -101,7 +108,12 @@ export function WalletCashDialog({
           event.preventDefault();
           if (parsedAmount <= 0 || amountUsdt <= 0 || fxUnavailable) return;
           if (insufficientBalance || submitAmount == null) return;
-          onSubmit({ amount: submitAmount, currency, mode });
+          onSubmit({
+            amount: submitAmount,
+            currency,
+            mode,
+            source: mode === 'deposit' ? source : undefined,
+          });
           setAmount('');
         }}
       >
@@ -126,17 +138,40 @@ export function WalletCashDialog({
           </SegmentedControlItem>
         </SegmentedControl>
 
-        <SegmentedControl variant="soft" className={walletDialogSegmentClass}>
-          {(['USDT', 'BRL'] as QuoteCurrency[]).map((code) => (
+        {mode === 'deposit' ? (
+          <SegmentedControl variant="soft" className={walletDialogSegmentClass}>
             <SegmentedControlItem
-              key={code}
-              active={currency === code}
+              active={source === 'EXTRA_INCOME'}
               className={cn(walletDialogSegmentItemClass, typeClass.micro)}
-              onClick={() => setCurrency(code)}
+              onClick={() => setSource('EXTRA_INCOME')}
             >
-              {code}
+              Renda extra
             </SegmentedControlItem>
-          ))}
+            <SegmentedControlItem
+              active={source === 'MONTHLY_SALARY'}
+              className={cn(walletDialogSegmentItemClass, typeClass.micro)}
+              onClick={() => setSource('MONTHLY_SALARY')}
+            >
+              Monthly salary
+            </SegmentedControlItem>
+          </SegmentedControl>
+        ) : null}
+
+        <SegmentedControl variant="soft" className={walletDialogSegmentClass}>
+          <SegmentedControlItem
+            active={currency === 'USDT'}
+            className={cn(walletDialogSegmentItemClass, typeClass.micro)}
+            onClick={() => setCurrency('USDT')}
+          >
+            USDT
+          </SegmentedControlItem>
+          <SegmentedControlItem
+            active={currency === 'BRL'}
+            className={cn(walletDialogSegmentItemClass, typeClass.micro)}
+            onClick={() => setCurrency('BRL')}
+          >
+            BRL
+          </SegmentedControlItem>
         </SegmentedControl>
 
         {isWithdraw ? (
@@ -172,7 +207,7 @@ export function WalletCashDialog({
           ) : null}
           {fxUnavailable ? (
             <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-              Aguardando cotação BRL/USDT…
+              Waiting for BRL/USDT quote…
             </span>
           ) : null}
           {amountTooLarge ? (
@@ -192,7 +227,13 @@ export function WalletCashDialog({
             <Button
               type="submit"
               variant="primary"
-              disabled={saving || parsedAmount <= 0 || insufficientBalance || fxUnavailable || submitAmount == null}
+              disabled={
+                saving ||
+                parsedAmount <= 0 ||
+                insufficientBalance ||
+                fxUnavailable ||
+                submitAmount == null
+              }
               className="flex-1"
             >
               {saving ? 'Processing…' : isWithdraw ? 'Confirm withdraw' : 'Confirm deposit'}

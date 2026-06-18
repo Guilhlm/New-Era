@@ -130,6 +130,10 @@ export class PortfolioReadService {
           category: {
             in: [
               FINANCE_TX_CATEGORY.DEPOSIT,
+              FINANCE_TX_CATEGORY.DEPOSIT_CARD,
+              FINANCE_TX_CATEGORY.DEPOSIT_CASH,
+              FINANCE_TX_CATEGORY.DEPOSIT_SALARY,
+              FINANCE_TX_CATEGORY.DEPOSIT_EXTRA_INCOME,
               FINANCE_TX_CATEGORY.WITHDRAW,
               FINANCE_TX_CATEGORY.POSITION_REGISTER,
             ],
@@ -163,7 +167,13 @@ export class PortfolioReadService {
     let netPositionRegisters = 0;
     for (const tx of todayFlows) {
       const amount = toNumber(tx.amount);
-      if (tx.category === FINANCE_TX_CATEGORY.DEPOSIT) {
+      if (
+        tx.category === FINANCE_TX_CATEGORY.DEPOSIT ||
+        tx.category === FINANCE_TX_CATEGORY.DEPOSIT_CARD ||
+        tx.category === FINANCE_TX_CATEGORY.DEPOSIT_CASH ||
+        tx.category === FINANCE_TX_CATEGORY.DEPOSIT_SALARY ||
+        tx.category === FINANCE_TX_CATEGORY.DEPOSIT_EXTRA_INCOME
+      ) {
         netDeposits += amount;
       } else if (tx.category === FINANCE_TX_CATEGORY.WITHDRAW) {
         netWithdrawals += amount;

@@ -19,14 +19,14 @@ function formatChartDateLabel(recordedAt?: string) {
   if (!recordedAt) return '—';
   const date = new Date(recordedAt);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
 }
 
 function formatChartTooltipDate(recordedAt?: string) {
   if (!recordedAt) return '—';
   const date = new Date(recordedAt);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('pt-BR', {
+  return date.toLocaleDateString('en-US', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
@@ -53,24 +53,24 @@ const MEASURE_CM_FIELDS = new Set([
 
 export function formatEvolutionTooltipValue(value: number, field: string): string {
   if (field === 'weight' || field === 'leanMass' || field === 'boneMass') {
-    return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Kg`;
+    return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })} Kg`;
   }
   if (MEASURE_CM_FIELDS.has(field)) {
-    return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} cm`;
+    return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })} cm`;
   }
   if (field === 'restingHeartRate' || field === 'maxHeartRate') {
     return `${Math.round(value)} Bpm`;
   }
   if (field === 'bodyWater' || field === 'bodyFat' || field === 'hydrationLevel') {
-    return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+    return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
   }
   if (field === 'basalMetabolicRate') {
-    return `${Math.round(value).toLocaleString('pt-BR')} Kcal`;
+    return `${Math.round(value).toLocaleString('en-US')} Kcal`;
   }
   if (field === 'sleepHours') {
-    return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} h`;
+    return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })} h`;
   }
-  return value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  return value.toLocaleString('en-US', { maximumFractionDigits: 1 });
 }
 
 export function getChartTooltipDateLabel(point: MeasurementChartPoint): string {

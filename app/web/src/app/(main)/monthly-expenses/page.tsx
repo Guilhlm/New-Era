@@ -1,5 +1,10 @@
-import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
+import { MonthlyExpensesDashboard } from '@/components/dashboards-lazy';
+import { FinanceIncomeGate } from '@/components/finance/finance-income-gate';
 
 export default function MonthlyExpensesPage() {
-  return <DashboardPlaceholder title="Monthly Expenses" />;
+  return (
+    <FinanceIncomeGate>
+      <MonthlyExpensesDashboard />
+    </FinanceIncomeGate>
+  );
 }

@@ -24,7 +24,7 @@ export function getDefaultTradeQuantity(
 export function formatPositionShares(shares: number, type?: string): string {
   if (shares <= 0) return '—';
   const maxDecimals = type === 'CRYPTO' ? 8 : 4;
-  return shares.toLocaleString('pt-BR', {
+  return shares.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: maxDecimals,
   });

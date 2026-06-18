@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { TbShoppingCart } from 'react-icons/tb';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
@@ -18,7 +19,7 @@ function formatMarketUpdatedAt(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleTimeString('pt-BR', {
+  return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -74,65 +75,49 @@ function AssetAvatar({ ticker }: { ticker: string }) {
   );
 }
 
-function ActionButtons({
+function InvestmentRowActions({
   row,
   disabled,
   onRegister,
   onBuy,
   onSell,
-  onEdit,
-  onDelete,
 }: {
   row: WalletInvestmentRowVm;
   disabled?: boolean;
   onRegister?: (row: WalletInvestmentRowVm) => void;
   onBuy?: (row: WalletInvestmentRowVm) => void;
   onSell?: (row: WalletInvestmentRowVm) => void;
-  onEdit?: (row: WalletInvestmentRowVm) => void;
-  onDelete?: (row: WalletInvestmentRowVm) => void;
 }) {
   const canSell = row.hasPosition && row.shares > 0;
 
   return (
-    <div className="flex items-center justify-center gap-2">
-      <button
-        type="button"
-        disabled={Boolean(disabled)}
-        className={cn(typeClass.label, 'text-text/70 transition hover:text-text disabled:opacity-50')}
-        onClick={() => onBuy?.(row)}
-      >
-        Buy
-      </button>
-      <button
-        type="button"
-        disabled={disabled || !canSell}
-        className={cn(
-          typeClass.label,
-          typeToneClass.accent,
-          'transition hover:text-text disabled:opacity-40',
-        )}
-        onClick={() => onSell?.(row)}
-      >
-        Sell
-      </button>
-      {row.hasPosition && row.id ? (
-        <WalletInvestmentOptionsMenu
-          ticker={row.ticker}
-          disabled={Boolean(disabled)}
-          onEdit={() => onEdit?.(row)}
-          onDelete={() => onDelete?.(row)}
-        />
-      ) : null}
-      {!row.hasPosition ? (
+    <div className="inline-flex items-center justify-center gap-1">
+      <div className="inline-flex items-center gap-1 rounded-lg bg-layer2-half p-0.5">
         <button
           type="button"
+          aria-label={`Buy ${row.ticker}`}
           disabled={Boolean(disabled)}
-          className={cn(typeClass.label, 'text-red transition hover:brightness-110 disabled:opacity-50')}
-          onClick={() => onRegister?.(row)}
+          className={cn(
+            'inline-flex h-7 w-7 items-center justify-center rounded-md transition',
+            'bg-red/15 text-red hover:bg-red/25 disabled:opacity-50',
+          )}
+          onClick={() => onBuy?.(row)}
         >
-          Register
+          <TbShoppingCart className="h-3.5 w-3.5" aria-hidden />
         </button>
-      ) : null}
+      </div>
+
+      <div className="inline-flex items-center gap-1 rounded-lg bg-layer2-half p-0.5">
+        <WalletInvestmentOptionsMenu
+          ticker={row.ticker}
+          compact
+          disabled={Boolean(disabled)}
+          onRegister={() => onRegister?.(row)}
+          onSell={() => onSell?.(row)}
+          canSell={canSell}
+          hasPosition={row.hasPosition}
+        />
+      </div>
     </div>
   );
 }
@@ -394,14 +379,12 @@ export function WalletInvestmentsCard({
                             <span className={typeToneClass.muted60}>—</span>
                           )}
                         </div>
-                        <ActionButtons
+                        <InvestmentRowActions
                           row={row}
                           disabled={interactDisabled}
                           onRegister={actions?.onRegisterPositionForRow}
                           onBuy={actions?.onBuyInvestment}
                           onSell={actions?.onSellInvestment}
-                          onEdit={actions?.onEditPosition}
-                          onDelete={actions?.onDeletePosition}
                         />
                       </div>
                     </td>

@@ -78,7 +78,7 @@ export function useBodyMeasureHeader(query: BodyMeasureQueryState) {
       const message =
         error instanceof HttpError && error.message
           ? error.message
-          : 'Não foi possível salvar as medidas.';
+          : 'Could not save measurements.';
       toastAuthError(message);
     }
   }

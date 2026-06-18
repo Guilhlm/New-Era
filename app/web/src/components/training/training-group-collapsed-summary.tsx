@@ -19,7 +19,7 @@ export function TrainingGroupCollapsedExercisesLine({
     <CollapsedItemsPreview
       count={exercises.length}
       countLabel={`${exercises.length} ${exercises.length === 1 ? 'ex' : 'exs'}`}
-      emptyLabel="Sem exercícios — toque para expandir"
+      emptyLabel="No exercises — tap to expand"
       previewNames={previewNames}
       fullTitle={previewNames.join(' · ')}
     />

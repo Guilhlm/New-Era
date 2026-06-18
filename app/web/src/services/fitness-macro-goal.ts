@@ -12,7 +12,7 @@ export type FitnessMacroGoal = {
 } | null;
 
 export type UpdateFitnessMacroGoalInput = Partial<{
-  weightGoal: number | string | null;
+  weightGoal: number | null;
   calories: number | null;
 }>;
 

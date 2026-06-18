@@ -19,6 +19,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FitnessMacroGoalModule } from './modules/fitness-macro-goal/fitness-macro-goal.module';
 import { WaterLogModule } from './modules/water-log/water-log.module';
 import { TaskModule } from './modules/task/task.module';
+import { MonthlyExpenseModule } from './modules/finance/monthly-expense/monthly-expense.module';
+import { FinancialGoalModule } from './modules/finance/financial-goal/financial-goal.module';
+import { NotificationModule } from './modules/finance/notification/notification.module';
 
 @Module({
   imports: [
@@ -41,6 +44,9 @@ import { TaskModule } from './modules/task/task.module';
     WalletModule,
     TransactionModule,
     InvestmentModule,
+    MonthlyExpenseModule,
+    FinancialGoalModule,
+    NotificationModule,
     FinanceSummaryModule,
     MarketModule,
     AuthModule,

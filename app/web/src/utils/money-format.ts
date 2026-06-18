@@ -1,6 +1,6 @@
 import type { WalletCurrency } from '@/types/wallet';
 
-export const MONEY_LOCALE = 'pt-BR';
+export const MONEY_LOCALE = 'en-US';
 
 export type MoneyFormatOptions = {
   currency?: WalletCurrency;

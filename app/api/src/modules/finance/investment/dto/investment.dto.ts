@@ -132,6 +132,15 @@ export class DepositFundsDto {
   @IsString()
   @MaxLength(300)
   description?: string | null;
+
+  @IsOptional()
+  @IsEnum(['CARD', 'CASH', 'MONTHLY_SALARY', 'EXTRA_INCOME'])
+  source?: 'CARD' | 'CASH' | 'MONTHLY_SALARY' | 'EXTRA_INCOME';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  cardId?: string | null;
 }
 
 export class WithdrawFundsDto extends DepositFundsDto {}
@@ -181,7 +190,12 @@ export class RegisterPositionDto {
 
 export const FINANCE_TX_CATEGORY = {
   DEPOSIT: 'DEPOSIT',
+  DEPOSIT_CARD: 'DEPOSIT_CARD',
+  DEPOSIT_CASH: 'DEPOSIT_CASH',
+  DEPOSIT_SALARY: 'DEPOSIT_SALARY',
+  DEPOSIT_EXTRA_INCOME: 'DEPOSIT_EXTRA_INCOME',
   WITHDRAW: 'WITHDRAW',
+  FINANCIAL_GOAL_CONTRIBUTION: 'FINANCIAL_GOAL_CONTRIBUTION',
   INVESTMENT_BUY: 'INVESTMENT_BUY',
   INVESTMENT_SELL: 'INVESTMENT_SELL',
   POSITION_REGISTER: 'POSITION_REGISTER',

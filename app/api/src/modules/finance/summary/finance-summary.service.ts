@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   InvestmentType,
   Prisma,
@@ -36,8 +36,19 @@ export class FinanceSummaryService {
     private readonly portfolioRead: PortfolioReadService,
   ) {}
 
+  private async assertMonthlyIncomeConfigured(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthlyIncome: true },
+    });
+    if (Number(user?.monthlyIncome ?? 0) <= 0) {
+      throw new BadRequestException('Set your monthly salary to use the finance area.');
+    }
+  }
+
   async getSummary(userId: string, performancePeriod = '1W') {
-    const [equity, positions, cash, transactions, snapshots] = await Promise.all([
+    await this.assertMonthlyIncomeConfigured(userId);
+    const [equity, positions, cash, transactions, monthlyExpenses, snapshots] = await Promise.all([
       this.portfolioRead.equityUsdt(userId),
       this.portfolioRead.livePositions(userId),
       this.portfolioRead.primaryCashAvailable(userId),
@@ -46,6 +57,16 @@ export class FinanceSummaryService {
         orderBy: { date: 'desc' },
         take: RECENT_TX_LIMIT,
         include: { fromWallet: true, toWallet: true },
+      }),
+      this.prisma.monthlyExpense.findMany({
+        where: {
+          userId,
+          transactionId: null,
+          status: 'paid',
+        },
+        orderBy: { createdAt: 'desc' },
+        take: RECENT_TX_LIMIT,
+        include: { categoryRef: true },
       }),
       this.getPerformanceSnapshots(userId, performancePeriod),
     ]);
@@ -74,7 +95,19 @@ export class FinanceSummaryService {
 
     const allocation = this.buildAllocation(positions, walletCashTotal, totalBalance);
     const portfolioInsight = this.buildPortfolioInsight(positions);
-    const recentTransactions = transactions.map((tx) => this.mapTransaction(tx));
+    const recentTransactions = [
+      ...transactions.map((tx) => ({
+        ...this.mapTransaction(tx),
+        date: tx.date,
+      })),
+      ...monthlyExpenses.map((expense) => ({
+        ...this.mapMonthlyExpense(expense),
+        date: expense.createdAt,
+      })),
+    ]
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, RECENT_TX_LIMIT)
+      .map(({ date: _date, ...item }) => item);
     const performance = this.buildPerformance(
       performancePeriod,
       snapshots,
@@ -108,6 +141,7 @@ export class FinanceSummaryService {
   }
 
   async getPerformance(userId: string, period = '1W') {
+    await this.assertMonthlyIncomeConfigured(userId);
     const [snapshots, equity] = await Promise.all([
       this.getPerformanceSnapshots(userId, period),
       this.portfolioRead.equityUsdt(userId),
@@ -272,12 +306,21 @@ export class FinanceSummaryService {
     } else if (category === FINANCE_TX_CATEGORY.DIVIDEND) {
       title = 'Dividend';
       subtitle = tx.description ?? subtitle;
-    } else if (category === FINANCE_TX_CATEGORY.DEPOSIT) {
+    } else if (
+      category === FINANCE_TX_CATEGORY.DEPOSIT ||
+      category === FINANCE_TX_CATEGORY.DEPOSIT_CARD ||
+      category === FINANCE_TX_CATEGORY.DEPOSIT_CASH ||
+      category === FINANCE_TX_CATEGORY.DEPOSIT_SALARY ||
+      category === FINANCE_TX_CATEGORY.DEPOSIT_EXTRA_INCOME
+    ) {
       title = 'Deposit';
       subtitle = tx.description ?? 'Funds added';
     } else if (category === FINANCE_TX_CATEGORY.WITHDRAW) {
       title = 'Withdraw';
       subtitle = tx.description ?? 'Funds removed';
+    } else if (category === FINANCE_TX_CATEGORY.FINANCIAL_GOAL_CONTRIBUTION) {
+      title = 'Goal contribution';
+      subtitle = tx.description ?? 'Funds allocated to a goal';
     } else if (category === FINANCE_TX_CATEGORY.POSITION_REGISTER) {
       title = 'Position registered';
       subtitle = tx.description?.includes('•')
@@ -292,6 +335,29 @@ export class FinanceSummaryService {
     }
 
     return { id: tx.id, title, subtitle, amount };
+  }
+
+  private mapMonthlyExpense(expense: {
+    id: string;
+    title: string;
+    amount: unknown;
+    category: string | null;
+    source: string;
+    createdAt: Date;
+    categoryRef: { name: string } | null;
+  }) {
+    const subtitleParts = [
+      expense.categoryRef?.name ?? expense.category ?? 'Uncategorized',
+      expense.source === 'CASH' ? 'Cash' : expense.source,
+    ];
+    return {
+      id: `monthly-${expense.id}`,
+      title: expense.title,
+      subtitle: subtitleParts.filter(Boolean).join(' • '),
+      amount: -Math.abs(toNumber(expense.amount)),
+      currency: 'BRL',
+      alreadyConverted: true,
+    };
   }
 
   private buildPerformance(

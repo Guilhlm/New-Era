@@ -17,7 +17,7 @@ export class WalletService {
         userId,
         name: data.name,
         type: data.type,
-        balance: data.balance ?? 0,
+        balance: 0,
       },
     });
 

@@ -5,7 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { getCalendarWeekday } from '@/hooks/use-calendar-day-change';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { queryKeys } from '@/lib/query-keys';
-import { patchTaskDayDone } from '@/lib/invalidate-task-caches';
+import { patchTaskDayDone, patchTaskDoneEverywhere } from '@/lib/invalidate-task-caches';
 import { getTasksToday, toggleTaskComplete } from '@/services/task';
 import { HttpError } from '@/services/http';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
@@ -129,7 +129,9 @@ export function useHomeTasksState() {
         patchDisciplineCaches(queryClient, optimistic.discipline, optimistic.dietDiscipline);
         const toggled = optimistic.tasks.find((task) => task.id === taskId);
         if (toggled) {
-          patchTaskDayDone(queryClient, previous.weekday, taskId, Boolean(toggled.done));
+          const done = Boolean(toggled.done);
+          patchTaskDayDone(queryClient, previous.weekday, taskId, done);
+          patchTaskDoneEverywhere(queryClient, taskId, done);
         }
       }
 
@@ -161,7 +163,9 @@ export function useHomeTasksState() {
       patchDisciplineCaches(queryClient, result.discipline, result.dietDiscipline);
       const today = queryClient.getQueryData<TasksTodayData>(queryKeys.tasksToday);
       if (today) {
-        patchTaskDayDone(queryClient, today.weekday, result.task.id, Boolean(result.task.done));
+        const done = Boolean(result.task.done);
+        patchTaskDayDone(queryClient, today.weekday, result.task.id, done);
+        patchTaskDoneEverywhere(queryClient, result.task.id, done);
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.taskWeekdaySummary });
       void queryClient.invalidateQueries({

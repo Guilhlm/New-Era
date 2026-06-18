@@ -100,8 +100,9 @@ export function WalletRecentTransactionsCard({
                         >
                           {formatWalletAmount(transaction.amount, {
                             signed: true,
-                            currency: ui?.currency,
+                            currency: transaction.currency ?? ui?.currency,
                             fxRate: ui?.fxRate,
+                            alreadyConverted: transaction.alreadyConverted,
                           })}
                         </p>
                       </div>

@@ -1,11 +1,13 @@
 'use client';
 
+import { TaskEditPlanDialog } from '@/components/tasks/task-edit-plan-dialog';
 import { TaskEditSheet } from '@/components/tasks/task-edit-sheet';
 import { TaskPlanHeaderCard } from '@/components/tasks/task-plan-header-card';
 import { TaskScheduleList } from '@/components/tasks/task-schedule-list';
 import { TaskSuggestionsCard } from '@/components/tasks/task-suggestions-card';
 import { TaskWeekdaySidebarCard } from '@/components/tasks/task-weekday-sidebar-card';
 import {
+  DashboardSidebarColumn,
   DashboardTwoColumnLayout,
   dashboardGridArea,
 } from '@/components/ui/dashboard-two-column-layout';
@@ -46,19 +48,19 @@ export function TaskDashboard() {
           style={dashboardGridArea('main', 'body')}
         />
 
-        <div
-          className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2.5 overflow-hidden"
-          style={{ ...dashboardGridArea('sidebar', 'header'), gridRow: '1 / 3' }}
-        >
+        <DashboardSidebarColumn>
           <TaskWeekdaySidebarCard
             data={{
               title: 'Weekdays',
               days: state.data.sidebarDays,
               selectedWeekday: state.data.selectedWeekday,
             }}
-            actions={{ onSelectDay: state.actions.selectWeekday }}
+            actions={{
+              onSelectDay: state.actions.selectWeekday,
+              onEditPlan: state.actions.openEditPlan,
+            }}
             ui={{ loading: state.ui.loading, saving: state.ui.saving }}
-            className="min-h-0 flex-1"
+            className="min-h-0 flex-[2]"
           />
           <TaskSuggestionsCard
             data={{ suggestions: state.data.suggestions }}
@@ -70,8 +72,16 @@ export function TaskDashboard() {
             ui={{ loading: state.ui.suggestionsLoading, saving: state.ui.saving }}
             className="min-h-0 flex-1"
           />
-        </div>
+        </DashboardSidebarColumn>
       </DashboardTwoColumnLayout>
+
+      <TaskEditPlanDialog
+        open={state.ui.editPlanOpen}
+        weekdayLabel={state.data.header.weekdayLabel}
+        saving={state.ui.saving}
+        onClose={state.actions.closeEditPlan}
+        onSave={state.actions.savePlanTask}
+      />
 
       <TaskEditSheet
         open={Boolean(state.data.editTask)}

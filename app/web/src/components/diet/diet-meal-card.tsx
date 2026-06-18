@@ -165,7 +165,7 @@ export function DietMealCard({ data, actions, ui, bindHeaderRef, bindIngredients
                 </div>
               ) : !data.draft ? (
                 <p className={cn('shrink-0', typeClass.body, 'text-text/50')}>
-                  Nenhum ingrediente ainda. Use New Ingredient + para adicionar.
+                  No ingredients yet. Use New Ingredient + to add one.
                 </p>
               ) : null}
             </div>

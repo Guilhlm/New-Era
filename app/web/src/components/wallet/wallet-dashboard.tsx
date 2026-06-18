@@ -170,7 +170,7 @@ export function WalletDashboard() {
         saving={state.ui.saving}
         defaultMode={state.ui.cashDialogMode}
         defaultCurrency={state.ui.currency}
-        fxRate={state.data.fxRate}
+        fxRate={state.data.brlFxRate}
         availableBalanceUsdt={state.data.walletCashAvailable}
         onClose={state.actions.closeCashDialog}
         onSubmit={state.actions.submitCash}

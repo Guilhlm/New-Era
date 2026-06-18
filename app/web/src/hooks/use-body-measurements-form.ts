@@ -70,7 +70,7 @@ export function useBodyMeasurementsForm(query: BodyMeasureQueryState) {
       toastUpdated(CRUD_TOAST.measurementsUpdated);
     } catch (error) {
       const message =
-        error instanceof HttpError && error.message ? error.message : 'Não foi possível salvar as medidas.';
+        error instanceof HttpError && error.message ? error.message : 'Could not save measurements.';
       toastAuthError(message);
     } finally {
       setMeasurementsSaving(false);

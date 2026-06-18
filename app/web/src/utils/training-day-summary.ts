@@ -5,9 +5,9 @@ export type { TrainingDaySummaryStatVm, TrainingDaySummaryVm } from '@/types/tra
 
 function formatVolumeKg(total: number) {
   if (total >= 1000) {
-    return `${(total / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k`;
+    return `${(total / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 })}k`;
   }
-  return total.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  return total.toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
 export function buildTrainingDaySummary(

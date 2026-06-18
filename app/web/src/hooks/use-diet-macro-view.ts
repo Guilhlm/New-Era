@@ -2,17 +2,15 @@
 
 import { useMemo } from 'react';
 import type { DietMealVm } from '@/types/diet';
+import type { TaskVm } from '@/types/task';
 import {
   buildMacroLegend,
   buildMacroSegments,
   buildMacroSummaries,
   formatMacroKcal,
+  sumConsumedFromCompletedMeals,
   sumItemsFromMeals,
 } from '@/utils/diet-macros';
-
-const EMPTY_MACRO_TOTALS = { calories: 0, protein: 0, carbs: 0, fats: 0 };
-
-const STATIC_MACRO_SEGMENTS = buildMacroSegments(EMPTY_MACRO_TOTALS);
 
 function buildTargetsFromMeals(planTotals: {
   calories: number;
@@ -28,24 +26,29 @@ function buildTargetsFromMeals(planTotals: {
   };
 }
 
-export function useDietMacroView(meals: DietMealVm[]) {
+export function useDietMacroView(meals: DietMealVm[], tasks: TaskVm[]) {
   const planTotals = useMemo(() => sumItemsFromMeals(meals), [meals]);
+  const consumedTotals = useMemo(
+    () => sumConsumedFromCompletedMeals(meals, tasks),
+    [meals, tasks],
+  );
   const targets = useMemo(() => buildTargetsFromMeals(planTotals), [planTotals]);
 
   const macroSummaries = useMemo(
-    () => buildMacroSummaries(EMPTY_MACRO_TOTALS, targets),
-    [targets],
+    () => buildMacroSummaries(consumedTotals, targets),
+    [consumedTotals, targets],
   );
   const dailyMacroLegend = useMemo(
-    () => buildMacroLegend(EMPTY_MACRO_TOTALS, planTotals),
-    [planTotals],
+    () => buildMacroLegend(consumedTotals, planTotals),
+    [consumedTotals, planTotals],
   );
+  const dailyMacroSegments = useMemo(() => buildMacroSegments(consumedTotals), [consumedTotals]);
 
   return {
     macroSummaries,
     dailyMacros: {
-      totalKcalLabel: formatMacroKcal(0),
-      segments: STATIC_MACRO_SEGMENTS,
+      totalKcalLabel: formatMacroKcal(planTotals.calories),
+      segments: dailyMacroSegments,
       legend: dailyMacroLegend,
     },
   };

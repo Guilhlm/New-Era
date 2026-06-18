@@ -4,19 +4,18 @@ import { BodyMeasurementsHeaderCard } from './body-measurements-header-card';
 import { FitnessGoalsCard } from './fitness-goals-card';
 import { HealthVitalsCard } from './health-vitals-card';
 import { MeasurementsCard } from './measurements-card';
+import {
+  DashboardSidebarColumn,
+  DashboardTwoColumnLayout,
+  dashboardGridArea,
+} from '@/components/ui/dashboard-two-column-layout';
 import { useBodyMetricsDashboardState } from '@/hooks/use-body-metrics-dashboard-state';
 
 export function BodyMetricsDashboard() {
   const state = useBodyMetricsDashboardState();
 
   return (
-    <section
-      className="flex h-full min-h-0 flex-1 flex-col gap-2.5 lg:grid lg:min-h-0 lg:flex-1 lg:gap-2.5"
-      style={{
-        gridTemplateColumns: 'minmax(0, 2.65fr) minmax(0, 1fr)',
-        gridTemplateRows: 'minmax(180px, auto) minmax(0, 1fr)',
-      }}
-    >
+    <DashboardTwoColumnLayout>
       <BodyMeasurementsHeaderCard
         data={state.data.header}
         actions={{
@@ -24,8 +23,8 @@ export function BodyMetricsDashboard() {
           onChangeWeight: state.actions.setHeaderWeightDraft,
           onChangeHeight: state.actions.setHeaderHeightDraft,
         }}
-        className="min-h-0"
-        style={{ gridColumn: '1 / 2', gridRow: '1 / 2' }}
+        className="h-full min-h-0"
+        style={dashboardGridArea('main', 'header')}
       />
 
       <MeasurementsCard
@@ -51,13 +50,10 @@ export function BodyMetricsDashboard() {
           saveMeasurements: state.actions.saveMeasurements,
         }}
         className="min-h-0 overflow-hidden"
-        style={{ gridColumn: '1 / 2', gridRow: '2 / 3' }}
+        style={dashboardGridArea('main', 'body')}
       />
 
-      <div
-        className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2.5 overflow-hidden"
-        style={{ gridColumn: '2 / 3', gridRow: '1 / 3' }}
-      >
+      <DashboardSidebarColumn className="grid grid-rows-[minmax(0,10fr)_minmax(0,4fr)]">
         <HealthVitalsCard
           data={{
             title: state.ui.vitalsTitle,
@@ -71,13 +67,12 @@ export function BodyMetricsDashboard() {
             onToggleEdit: () => void state.vitals.actions.toggleEdit(),
             onChange: state.vitals.actions.setVitalDraft,
           }}
-          className="flex-[2] min-h-0"
+          className="min-h-0"
         />
         <FitnessGoalsCard
           data={{
             title: state.ui.goalsTitle,
             rows: state.goals.data.rows,
-            weightProgress: state.goals.data.weightProgress,
             editing: state.goals.data.editing,
             loading: state.goals.data.loading,
             saving: state.goals.data.saving,
@@ -88,9 +83,9 @@ export function BodyMetricsDashboard() {
             onWeightGoalChange: state.goals.actions.setWeightGoalDraft,
             onCaloriesChange: state.goals.actions.setCaloriesDraft,
           }}
-          className="flex-1 min-h-0"
+          className="min-h-0"
         />
-      </div>
-    </section>
+      </DashboardSidebarColumn>
+    </DashboardTwoColumnLayout>
   );
 }

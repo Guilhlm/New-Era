@@ -12,7 +12,6 @@ import {
   updateCurrentFitnessMacroGoal,
 } from '@/services/fitness-macro-goal';
 import {
-  computeWeightProgressPercent,
   formatCaloriesLabel,
   formatWeightGoalLabel,
   normalizeCaloriesDraft,
@@ -27,11 +26,6 @@ export type GoalRowVm = {
   label: string;
   valueLabel: string;
   draft: string;
-  showProgress: boolean;
-};
-
-type UseFitnessMacroGoalParams = {
-  currentWeightKg: number | null;
 };
 
 type GoalDrafts = {
@@ -56,19 +50,17 @@ function buildRows(saved: GoalDrafts, editing: boolean, drafts: GoalDrafts): Goa
       label: 'Weight goal',
       valueLabel: formatWeightGoalLabel(saved.weightGoal),
       draft: weightDraft,
-      showProgress: true,
     },
     {
       key: 'calories',
       label: 'Daily calories',
       valueLabel: formatCaloriesLabel(saved.calories),
       draft: caloriesDraft,
-      showProgress: false,
     },
   ];
 }
 
-export function useFitnessMacroGoal({ currentWeightKg }: UseFitnessMacroGoalParams) {
+export function useFitnessMacroGoal() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState<GoalDrafts>({ weightGoal: '', calories: '' });
@@ -114,21 +106,25 @@ export function useFitnessMacroGoal({ currentWeightKg }: UseFitnessMacroGoalPara
     [drafts.calories, drafts.weightGoal, saved.calories, saved.weightGoal],
   );
 
-  const weightProgress = useMemo(() => {
-    const goalKg = parseNumeric(saved.weightGoal);
-    return computeWeightProgressPercent(currentWeightKg, goalKg);
-  }, [currentWeightKg, saved.weightGoal]);
-
   const rows = useMemo(
     () => buildRows(saved, editing, drafts),
     [drafts, editing, saved],
   );
 
   async function save() {
-    const payload: UpdateFitnessMacroGoalInput = {
-      weightGoal: drafts.weightGoal.trim() ? normalizeWeightGoalDraft(drafts.weightGoal) : null,
-      calories: drafts.calories.trim() ? Number(normalizeCaloriesDraft(drafts.calories)) : null,
-    };
+    const payload: UpdateFitnessMacroGoalInput = {};
+
+    if (dirty.weightGoal) {
+      const trimmed = drafts.weightGoal.trim();
+      payload.weightGoal = trimmed ? parseNumeric(trimmed) : null;
+    }
+
+    if (dirty.calories) {
+      const trimmed = drafts.calories.trim();
+      payload.calories = trimmed ? Number(normalizeCaloriesDraft(trimmed)) : null;
+    }
+
+    if (Object.keys(payload).length === 0) return;
     await saveMutation.mutateAsync(payload);
   }
 
@@ -150,7 +146,6 @@ export function useFitnessMacroGoal({ currentWeightKg }: UseFitnessMacroGoalPara
   return {
     data: {
       rows,
-      weightProgress,
       editing,
       loading: query.isPending,
       saving: saveMutation.isPending,

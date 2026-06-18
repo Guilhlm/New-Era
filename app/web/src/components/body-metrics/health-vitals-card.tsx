@@ -2,10 +2,15 @@
 
 import type { HealthVitalField, HealthVitalRow } from '@/types/body-metrics';
 import { HealthVitalRow as HealthVitalRowItem } from '@/components/body-metrics/health-vital-row';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import {
+  sidebarDayListFooterReserveClass,
+  sidebarGridListClass,
+} from '@/components/ui/sidebar-day-row';
 import { typeClass, typeToneClass } from '@/lib/typography';
-import { MdCheck, MdEdit } from 'react-icons/md';
+import { HEALTH_VITAL_DEFS } from '@/types/body-metrics';
 
 type HealthVitalsCardProps = {
   data: {
@@ -25,46 +30,51 @@ type HealthVitalsCardProps = {
 
 export function HealthVitalsCard({ data, actions, className }: HealthVitalsCardProps) {
   const blocked = data.loading || data.saving;
+  const vitalListClass = sidebarGridListClass(HEALTH_VITAL_DEFS.length);
 
   return (
-    <Card className={cn('flex h-full min-h-0 flex-col p-5 lg:p-6', className)}>
-      <div className="flex items-start gap-3">
-        <p className={cn(typeClass.title, typeToneClass.default)}>{data.title}</p>
+    <Card className={cn('flex h-full min-h-0 flex-col overflow-hidden p-5 lg:p-6', className)}>
+      <p className={cn('shrink-0 text-center', typeClass.title, typeToneClass.default)}>{data.title}</p>
 
-        <button
-          type="button"
-          className={cn(
-            'ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-layer2-half focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60',
-            data.editing ? (data.hasDirty ? 'text-red' : 'text-text/70') : 'text-text/70',
-          )}
-          aria-label={data.editing ? 'Salvar vitals' : 'Editar vitals'}
-          disabled={blocked}
-          onClick={actions.onToggleEdit}
-        >
-          {data.editing ? (
-            <MdCheck className="h-5 w-5" aria-hidden />
-          ) : (
-            <MdEdit className="h-5 w-5" aria-hidden />
-          )}
-        </button>
+      <div className={vitalListClass}>
+        {data.loading ? (
+          <div
+            className={cn(
+              'col-span-full flex h-full items-center justify-center rounded-[5px] bg-layer2-half px-3',
+              typeClass.body,
+              typeToneClass.muted60,
+            )}
+          >
+            Loading…
+          </div>
+        ) : (
+          data.rows.map((row) => (
+            <HealthVitalRowItem
+              key={row.key}
+              data={{ row, editing: data.editing }}
+              ui={{ disabled: blocked }}
+              actions={{ onChange: actions.onChange }}
+            />
+          ))
+        )}
       </div>
 
-      <div className="scrollbar-none mt-4 min-h-0 flex-1 overflow-auto pr-1">
-        <div className="grid grid-cols-1 gap-2.5">
-          {data.loading ? (
-            <div className={cn('rounded-xl bg-layer2-half px-5 py-4', typeClass.body, typeToneClass.muted60)}>Carregando…</div>
-          ) : (
-            data.rows.map((row) => (
-              <HealthVitalRowItem
-                key={row.key}
-                data={{ row, editing: data.editing }}
-                ui={{ disabled: blocked }}
-                actions={{ onChange: actions.onChange }}
-              />
-            ))
-          )}
-        </div>
-      </div>
+      <Button
+        type="button"
+        variant="primary"
+        size="md"
+        disabled={blocked}
+        className={sidebarDayListFooterReserveClass}
+        onClick={() => void actions.onToggleEdit()}
+      >
+        {data.saving
+          ? 'Saving…'
+          : data.editing
+            ? data.hasDirty
+              ? 'Save Vitals'
+              : 'Done'
+            : 'Edit Vitals'}
+      </Button>
     </Card>
   );
 }

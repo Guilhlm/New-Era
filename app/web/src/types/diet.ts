@@ -50,7 +50,7 @@ export type DietMacroSegmentVm = {
 export type DietMacroLegendVm = {
   key: 'protein' | 'carbs' | 'fats';
   label: string;
-  colorClassName: string;
+  color: string;
   currentGrams: number;
   targetGrams: number;
   overTarget: boolean;

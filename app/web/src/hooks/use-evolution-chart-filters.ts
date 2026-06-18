@@ -59,10 +59,10 @@ export function useEvolutionChartFilters({
 
   const emptyMessage =
     selectedMetric.source === 'vital'
-      ? 'Salve vitals para ver a evolução.'
+      ? 'Save vitals to see the evolution.'
       : selectedMetric.field === 'weight'
-        ? 'Salve o peso no header para ver a evolução.'
-        : 'Salve medidas para ver a evolução.';
+        ? 'Save weight in the header to see the evolution.'
+        : 'Save measurements to see the evolution.';
 
   const formatValue = useMemo(
     () => (value: number) => formatEvolutionTooltipValue(value, selectedMetric.field),

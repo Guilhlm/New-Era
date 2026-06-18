@@ -4,14 +4,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { IoClose, IoLogOutOutline } from 'react-icons/io5';
 import { MdOutlineRestaurant, MdOutlineTaskAlt } from 'react-icons/md';
 import { RiHome4Line, RiWallet3Line } from 'react-icons/ri';
 import { TbBell, TbMenu2, TbReceipt, TbRulerMeasure, TbTarget, TbBarbell } from 'react-icons/tb';
 import { useSidebarUser } from '@/hooks/use-sidebar-user';
 import { useLogout } from '@/hooks/use-logout';
+import { useNotificationsUnreadCount } from '@/hooks/use-notifications-unread-count';
 import { prefetchRouteData } from '@/lib/route-prefetch';
+import {
+  formatUnreadBadge,
+} from '@/components/notifications/notifications-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
@@ -32,12 +36,13 @@ const navPrimary: NavItem[] = [
   { href: '/create-tasks', label: 'Create Tasks', Icon: MdOutlineTaskAlt },
 ];
 
-const navSecondary: NavItem[] = [
+const navSecondaryBase: NavItem[] = [
   { href: '/wallet-investments', label: 'Wallet Investments', Icon: RiWallet3Line },
   { href: '/monthly-expenses', label: 'Monthly Expenses', Icon: TbReceipt },
   { href: '/finance-goals', label: 'Finances Goals', Icon: TbTarget },
-  { href: '/notifications', label: 'Notifications', Icon: TbBell, badge: '8+' },
+  { href: '/notifications', label: 'Notifications', Icon: TbBell },
 ];
+
 const navLinkClass = cn('flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5', typeClass.body, 'transition');
 
 function isActivePath(pathname: string, href: string) {
@@ -50,7 +55,12 @@ export function AppSidebar() {
   const queryClient = useQueryClient();
   const { displayName, cpfLabel, avatarLetters, avatarPhoto } = useSidebarUser();
   const logout = useLogout();
+  const unreadQuery = useNotificationsUnreadCount();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const notificationsBadge = formatUnreadBadge(unreadQuery.data ?? 0);
+  const navSecondary = navSecondaryBase.map((item) =>
+    item.href === '/notifications' ? { ...item, badge: notificationsBadge } : item,
+  );
 
   const prefetchRoute = useCallback(
     (href: string) => {
@@ -58,10 +68,6 @@ export function AppSidebar() {
     },
     [queryClient],
   );
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   return (
     <>
@@ -175,6 +181,7 @@ export function AppSidebar() {
         <ul className="flex flex-col gap-1">
           {navSecondary.map(({ href, label, Icon, badge }) => {
             const active = isActivePath(pathname, href);
+
             return (
               <li key={href}>
                 <Link
@@ -184,6 +191,8 @@ export function AppSidebar() {
                     active ? 'bg-layer2 text-text' : 'text-text/55 hover:bg-layer2-half hover:text-text',
                   )}
                   aria-current={active ? 'page' : undefined}
+                  onMouseEnter={() => prefetchRoute(href)}
+                  onFocus={() => prefetchRoute(href)}
                 >
                   <Icon className="h-5 w-5 shrink-0" aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{label}</span>

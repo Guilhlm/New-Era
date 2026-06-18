@@ -3,14 +3,14 @@
 import { cn } from '@/components/ui/cn';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import type { TaskSuggestionVm } from '@/types/task';
-import { sourceTypeLabel } from '@/utils/task-mapper';
+import { normalizeTimeInputValue, sourceTypeLabel } from '@/utils/task-mapper';
 import { MdOutlineRestaurant } from 'react-icons/md';
 import { TbBarbell } from 'react-icons/tb';
 import { IoCheckmark } from 'react-icons/io5';
 
 type TaskSuggestionRowProps = {
   item: TaskSuggestionVm;
-  disabled?: boolean;
+  toggleDisabled?: boolean;
   onToggle: () => void;
   onTimeChange: (scheduledAt: string) => void;
 };
@@ -25,9 +25,9 @@ function SuggestionIcon({ sourceType }: { sourceType: TaskSuggestionVm['sourceTy
   return null;
 }
 
-export function TaskSuggestionRow({ item, disabled, onToggle, onTimeChange }: TaskSuggestionRowProps) {
+export function TaskSuggestionRow({ item, toggleDisabled, onToggle, onTimeChange }: TaskSuggestionRowProps) {
   const selected = Boolean(item.selected);
-  const scheduledAt = item.scheduledAt ?? item.defaultScheduledAt;
+  const scheduledAt = normalizeTimeInputValue(item.scheduledAt ?? item.defaultScheduledAt);
 
   return (
     <div
@@ -38,7 +38,7 @@ export function TaskSuggestionRow({ item, disabled, onToggle, onTimeChange }: Ta
     >
       <button
         type="button"
-        disabled={disabled}
+        disabled={toggleDisabled}
         aria-label={selected ? 'Deselect suggestion' : 'Select suggestion'}
         aria-pressed={selected}
         className={cn(
@@ -64,7 +64,7 @@ export function TaskSuggestionRow({ item, disabled, onToggle, onTimeChange }: Ta
       <div className="flex w-[5.5rem] shrink-0 items-center justify-center border-l border-grey/50 px-2">
         <input
           type="time"
-          disabled={disabled || !selected}
+          disabled={!selected}
           value={scheduledAt}
           aria-label={`Time for ${item.title}`}
           className={            cn(

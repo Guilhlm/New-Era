@@ -18,12 +18,6 @@ export class CreateWalletDto {
 
   @IsEnum(WalletType)
   type!: WalletType;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  balance?: number;
 }
 
 export class UpdateWalletDto {

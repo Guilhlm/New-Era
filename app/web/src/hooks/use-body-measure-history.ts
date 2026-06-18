@@ -23,7 +23,7 @@ export function useBodyMeasureHistory(_refreshKey?: string) {
   return {
     measures: query.data ?? [],
     loading: query.isPending,
-    error: query.isError ? 'Não foi possível carregar o histórico.' : null,
+    error: query.isError ? 'Could not load history.' : null,
     reload,
   };
 }

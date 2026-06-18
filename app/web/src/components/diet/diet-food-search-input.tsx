@@ -61,7 +61,7 @@ export function DietFoodSearchInput({
           {loading ? (
             <p className={cn('px-3 py-2', typeClass.caption, typeToneClass.muted60)}>Searching…</p>
           ) : results.length === 0 ? (
-            <p className={cn('px-3 py-2', typeClass.caption, typeToneClass.muted60)}>Nenhum ingrediente encontrado.</p>
+            <p className={cn('px-3 py-2', typeClass.caption, typeToneClass.muted60)}>No ingredients found.</p>
           ) : (
             results.map((food) => (
               <button

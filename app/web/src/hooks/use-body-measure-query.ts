@@ -24,12 +24,12 @@ export function useBodyMeasureQuery() {
     const height = toDraftString(measureRecord?.height);
     const recordedAt = measureRecord?.recordedAt ? new Date(measureRecord.recordedAt) : null;
     const dateLabel = recordedAt
-      ? recordedAt.toLocaleDateString('pt-BR', {
+      ? recordedAt.toLocaleDateString('en-US', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
         })
-      : new Date().toLocaleDateString('pt-BR', {
+      : new Date().toLocaleDateString('en-US', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',

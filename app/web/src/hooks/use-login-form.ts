@@ -11,16 +11,6 @@ function looksLikeEmail(value: string) {
   return value.includes('@') || /[a-zA-Z]/.test(value);
 }
 
-function normalizeIdentifier(value: string) {
-  return looksLikeEmail(value) ? value.trim().toLowerCase() : value.replace(/\D/g, '');
-}
-
-const AUTH_INPUT_SAVED_CLASS = 'text-input-idle';
-
-function getInputTone(currentValue: string) {
-  return normalizeIdentifier(currentValue) === '' ? AUTH_INPUT_SAVED_CLASS : 'text-red';
-}
-
 type UseLoginFormParams = {
   onSuccess: () => void;
 };
@@ -69,11 +59,6 @@ export function useLoginForm({ onSuccess }: UseLoginFormParams) {
       loading,
       identifierInputMode,
       identifierViewValue: looksLikeEmail(identifier) ? identifier : formatCpfInput(identifier),
-      tones: {
-        identifier: getInputTone(identifier),
-        password: getInputTone(password),
-        confirmPassword: getInputTone(confirmPassword),
-      },
     },
     passwordToggles: {
       passToggle,

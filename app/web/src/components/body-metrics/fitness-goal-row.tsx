@@ -8,7 +8,6 @@ type FitnessGoalRowProps = {
   data: {
     row: GoalRowVm;
     editing: boolean;
-    weightProgress: number;
   };
   ui: {
     disabled: boolean;
@@ -20,15 +19,14 @@ type FitnessGoalRowProps = {
 };
 
 const inputClass =
-  'mt-2 w-full rounded-md bg-layer2 px-3 py-2 text-center type-body-strong text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60';
+  'min-w-0 flex-1 bg-transparent text-right outline-none placeholder:text-text/40 focus-visible:ring-0';
 
 export function FitnessGoalRow({ data, ui, actions }: FitnessGoalRowProps) {
-  const { row, editing, weightProgress } = data;
-  const percent = Math.min(100, Math.max(0, weightProgress));
+  const { row, editing } = data;
 
   return (
-    <div className="rounded-xl bg-layer2-half px-5 py-4">
-      <p className={cn(typeClass.overline, typeToneClass.muted60)}>{row.label}</p>
+    <div className="flex h-full min-h-0 items-center justify-between gap-2 overflow-hidden rounded-[5px] bg-layer2-half px-3 py-2">
+      <span className={cn('min-w-0 truncate', typeClass.body, typeToneClass.muted60)}>{row.label}</span>
 
       {editing ? (
         <input
@@ -36,7 +34,7 @@ export function FitnessGoalRow({ data, ui, actions }: FitnessGoalRowProps) {
           autoComplete="off"
           aria-label={row.label}
           disabled={ui.disabled}
-          className={cn(inputClass, ui.disabled ? 'opacity-60' : '')}
+          className={cn(inputClass, typeClass.body, ui.disabled ? 'opacity-60' : 'text-text')}
           value={row.draft}
           placeholder={row.key === 'weight' ? '0 Kg' : '0 kcal'}
           onChange={(e) =>
@@ -46,20 +44,10 @@ export function FitnessGoalRow({ data, ui, actions }: FitnessGoalRowProps) {
           }
         />
       ) : (
-        <p className={cn('mt-2', typeClass.bodyStrong, typeToneClass.default)}>{row.valueLabel}</p>
+        <span className={cn('shrink-0 truncate text-right', typeClass.body, typeToneClass.default)}>
+          {row.valueLabel}
+        </span>
       )}
-
-      {row.showProgress && !editing ? (
-        <div className="mt-3">
-          <div className="flex items-center justify-between">
-            <p className={cn(typeClass.overline, typeToneClass.muted60)}>Progress</p>
-            <p className={cn(typeClass.label, 'text-text/70')}>{percent}%</p>
-          </div>
-          <div className="mt-2 h-2 w-full rounded-full bg-layer2">
-            <div className="h-2 rounded-full bg-red" style={{ width: `${percent}%` }} aria-hidden />
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

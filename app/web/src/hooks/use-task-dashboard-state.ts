@@ -14,6 +14,7 @@ export function useTaskDashboardState() {
   const suggestionsState = useTaskSuggestions(dayQuery.data.selectedWeekday);
   const [saving, setSaving] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editPlanOpen, setEditPlanOpen] = useState(false);
   const [editTask, setEditTask] = useState<(typeof dayQuery.data.tasks)[number] | null>(null);
 
   const mutations = useTaskMutations({
@@ -30,6 +31,11 @@ export function useTaskDashboardState() {
   });
 
   const summary = buildTaskDaySummary(dayQuery.data.tasks);
+
+  async function savePlanTask(title: string, scheduledAt: string) {
+    const saved = await mutations.actions.createManualTask(title, scheduledAt);
+    if (saved) setEditPlanOpen(false);
+  }
 
   return {
     data: {
@@ -53,6 +59,9 @@ export function useTaskDashboardState() {
       prevDay: dayQuery.actions.prevDay,
       nextDay: dayQuery.actions.nextDay,
       selectWeekday: dayQuery.actions.selectWeekday,
+      openEditPlan: () => setEditPlanOpen(true),
+      closeEditPlan: () => setEditPlanOpen(false),
+      savePlanTask,
       ...mutations.actions,
       ...suggestionsState.actions,
     },
@@ -61,6 +70,7 @@ export function useTaskDashboardState() {
       suggestionsLoading: suggestionsState.ui.loading,
       saving,
       createOpen,
+      editPlanOpen,
     },
   };
 }

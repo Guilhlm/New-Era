@@ -5,6 +5,10 @@ import type { UpsertWaterLogDto } from './dto/water-log.dto';
 
 const DEFAULT_WATER_TOTAL = 3;
 const WATER_GLASS_VOLUME_L = 0.3;
+const MAX_WATER_TOTAL_L = 12;
+const WATER_GLASSES_PER_ROW = 6;
+const WATER_GLASS_ROW_COUNT = 2;
+const MAX_GLASS_SLOTS = WATER_GLASSES_PER_ROW * WATER_GLASS_ROW_COUNT;
 
 function parseLogDate(dateRaw: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
@@ -26,9 +30,15 @@ function toNumber(
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function clampWaterTotal(value: number) {
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return Math.min(MAX_WATER_TOTAL_L, Math.round(value * 100) / 100);
+}
+
 function glassCountFromWaterTotal(waterTotal: number) {
   if (waterTotal <= 0) return 1;
-  return Math.max(1, Math.ceil(waterTotal / WATER_GLASS_VOLUME_L - 1e-9));
+  const needed = Math.max(1, Math.ceil(waterTotal / WATER_GLASS_VOLUME_L - 1e-9));
+  return Math.min(MAX_GLASS_SLOTS, needed);
 }
 
 @Injectable()
@@ -69,10 +79,11 @@ export class WaterLogService {
       where: { userId_logDate: { userId, logDate } },
     });
 
-    const waterTotal =
+    const waterTotal = clampWaterTotal(
       body.waterTotal !== undefined
-        ? Math.max(0, Number(body.waterTotal))
-        : toNumber(existing?.waterTotal, DEFAULT_WATER_TOTAL);
+        ? Number(body.waterTotal)
+        : toNumber(existing?.waterTotal, DEFAULT_WATER_TOTAL),
+    );
     const waterIntake =
       body.waterIntake !== undefined
         ? Math.max(0, Number(body.waterIntake))

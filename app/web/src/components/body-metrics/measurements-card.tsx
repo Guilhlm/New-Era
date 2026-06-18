@@ -87,7 +87,7 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
             type="button"
             variant="ghost"
             size="sm"
-            aria-label="Ver gráfico de evolução"
+            aria-label="View evolution chart"
             aria-pressed={view === 'chart'}
             className={cn(
               'h-10 w-10 shrink-0 p-0',
@@ -104,7 +104,7 @@ export function MeasurementsCard({ data, ui, actions, style, className }: Measur
             type="button"
             variant="ghost"
             size="sm"
-            aria-label="Ver lista de medidas"
+            aria-label="View measurements list"
             aria-pressed={view === 'list'}
             className={cn(
               'h-10 w-10 shrink-0 p-0',

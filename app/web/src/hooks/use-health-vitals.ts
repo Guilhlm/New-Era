@@ -98,7 +98,7 @@ export function useHealthVitals() {
     },
     onError: (error) => {
       const message =
-        error instanceof HttpError && error.message ? error.message : 'Não foi possível salvar os vitals.';
+        error instanceof HttpError && error.message ? error.message : 'Could not save health vitals.';
       toastAuthError(message);
     },
   });

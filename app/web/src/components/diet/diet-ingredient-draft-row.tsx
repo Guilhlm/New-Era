@@ -63,10 +63,10 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
         <DietFoodSearchInput
           autoFocus
           disabled={blocked}
-          placeholder="Buscar ingrediente…"
+          placeholder="Search ingredient…"
           onSelect={actions.onSelectFood}
         />
-        <p className={cn('mt-2', typeClass.caption, 'text-text/50')}>Busque e selecione um ingrediente.</p>
+        <p className={cn('mt-2', typeClass.caption, 'text-text/50')}>Search and select an ingredient.</p>
       </div>
     );
   }
@@ -79,7 +79,7 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
 
       <div className="flex shrink-0 items-center gap-1.5">
         <label className="sr-only" htmlFor={`grams-${data.draftKey}`}>
-          Quantidade em gramas
+          Quantity in grams
         </label>
         <input
           id={`grams-${data.draftKey}`}
@@ -125,7 +125,7 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
       <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
-          aria-label="Salvar ingrediente"
+          aria-label="Save ingredient"
           disabled={blocked || !canConfirm}
           className={cn(
             'inline-flex h-9 w-9 items-center justify-center rounded-md bg-layer2 text-text/70 transition',
@@ -137,7 +137,7 @@ export function DietIngredientDraftRow({ data, actions, ui }: DietIngredientDraf
         </button>
         <button
           type="button"
-          aria-label="Cancelar ingrediente"
+          aria-label="Cancel ingredient"
           disabled={blocked}
           className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-layer2 text-text/70 transition hover:bg-layer2-half"
           onClick={actions.onCancel}

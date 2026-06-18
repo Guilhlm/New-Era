@@ -30,8 +30,30 @@ export function DashboardTwoColumnLayout({
   );
 }
 
+/** Alinha padding horizontal com `PlanHeaderCard` (`px-6 lg:px-8`). */
+export const dashboardMainBodyCardPaddingClass = 'px-6 py-5 lg:px-8 lg:py-6';
+
 export function dashboardGridArea(column: 'main' | 'sidebar', row: 'header' | 'body') {
   const col = column === 'main' ? '1 / 2' : '2 / 3';
   const gridRow = row === 'header' ? '1 / 2' : '2 / 3';
   return { gridColumn: col, gridRow };
+}
+
+type DashboardSidebarColumnProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export function DashboardSidebarColumn({ children, className }: DashboardSidebarColumnProps) {
+  return (
+    <div
+      className={cn(
+        'flex h-full min-h-0 w-full min-w-0 flex-col gap-2.5 overflow-hidden',
+        className,
+      )}
+      style={{ ...dashboardGridArea('sidebar', 'header'), gridRow: '1 / 3' }}
+    >
+      {children}
+    </div>
+  );
 }

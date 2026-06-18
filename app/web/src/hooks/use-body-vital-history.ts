@@ -23,7 +23,7 @@ export function useBodyVitalHistory(_refreshKey?: string) {
   return {
     vitals: query.data ?? [],
     loading: query.isPending,
-    error: query.isError ? 'Não foi possível carregar o histórico de vitals.' : null,
+    error: query.isError ? 'Could not load vitals history.' : null,
     reload,
   };
 }

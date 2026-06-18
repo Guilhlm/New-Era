@@ -38,6 +38,7 @@ export function useProfileQuery() {
     data: {
       user: query.data ?? null,
       loadError,
+      loading: query.isPending,
     },
     actions: {
       reloadUser,

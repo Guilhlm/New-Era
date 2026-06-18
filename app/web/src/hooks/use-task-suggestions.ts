@@ -7,15 +7,20 @@ import { queryKeys } from '@/lib/query-keys';
 import { getTaskSuggestions } from '@/services/task';
 import { HttpError } from '@/services/http';
 import type { TaskSuggestionVm } from '@/types/task';
+import { normalizeTimeInputValue } from '@/utils/task-mapper';
 
 type SuggestionRow = TaskSuggestionVm & { selected: boolean; scheduledAt: string };
 
 function mapSuggestions(items: TaskSuggestionVm[]): SuggestionRow[] {
-  return items.map((item) => ({
-    ...item,
-    selected: false,
-    scheduledAt: item.defaultScheduledAt,
-  }));
+  return items.map((item) => {
+    const defaultScheduledAt = normalizeTimeInputValue(item.defaultScheduledAt);
+    return {
+      ...item,
+      defaultScheduledAt,
+      selected: false,
+      scheduledAt: defaultScheduledAt,
+    };
+  });
 }
 
 export function useTaskSuggestions(selectedWeekday: number) {
@@ -29,6 +34,10 @@ export function useTaskSuggestions(selectedWeekday: number) {
     },
     retry: 3,
   });
+
+  useEffect(() => {
+    setLocalOverrides({});
+  }, [selectedWeekday]);
 
   useEffect(() => {
     if (!query.isError) return;
@@ -55,10 +64,12 @@ export function useTaskSuggestions(selectedWeekday: number) {
 
   function toggleSuggestion(sourceId: string) {
     setLocalOverrides((prev) => {
-      const current = suggestions.find((item) => item.sourceId === sourceId);
+      const base = query.data?.find((item) => item.sourceId === sourceId);
+      const merged = { ...base, ...prev[sourceId] };
+      const currentlySelected = merged?.selected ?? false;
       return {
         ...prev,
-        [sourceId]: { ...prev[sourceId], selected: !(current?.selected ?? false) },
+        [sourceId]: { ...prev[sourceId], selected: !currentlySelected },
       };
     });
   }
@@ -87,6 +98,6 @@ export function useTaskSuggestions(selectedWeekday: number) {
       setSuggestionTime,
       setSuggestions,
     },
-    ui: { loading: query.isPending },
+    ui: { loading: query.isPending && query.data === undefined },
   };
 }

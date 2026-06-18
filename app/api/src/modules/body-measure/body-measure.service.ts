@@ -39,7 +39,7 @@ export class BodyMeasureService {
     return this.prisma.bodyMeasure.findFirst({
       where: { userId },
       orderBy: { recordedAt: 'desc' },
-    });
+    }).then((measure) => measure ?? null);
   }
 
   async findOneMeasure(id: string, userId: string) {
@@ -80,7 +80,7 @@ export class BodyMeasureService {
     return this.prisma.bodyVital.findFirst({
       where: { userId },
       orderBy: { recordedAt: 'desc' },
-    });
+    }).then((vital) => vital ?? null);
   }
 
   async findOneVital(id: string, userId: string) {

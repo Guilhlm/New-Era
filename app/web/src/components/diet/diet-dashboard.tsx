@@ -5,7 +5,6 @@ import { DietIngredientEditSheet } from '@/components/diet/diet-ingredient-edit-
 import { DietMealsGrid } from '@/components/diet/diet-meals-grid';
 import { DietPlanHeaderCard } from '@/components/diet/diet-plan-header-card';
 import { DietWaterIntakeCard } from '@/components/diet/diet-water-intake-card';
-import { DietWeeklyNutritionChart } from '@/components/diet/diet-weekly-nutrition-chart';
 import {
   DashboardTwoColumnLayout,
   dashboardGridArea,
@@ -78,15 +77,7 @@ export function DietDashboard() {
               onWaterTotalChange: water.actions.changeWaterTotal,
             }}
             ui={water.ui}
-            className="min-h-0 flex-1"
-          />
-          <DietWeeklyNutritionChart
-            data={{
-              title: 'Weekly Discipline',
-              bars: state.data.weeklyChart.bars,
-              loading: state.data.weeklyChart.loading,
-            }}
-            className="min-h-0 flex-1"
+            className="min-h-0 flex-[2]"
           />
         </div>
       </DashboardTwoColumnLayout>

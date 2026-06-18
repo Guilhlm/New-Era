@@ -66,7 +66,7 @@ export function useMeasurementsEvolutionChart({
   );
 
   const formatPointValue = useMemo(
-    () => formatValue ?? ((value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })),
+    () => formatValue ?? ((value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 1 })),
     [formatValue],
   );
 

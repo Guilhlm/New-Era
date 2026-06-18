@@ -17,8 +17,7 @@ export async function POST(request: Request) {
   }
 
   const payload = {
-    email: typeof body.email === 'string' ? body.email : '',
-    cpf: typeof body.cpf === 'string' ? body.cpf : '',
+    token: typeof body.token === 'string' ? body.token : '',
     newPassword: typeof body.newPassword === 'string' ? body.newPassword : '',
   };
 

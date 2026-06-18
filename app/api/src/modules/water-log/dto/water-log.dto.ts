@@ -9,12 +9,12 @@ export class UpsertWaterLogDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Max(100)
+  @Max(12)
   waterTotal?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Max(100)
+  @Max(12)
   waterIntake?: number;
 }

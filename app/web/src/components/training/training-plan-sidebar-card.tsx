@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
+import { sidebarDayListClass, sidebarDayListFooterReserveClass, sidebarDayRowClass } from '@/components/ui/sidebar-day-row';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import { TrainingPlanDayMenu } from '@/components/training/training-plan-day-menu';
 
@@ -42,29 +43,31 @@ export function TrainingPlanSidebarCard({
 }: TrainingPlanSidebarCardProps) {
   return (
     <Card className={cn('flex h-full min-h-0 flex-col overflow-hidden p-5 lg:p-6', className)}>
-      <p className={cn('text-center', typeClass.title, typeToneClass.default)}>{data.title}</p>
+      <p className={cn('shrink-0 text-center', typeClass.title, typeToneClass.default)}>{data.title}</p>
 
-      <div className="scrollbar-none mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto">
+      <div className={sidebarDayListClass}>
         {data.days.map((day) => {
           const active = day.weekday === data.selectedWeekday;
           return (
-            <div
-              key={day.weekday}
-              className={cn(
-                'flex w-full items-center justify-between rounded-lg border px-4 py-3 transition-colors',
-                active
-                  ? 'border-red bg-layer2-half/30'
-                  : 'border-transparent bg-layer2-half/20 hover:bg-layer2-half/40',
-              )}
-            >
+            <div key={day.weekday} className={cn(sidebarDayRowClass(active), 'min-w-0')}>
               <button
                 type="button"
                 disabled={ui?.loading || ui?.saving}
-                className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                className="flex min-h-0 min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-left focus-visible:outline-none"
                 onClick={() => actions.onSelectDay(day.weekday)}
               >
-                <span className={cn('shrink-0', typeClass.body, typeToneClass.default)}>{day.label}:</span>
-                <span className={cn('truncate', typeClass.body, 'text-text/80')}>{day.displayTitle}</span>
+                <span
+                  className={cn(
+                    'shrink-0',
+                    typeClass.body,
+                    active ? typeToneClass.default : typeToneClass.muted60,
+                  )}
+                >
+                  {day.label}:
+                </span>
+                <span className={cn('truncate', typeClass.body, active ? 'text-text' : 'text-text/80')}>
+                  {day.displayTitle}
+                </span>
               </button>
 
               <TrainingPlanDayMenu
@@ -86,7 +89,7 @@ export function TrainingPlanSidebarCard({
         variant="primary"
         size="md"
         disabled={ui?.saving}
-        className="mt-4 h-10 w-full shrink-0"
+        className={sidebarDayListFooterReserveClass}
         onClick={actions.onEditPlan}
       >
         Edit Plan

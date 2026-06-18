@@ -74,7 +74,7 @@ export function formatAmountDraft(value: number): string {
 }
 
 export function formatSharesDraft(value: number): string {
-  return value.toLocaleString('pt-BR', {
+  return value.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 8,
   });

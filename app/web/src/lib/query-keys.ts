@@ -26,4 +26,11 @@ export const queryKeys = {
     ['wallet-market', tab ?? 'stocks', currency ?? 'USDT'] as const,
   walletFx: ['wallet-fx'] as const,
   wallets: ['wallets'] as const,
+  monthlyExpenses: (month?: string) => ['monthly-expenses', month ?? 'current'] as const,
+  monthlyExpenseCategories: (month?: string) =>
+    ['monthly-expense-categories', month ?? 'current'] as const,
+  monthlyExpenseCards: ['monthly-expense-cards'] as const,
+  financeGoals: (sort?: string) => ['finance-goals', sort ?? 'progress'] as const,
+  notifications: (filters?: string) => ['notifications', filters ?? 'all'] as const,
+  notificationsUnreadCount: ['notifications-unread-count'] as const,
 };

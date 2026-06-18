@@ -49,7 +49,7 @@ export function DietMealsGrid({ data, actions, ui, className, style }: DietMeals
       loading={ui?.loading}
       loadingLabel="Loading meals…"
       hiddenHintLabel={(count) =>
-        `+${count} refeiç${count === 1 ? 'ão' : 'ões'} abaixo — recolha para ver`
+        `+${count} meal${count === 1 ? '' : 's'} below — collapse to view`
       }
       getExpandedBodyCount={getExpandedBodyCount}
       hasDraft={hasDraft}

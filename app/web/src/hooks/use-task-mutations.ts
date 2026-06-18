@@ -67,8 +67,10 @@ export function useTaskMutations({
       setCreateOpen(false);
       await invalidateTaskCaches(selectedWeekday);
       toastUpdated(CRUD_TOAST.taskCreated);
+      return true;
     } catch (error) {
       toastAuthError(error instanceof HttpError ? error.message : 'Could not create task.');
+      return false;
     } finally {
       setSaving(false);
     }

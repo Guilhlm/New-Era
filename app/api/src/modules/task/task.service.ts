@@ -338,7 +338,7 @@ export class TaskService {
       suggestions.push({
         sourceType: TaskSourceType.DIET_MEAL,
         sourceId: meal.id,
-        title: `Refeição: ${meal.name}`,
+        title: `Meal: ${meal.name}`,
         defaultScheduledAt: meal.mealTime ?? DEFAULT_MEAL_TIME,
       });
     }

@@ -63,6 +63,8 @@ export function mapTransactionsToVm(
     title: record.title,
     subtitle: record.subtitle,
     amount: record.amount,
+    currency: record.currency,
+    alreadyConverted: record.alreadyConverted,
   }));
 }
 

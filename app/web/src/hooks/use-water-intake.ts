@@ -8,9 +8,13 @@ import { HttpError } from '@/services/http';
 import { getWaterLogDay, upsertWaterLogDay, type WaterLogVm } from '@/services/water-log';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 import {
+  clampWaterTotal,
   computeWaterGlassState,
+  computeWaterProgressPercent,
   formatLiters,
+  glassCountFromWaterTotal,
   normalizeWaterTotalDraft,
+  WATER_MAX_TOTAL_L,
   weekdayToDateString,
 } from '@/utils/water-intake';
 
@@ -50,7 +54,7 @@ export function useWaterIntake(selectedWeekday: number) {
     glassCount: 10,
   };
 
-  const { filledCount, glassCount, perGlass } = useMemo(
+  const { filledCount, glassCount, perGlass, isComplete } = useMemo(
     () => computeWaterGlassState(activeLog.waterTotal, activeLog.waterIntake),
     [activeLog.waterIntake, activeLog.waterTotal],
   );
@@ -58,6 +62,16 @@ export function useWaterIntake(selectedWeekday: number) {
   const dirty = useMemo(
     () => normalizeWaterTotalDraft(draft) !== normalizeWaterTotalDraft(savedDraft),
     [draft, savedDraft],
+  );
+
+  const draftGlassCount = useMemo(() => {
+    const parsed = Number(normalizeWaterTotalDraft(draft));
+    return glassCountFromWaterTotal(parsed > 0 ? parsed : activeLog.waterTotal);
+  }, [activeLog.waterTotal, draft]);
+
+  const progressPercent = useMemo(
+    () => computeWaterProgressPercent(activeLog.waterIntake, activeLog.waterTotal),
+    [activeLog.waterIntake, activeLog.waterTotal],
   );
 
   const upsertMutation = useMutation({
@@ -104,7 +118,7 @@ export function useWaterIntake(selectedWeekday: number) {
         Number((activeLog.waterIntake + perGlass).toFixed(2)),
       );
       if (nextIntake <= activeLog.waterIntake) return;
-      await persist({ waterIntake: nextIntake }, { showUpdatedToast: true });
+      await persist({ waterIntake: nextIntake });
       return;
     }
 
@@ -112,7 +126,7 @@ export function useWaterIntake(selectedWeekday: number) {
 
     const nextIntake = Math.max(0, Number((index * perGlass).toFixed(2)));
     if (nextIntake >= activeLog.waterIntake) return;
-    await persist({ waterIntake: nextIntake }, { showUpdatedToast: true });
+    await persist({ waterIntake: nextIntake });
   }
 
   function cancelEdit() {
@@ -129,7 +143,7 @@ export function useWaterIntake(selectedWeekday: number) {
   async function saveEdit() {
     if (query.isPending || saving || !editing) return;
 
-    const waterTotalValue = Number(normalizeWaterTotalDraft(draft));
+    const waterTotalValue = clampWaterTotal(Number(normalizeWaterTotalDraft(draft)));
     if (!waterTotalValue) return;
 
     const next = await persist(
@@ -144,16 +158,25 @@ export function useWaterIntake(selectedWeekday: number) {
   }
 
   function changeWaterTotal(value: string) {
-    setDraft(value.replace(/[^\d.,]/g, ''));
+    const cleaned = value.replace(/[^\d.,]/g, '');
+    const parsed = Number(cleaned.replace(',', '.'));
+    if (Number.isFinite(parsed) && parsed > WATER_MAX_TOTAL_L) {
+      setDraft(String(WATER_MAX_TOTAL_L));
+      return;
+    }
+    setDraft(cleaned);
   }
 
   return {
     data: {
-      title: 'Water Intake',
       consumedLabel: formatLiters(activeLog.waterIntake),
       targetLabel: formatLiters(activeLog.waterTotal),
+      progressPercent,
       glassCount,
+      draftGlassCount,
       filledCount,
+      isComplete,
+      perGlass,
       editing,
       dirty,
       draft,

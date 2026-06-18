@@ -70,7 +70,7 @@ export function BodyMeasurementsHeaderCard({
                   : 'text-text/70'
                 : 'text-text/70',
             )}
-            aria-label="Editar medições"
+            aria-label="Edit measurements"
             onClick={actions.onToggleEdit}
           >
             {data.editing ? (

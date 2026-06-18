@@ -94,7 +94,7 @@ export function WalletInvestmentEditSheet({
       >
         <div>
           <p id="edit-investment-title" className={cn(typeClass.title, typeToneClass.default)}>
-            Editar posição
+            Edit position
           </p>
           <p className={cn('mt-1', typeClass.caption, typeToneClass.muted)}>
             {investment.ticker} · {investment.name}
@@ -102,7 +102,7 @@ export function WalletInvestmentEditSheet({
         </div>
 
         <div className={cn(walletDialogSectionClass, typeClass.caption)}>
-          <span className={typeToneClass.muted}>Preço atual </span>
+          <span className={typeToneClass.muted}>Current price </span>
           <span className={typeClass.bodyStrong}>
             {formatWalletAmount(investment.currentPrice, amountOpts)}
           </span>
@@ -110,11 +110,11 @@ export function WalletInvestmentEditSheet({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
           <label className={cn(walletDialogFieldClass, typeClass.body)}>
-            <span className={typeToneClass.muted}>Quantidade</span>
+            <span className={typeToneClass.muted}>Quantity</span>
             <WalletNumericInput value={shares} disabled={saving} hint={false} onChange={setShares} />
           </label>
           <label className={cn(walletDialogFieldClass, typeClass.body)}>
-            <span className={typeToneClass.muted}>Preço médio ({currency})</span>
+            <span className={typeToneClass.muted}>Average price ({currency})</span>
             <WalletNumericInput value={avgPrice} disabled={saving} onChange={setAvgPrice} />
           </label>
         </div>
@@ -122,10 +122,10 @@ export function WalletInvestmentEditSheet({
         <div className={walletDialogActionsClass}>
           <div className={cn(walletDialogPrimaryActionsClass, 'sm:flex-wrap')}>
             <Button type="submit" variant="primary" disabled={saving} className="flex-1">
-              {saving ? 'Salvando…' : 'Salvar'}
+              {saving ? 'Saving…' : 'Save'}
             </Button>
             <Button type="button" variant="secondary" disabled={saving} onClick={onClose} className="flex-1 sm:flex-none sm:min-w-[7.5rem]">
-              Cancelar
+              Cancel
             </Button>
             <Button
               type="button"

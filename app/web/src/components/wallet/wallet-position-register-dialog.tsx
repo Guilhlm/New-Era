@@ -115,10 +115,10 @@ export function WalletPositionRegisterDialog({
       >
         <div>
           <p id="register-position-title" className={cn(typeClass.title, typeToneClass.default)}>
-            Registrar posição
+            Register position
           </p>
           <p className={cn('mt-1', typeClass.caption, typeToneClass.muted60)}>
-            Informe o que você já possui e quanto pagou. Não debita saldo da carteira.
+            Enter what you already own and how much you paid. Does not debit wallet balance.
           </p>
         </div>
 
@@ -145,13 +145,13 @@ export function WalletPositionRegisterDialog({
           </select>
           {selectedRow ? (
             <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-              Preço atual: {formatWalletAssetPrice(selectedRow.currentPrice, amountOpts)}
+              Current price: {formatWalletAssetPrice(selectedRow.currentPrice, amountOpts)}
             </span>
           ) : null}
         </label>
 
         <label className={cn(walletDialogFieldClass, typeClass.body)}>
-          <span className={typeToneClass.muted}>Quantidade</span>
+          <span className={typeToneClass.muted}>Quantity</span>
           <WalletNumericInput
             value={shares}
             disabled={saving}
@@ -167,27 +167,27 @@ export function WalletPositionRegisterDialog({
             className={cn(walletDialogSegmentItemClass, typeClass.micro)}
             onClick={() => setCostMode('total')}
           >
-            Total pago
+            Total Paid
           </SegmentedControlItem>
           <SegmentedControlItem
             active={costMode === 'avg'}
             className={cn(walletDialogSegmentItemClass, typeClass.micro)}
             onClick={() => setCostMode('avg')}
           >
-            Preço médio
+            Average price
           </SegmentedControlItem>
         </SegmentedControl>
 
         <label className={cn(walletDialogFieldClass, typeClass.body)}>
           <span className={typeToneClass.muted}>
             {costMode === 'total'
-              ? `Total pago (${currency})`
-              : `Preço médio por unidade (${currency})`}
+              ? `Total Paid (${currency})`
+              : `Average price per unit (${currency})`}
           </span>
           <WalletNumericInput value={costValue} disabled={saving} onChange={setCostValue} />
           {costMode === 'total' && parsedShares > 0 && parsedCost > 0 ? (
             <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-              Preço médio estimado: {formatWalletAmount(estimatedAvg, amountOpts)}
+              Estimated average price: {formatWalletAmount(estimatedAvg, amountOpts)}
             </span>
           ) : null}
         </label>
@@ -195,10 +195,10 @@ export function WalletPositionRegisterDialog({
         <div className={walletDialogActionsClass}>
           <div className={walletDialogPrimaryActionsClass}>
             <Button type="submit" variant="primary" disabled={saving || !canSubmit} className="flex-1">
-              {saving ? 'Salvando…' : 'Registrar posição'}
+              {saving ? 'Saving…' : 'Register position'}
             </Button>
             <Button type="button" variant="secondary" disabled={saving} onClick={onClose} className="flex-1 sm:flex-none sm:min-w-[7.5rem]">
-              Cancelar
+              Cancel
             </Button>
           </div>
         </div>

@@ -72,14 +72,26 @@ export function mapTasksToHomeVm(records: DailyTaskRecord[]) {
   }));
 }
 
+/** Ensures a value is valid for `<input type="time">` (HH:mm). */
+export function normalizeTimeInputValue(value: string | null | undefined, fallback = '09:00') {
+  if (!value?.trim()) return fallback;
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return fallback;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return fallback;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 export function mapSuggestionToVm(record: TaskSuggestionRecord) {
+  const defaultScheduledAt = normalizeTimeInputValue(record.defaultScheduledAt);
   return {
     sourceType: record.sourceType,
     sourceId: record.sourceId,
     title: record.title,
-    defaultScheduledAt: record.defaultScheduledAt,
+    defaultScheduledAt,
     selected: false,
-    scheduledAt: record.defaultScheduledAt,
+    scheduledAt: defaultScheduledAt,
   };
 }
 

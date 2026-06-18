@@ -16,12 +16,29 @@ type FitnessMacroGoal = {
   updatedAt?: string;
 };
 
-const GOAL_PATCH_KEYS = ['weightGoal', 'calories'] as const;
+function toOptionalNumber(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const n = typeof value === 'number' ? value : Number(String(value).replace(',', '.'));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function toOptionalInt(value: unknown): number | null | undefined {
+  const n = toOptionalNumber(value);
+  if (n === undefined) return undefined;
+  if (n === null) return null;
+  return Math.trunc(n);
+}
 
 function pickGoalPatch(body: Record<string, unknown>) {
   const payload: Record<string, unknown> = {};
-  for (const key of GOAL_PATCH_KEYS) {
-    if (key in body) payload[key] = body[key];
+  if ('weightGoal' in body) {
+    const weightGoal = toOptionalNumber(body.weightGoal);
+    if (weightGoal !== undefined) payload.weightGoal = weightGoal;
+  }
+  if ('calories' in body) {
+    const calories = toOptionalInt(body.calories);
+    if (calories !== undefined) payload.calories = calories;
   }
   return payload;
 }

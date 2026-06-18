@@ -3,6 +3,7 @@ import { getCalendarWeekday } from '@/hooks/use-calendar-day-change';
 import { queryKeys } from '@/lib/query-keys';
 import { getLatestBodyMeasure, getBodyMeasureHistory, getLatestBodyVital } from '@/services/body-measure';
 import { getDietDay } from '@/services/diet';
+import { getFinancialGoals, getMonthlyExpenses, getNotifications } from '@/services/finance';
 import { getTasksDay, getTasksSummary, getTasksToday, getTaskDisciplineHistory } from '@/services/task';
 import { getWorkoutDay, getWorkoutPlanSummary } from '@/services/workout';
 
@@ -74,6 +75,24 @@ export function prefetchRouteData(queryClient: QueryClient, href: string) {
       void queryClient.prefetchQuery({
         queryKey: queryKeys.taskWeekdaySummary,
         queryFn: getTasksSummary,
+      });
+      break;
+    case '/monthly-expenses':
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.monthlyExpenses(),
+        queryFn: () => getMonthlyExpenses(),
+      });
+      break;
+    case '/finance-goals':
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.financeGoals(),
+        queryFn: () => getFinancialGoals('progress'),
+      });
+      break;
+    case '/notifications':
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.notifications(),
+        queryFn: () => getNotifications({ limit: 100 }),
       });
       break;
     default:

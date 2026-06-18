@@ -7,6 +7,7 @@ import { typeClass, typeToneClass } from '@/lib/typography';
 
 type PlanHeaderCardProps = {
   title: string;
+  subtitle?: string;
   rightSlot: ReactNode;
   statsSlot: ReactNode;
   className?: string;
@@ -16,6 +17,7 @@ type PlanHeaderCardProps = {
 
 export function PlanHeaderCard({
   title,
+  subtitle,
   rightSlot,
   statsSlot,
   className,
@@ -31,8 +33,18 @@ export function PlanHeaderCard({
       style={style}
     >
       <div className="relative flex h-full min-h-0 flex-col pb-4 pt-4">
-        <div className="flex h-10 items-center justify-between gap-4">
-          <p className={cn('min-w-0 truncate', typeClass.title, typeToneClass.accent)}>{title}</p>
+        <div
+          className={cn(
+            'flex justify-between gap-4',
+            subtitle ? 'min-h-10 items-start' : 'h-10 items-center',
+          )}
+        >
+          <div className="min-w-0">
+            <p className={cn('truncate', typeClass.title, typeToneClass.accent)}>{title}</p>
+            {subtitle ? (
+              <p className={cn('mt-0.5 truncate', typeClass.caption, typeToneClass.muted60)}>{subtitle}</p>
+            ) : null}
+          </div>
           {rightSlot}
         </div>
 

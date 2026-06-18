@@ -101,6 +101,14 @@ export function formatWalletAmount(
   return formatMoney(value, options);
 }
 
+export function formatBrlAmount(value: number, options?: { signed?: boolean }): string {
+  return formatMoney(value, {
+    ...options,
+    currency: 'BRL',
+    alreadyConverted: true,
+  });
+}
+
 /** Asset live/avg price — up to 8 fraction digits for micro-cap crypto quotes. */
 export function formatWalletAssetPrice(
   value: number,

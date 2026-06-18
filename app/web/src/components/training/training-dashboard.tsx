@@ -7,6 +7,7 @@ import { TrainingNotesCard } from '@/components/training/training-notes-card';
 import { TrainingPlanHeaderCard } from '@/components/training/training-plan-header-card';
 import { TrainingPlanSidebarCard } from '@/components/training/training-plan-sidebar-card';
 import {
+  DashboardSidebarColumn,
   DashboardTwoColumnLayout,
   dashboardGridArea,
 } from '@/components/ui/dashboard-two-column-layout';
@@ -49,10 +50,7 @@ export function TrainingDashboard() {
           style={dashboardGridArea('main', 'body')}
         />
 
-        <div
-          className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2.5 overflow-hidden"
-          style={{ ...dashboardGridArea('sidebar', 'header'), gridRow: '1 / 3' }}
-        >
+        <DashboardSidebarColumn>
           <TrainingPlanSidebarCard
             data={{
               title: 'Workout Plan',
@@ -78,7 +76,7 @@ export function TrainingDashboard() {
             ui={{ saving: state.ui.sidebarSaving }}
             className="min-h-0 flex-1"
           />
-        </div>
+        </DashboardSidebarColumn>
       </DashboardTwoColumnLayout>
 
       <TrainingExerciseEditSheet

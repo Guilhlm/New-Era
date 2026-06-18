@@ -44,7 +44,7 @@ export function DisciplineOverviewCard({
             <button
               type="button"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-layer2-half text-text/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60"
-              aria-label="Informações sobre Discipline"
+              aria-label="Information about Discipline"
               aria-describedby={tooltipId}
               onClick={(e) => {
                 e.preventDefault();

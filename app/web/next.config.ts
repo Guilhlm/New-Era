@@ -1,5 +1,29 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+/**
+ * CSP base. 'unsafe-inline' permanece em script/style porque o Next injeta
+ * scripts/estilos inline de hidratação sem nonce neste setup; ainda assim,
+ * restringe origens externas (object-src/base-uri/frame-ancestors/form-action),
+ * mitigando a maior parte dos vetores de XSS e clickjacking.
+ * Próximo passo recomendado: migrar para CSP baseada em nonce.
+ */
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  "connect-src 'self'",
+]
+  .join("; ")
+  .concat(";");
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -13,6 +37,7 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=()",
   },
+  { key: "Content-Security-Policy", value: contentSecurityPolicy },
 ];
 
 const nextConfig: NextConfig = {

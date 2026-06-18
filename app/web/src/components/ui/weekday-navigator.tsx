@@ -28,11 +28,11 @@ export function WeekdayNavigator({
         className,
       )}
       role="group"
-      aria-label="Selecionar dia da semana"
+      aria-label="Select weekday"
     >
       <button
         type="button"
-        aria-label="Dia anterior"
+        aria-label="Previous day"
         disabled={disabled}
         className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text/70 transition-colors hover:bg-red/15 hover:text-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60 active:scale-95 disabled:opacity-50"
         onClick={onPrevDay}
@@ -47,7 +47,7 @@ export function WeekdayNavigator({
 
       <button
         type="button"
-        aria-label="Próximo dia"
+        aria-label="Next day"
         disabled={disabled}
         className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text/70 transition-colors hover:bg-red/15 hover:text-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60 active:scale-95 disabled:opacity-50"
         onClick={onNextDay}

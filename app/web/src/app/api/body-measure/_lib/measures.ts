@@ -1,4 +1,5 @@
 import { backendApiUrl } from '@/app/api/_lib/auth';
+import { readUpstreamJson } from '@/app/api/body-measure/_lib/upstream-json';
 
 export type BodyMeasureRecord = {
   id: string;
@@ -70,8 +71,7 @@ export async function fetchLatestMeasure(token: string) {
     throw new Error(text || 'Failed to load latest measure');
   }
 
-  const latest = (await res.json()) as BodyMeasureRecord | null;
-  return latest;
+  return readUpstreamJson<BodyMeasureRecord>(res);
 }
 
 export async function fetchUserMeasures(token: string, _userId: string) {
@@ -84,7 +84,8 @@ export async function fetchUserMeasures(token: string, _userId: string) {
     throw new Error(text || 'Failed to load measures');
   }
 
-  return (await res.json()) as BodyMeasureRecord[];
+  const measures = await readUpstreamJson<BodyMeasureRecord[]>(res);
+  return measures ?? [];
 }
 
 function toOptionalNumber(value: unknown): number | undefined {

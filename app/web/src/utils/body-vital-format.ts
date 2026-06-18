@@ -32,7 +32,7 @@ export function normalizeVitalCompare(value: string, kind: 'decimal' | 'numeric'
 export function formatPercentLabel(value: string): string {
   const n = parseNumeric(value);
   if (n == null) return '—';
-  return `${n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%`;
+  return `${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%`;
 }
 
 export function formatBpmLabel(value: string): string {
@@ -44,19 +44,19 @@ export function formatBpmLabel(value: string): string {
 export function formatKcalLabel(value: string): string {
   const n = parseNumeric(value);
   if (n == null) return '—';
-  return `${Math.round(n).toLocaleString('pt-BR')} Kcal`;
+  return `${Math.round(n).toLocaleString('en-US')} Kcal`;
 }
 
 export function formatKgLabel(value: string): string {
   const n = parseNumeric(value);
   if (n == null) return '—';
-  return `${n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} Kg`;
+  return `${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} Kg`;
 }
 
 export function formatHoursLabel(value: string): string {
   const n = parseNumeric(value);
   if (n == null) return '—';
-  return `${n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} h`;
+  return `${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} h`;
 }
 
 export function formatVitalValueLabel(field: HealthVitalField, value: string): string {

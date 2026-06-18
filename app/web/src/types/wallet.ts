@@ -63,6 +63,8 @@ export type WalletTransactionVm = {
   title: string;
   subtitle: string;
   amount: number;
+  currency?: WalletCurrency;
+  alreadyConverted?: boolean;
 };
 
 export type WalletPortfolioInsightVm = {

@@ -57,6 +57,23 @@ export class FinanceExecutionService {
     return Math.round(value * 1e6) / 1e6;
   }
 
+  private depositCategoryForSource(source: DepositFundsDto['source']) {
+    if (source === 'CARD') return FINANCE_TX_CATEGORY.DEPOSIT_CARD;
+    if (source === 'MONTHLY_SALARY') return FINANCE_TX_CATEGORY.DEPOSIT_SALARY;
+    if (source === 'EXTRA_INCOME') return FINANCE_TX_CATEGORY.DEPOSIT_EXTRA_INCOME;
+    return FINANCE_TX_CATEGORY.DEPOSIT_CASH;
+  }
+
+  private async assertMonthlyIncomeConfigured(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthlyIncome: true },
+    });
+    if (Number(user?.monthlyIncome ?? 0) <= 0) {
+      throw new BadRequestException('Set your monthly salary to use the finance area.');
+    }
+  }
+
   private async toUsdtAmount(
     amount: number,
     currency: 'USDT' | 'BRL' = 'USDT',
@@ -85,9 +102,10 @@ export class FinanceExecutionService {
     ticker: string,
     data: MarketTradeDto,
     storedPrice = 0,
+    allowClientFallback = true,
   ): Promise<number> {
     const price = await this.marketProviders.resolvePriceUsdt(ticker, {
-      clientPrice: data.price,
+      clientPrice: allowClientFallback ? data.price : undefined,
       storedPrice,
     });
     if (price <= 0) {
@@ -154,13 +172,39 @@ export class FinanceExecutionService {
   }
 
   async deposit(userId: string, data: DepositFundsDto) {
+    await this.assertMonthlyIncomeConfigured(userId);
     const currency = data.currency ?? 'USDT';
+    const source = data.source ?? 'EXTRA_INCOME';
     const fxRate =
       currency === 'BRL' ? await this.marketProviders.getUsdtToBrlRate() : undefined;
     const amountUsdt = await this.toUsdtAmount(data.amount, currency);
     const wallet = await this.resolveCashWallet(userId, data.walletId);
+    const card =
+      source === 'CARD'
+        ? data.cardId
+          ? await this.prisma.card.findUnique({ where: { id: data.cardId } })
+          : null
+        : null;
+
+    if (source === 'CARD') {
+      if (!card) {
+        throw new BadRequestException('Select a card for card deposits.');
+      }
+      assertResourceOwner(card.userId, userId, 'Card');
+      const limitTotal = Number(card.limitTotal ?? 0);
+      const limitUsage = Number(card.limitUsage ?? 0);
+      if (limitTotal > 0 && limitUsage + data.amount > limitTotal) {
+        throw new BadRequestException('Insufficient card limit.');
+      }
+    }
 
     await this.prisma.$transaction(async (tx) => {
+      if (source === 'CARD' && card) {
+        await tx.card.update({
+          where: { id: card.id },
+          data: { limitUsage: { increment: data.amount } },
+        });
+      }
       await creditWallet(tx, wallet.id, amountUsdt);
       await tx.transaction.create({
         data: {
@@ -169,8 +213,8 @@ export class FinanceExecutionService {
           amount: decimalUsdt(amountUsdt),
           description:
             data.description ??
-            `Deposit • ${data.amount.toFixed(2)} ${currency} → ${amountUsdt.toFixed(2)} USDT`,
-          category: FINANCE_TX_CATEGORY.DEPOSIT,
+            `Deposit (${source}) • ${data.amount.toFixed(2)} ${currency} → ${amountUsdt.toFixed(2)} USDT`,
+          category: this.depositCategoryForSource(source),
           toWalletId: wallet.id,
           date: new Date(),
           ...fxSnapshotFields({
@@ -187,6 +231,7 @@ export class FinanceExecutionService {
   }
 
   async withdraw(userId: string, data: WithdrawFundsDto) {
+    await this.assertMonthlyIncomeConfigured(userId);
     const currency = data.currency ?? 'USDT';
     const wallet = await this.resolveCashWallet(userId, data.walletId);
     const balance = toNumber(wallet.balance);
@@ -227,8 +272,9 @@ export class FinanceExecutionService {
   }
 
   async registerPosition(userId: string, data: RegisterPositionDto) {
+    await this.assertMonthlyIncomeConfigured(userId);
     if (data.costTotal == null && data.avgPrice == null) {
-      throw new BadRequestException('Informe o total pago ou o preço médio.');
+      throw new BadRequestException('Enter the total paid or average price.');
     }
 
     const ticker = data.ticker.toUpperCase();
@@ -248,7 +294,7 @@ export class FinanceExecutionService {
     const name = data.name?.trim() || asset?.name || quote?.name || ticker;
     const type = data.type ?? asset?.type ?? quote?.type;
     if (!type) {
-      throw new BadRequestException('Tipo de ativo não reconhecido.');
+      throw new BadRequestException('Unrecognized asset type.');
     }
 
     const existing = await this.prisma.investment.findFirst({
@@ -326,7 +372,7 @@ export class FinanceExecutionService {
           currentValue: derived.currentValue,
           costValue: derived.costValue,
           lastAction: InvestmentLastAction.BUY,
-          notes: data.notes ?? 'Posição registrada manualmente',
+          notes: data.notes ?? 'Position registered manually',
         },
       });
 
@@ -349,6 +395,7 @@ export class FinanceExecutionService {
   }
 
   async tradeByTicker(userId: string, data: MarketTradeDto) {
+    await this.assertMonthlyIncomeConfigured(userId);
     const ticker = data.ticker.toUpperCase();
     let shares = this.roundShares(data.shares);
 
@@ -360,26 +407,26 @@ export class FinanceExecutionService {
     });
 
     const storedPrice = existing ? toNumber(existing.currentPrice) : 0;
-    let price = data.price;
-    let debitUsdt = roundUsdt(shares * price);
-    let totalUsdt = debitUsdt;
+    let price = 0;
+    let debitUsdt = 0;
+    let totalUsdt = 0;
 
     if (data.action === InvestmentLastAction.SELL) {
-      if (price <= 0) {
-        price = await this.resolveTradePriceUsdt(ticker, data, storedPrice);
-        debitUsdt = roundUsdt(shares * price);
-        totalUsdt = debitUsdt;
-      }
-
       if (!existing) {
         throw new BadRequestException('No position to sell.');
       }
+
+      // Preço de venda sempre resolvido no servidor; nunca confiar no valor do cliente.
+      price = await this.resolveTradePriceUsdt(ticker, data, storedPrice, false);
+      debitUsdt = roundUsdt(shares * price);
+      totalUsdt = debitUsdt;
+
       const currentShares = toNumber(existing.shares);
       if (shares > currentShares + 1e-8) {
         throw new BadRequestException('Insufficient shares.');
       }
     } else {
-      price = await this.resolveTradePriceUsdt(ticker, data, storedPrice);
+      price = await this.resolveTradePriceUsdt(ticker, data, storedPrice, false);
 
       try {
         const resolved = resolveBuyTrade(price, walletBalance, {
@@ -498,6 +545,7 @@ export class FinanceExecutionService {
     userId: string,
     data: TradeInvestmentDto,
   ) {
+    await this.assertMonthlyIncomeConfigured(userId);
     const existing = await this.prisma.investment.findUnique({
       where: { id: investmentId },
     });

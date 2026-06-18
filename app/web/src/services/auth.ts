@@ -14,9 +14,13 @@ export type RegisterInput = {
   cpf: string;
 };
 
-export type ResetPasswordInput = {
+export type RequestPasswordResetInput = {
   email: string;
   cpf: string;
+};
+
+export type ResetPasswordInput = {
+  token: string;
   newPassword: string;
 };
 
@@ -26,6 +30,13 @@ export function login(input: LoginInput) {
 
 export function register(input: RegisterInput) {
   return postJson<AuthResult, RegisterInput>('/api/auth/register', input);
+}
+
+export function requestPasswordReset(input: RequestPasswordResetInput) {
+  return postJson<AuthResult, RequestPasswordResetInput>(
+    '/api/auth/forgot-password',
+    input,
+  );
 }
 
 export function resetPassword(input: ResetPasswordInput) {

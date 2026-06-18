@@ -140,7 +140,7 @@ export function formatExerciseDisplayName(name: string, equipment: string | null
 
 export function formatWeightLabel(weightKg: number | null) {
   if (weightKg === null) return '—';
-  return `${weightKg % 1 === 0 ? weightKg.toFixed(0) : weightKg.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}kg`;
+  return `${weightKg % 1 === 0 ? weightKg.toFixed(0) : weightKg.toLocaleString('en-US', { maximumFractionDigits: 1 })}kg`;
 }
 
 export function formatSeriesLabel(series: number | null) {

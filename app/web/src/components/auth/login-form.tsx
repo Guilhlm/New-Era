@@ -48,7 +48,6 @@ export function LoginForm({ title }: LoginFormProps) {
             autoComplete="username"
             placeholder="CPF 000.000.000-00"
             value={loginForm.data.identifierViewValue}
-            inputClassName={loginForm.data.tones.identifier}
             onChange={(e) => loginForm.actions.setIdentifierValue(e.target.value)}
           />
           <AuthPasswordField
@@ -56,7 +55,6 @@ export function LoginForm({ title }: LoginFormProps) {
             onChange={loginForm.actions.setPassword}
             placeholder="Password"
             autoComplete="current-password"
-            inputClassName={loginForm.data.tones.password}
             toggle={loginForm.passwordToggles.passToggle}
           />
           <AuthPasswordField
@@ -64,7 +62,6 @@ export function LoginForm({ title }: LoginFormProps) {
             onChange={loginForm.actions.setConfirmPassword}
             placeholder="Confirm Password"
             autoComplete="new-password"
-            inputClassName={loginForm.data.tones.confirmPassword}
             toggle={loginForm.passwordToggles.confirmToggle}
           />
         </div>

@@ -1,5 +1,10 @@
-import { DashboardPlaceholder } from '@/components/ui/dashboard-placeholder';
+import { NotificationsDashboard } from '@/components/dashboards-lazy';
+import { FinanceIncomeGate } from '@/components/finance/finance-income-gate';
 
 export default function NotificationsPage() {
-  return <DashboardPlaceholder title="Notifications" />;
+  return (
+    <FinanceIncomeGate>
+      <NotificationsDashboard />
+    </FinanceIncomeGate>
+  );
 }

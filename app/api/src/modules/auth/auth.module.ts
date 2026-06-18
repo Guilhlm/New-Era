@@ -16,7 +16,7 @@ import { requireJwtSecret } from '../../common/config/env.util';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: requireJwtSecret(configService),
-        signOptions: { expiresIn: '1d', algorithm: 'HS256' },
+        signOptions: { expiresIn: '7d', algorithm: 'HS256' },
       }),
     }),
   ],

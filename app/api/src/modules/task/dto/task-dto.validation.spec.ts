@@ -62,7 +62,7 @@ describe('CreateTasksBulkDto', () => {
       weekday: 1,
       tasks: [
         {
-          title: 'Refeição: Almoço',
+          title: 'Meal: Lunch',
           scheduledAt: '12:00',
           sourceType: 'DIET_MEAL',
           sourceId: 'meal-1',

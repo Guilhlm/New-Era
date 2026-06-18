@@ -21,7 +21,7 @@ export function DietMealCollapsedIngredientsLine({ items }: DietMealCollapsedIng
       <CollapsedItemsPreview
         count={0}
         countLabel=""
-        emptyLabel="Sem ingredientes — toque para expandir"
+        emptyLabel="No ingredients — tap to expand"
         previewNames={[]}
       />
     );

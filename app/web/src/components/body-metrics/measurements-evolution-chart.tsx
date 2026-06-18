@@ -66,12 +66,12 @@ export function MeasurementsEvolutionChart({ data, className }: MeasurementsEvol
           >
             {data.loading ? (
               <div className="flex h-full items-center justify-center">
-                <p className={cn(typeClass.body, typeToneClass.muted60)}>Carregando histórico…</p>
+                <p className={cn(typeClass.body, typeToneClass.muted60)}>Loading history…</p>
               </div>
             ) : !hasRawPoints ? (
               <div className="flex h-full items-center justify-center px-4">
                 <p className={cn('text-center', typeClass.body, typeToneClass.muted60)}>
-                  {data.emptyMessage ?? 'Salve medidas para ver a evolução.'}
+                  {data.emptyMessage ?? 'Save measurements to see the evolution.'}
                 </p>
               </div>
             ) : (
@@ -83,7 +83,7 @@ export function MeasurementsEvolutionChart({ data, className }: MeasurementsEvol
                   preserveAspectRatio="none"
                   className="pointer-events-none absolute inset-0 h-full w-full"
                   role="img"
-                  aria-label="Gráfico de evolução das medidas"
+                  aria-label="Measurements evolution chart"
                 >
                   {plotted.length > 1 ? (
                     <path

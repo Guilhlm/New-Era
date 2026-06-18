@@ -6,17 +6,51 @@ import {
 } from '../../../common/auth/ownership.util';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { syncUserFinanceState } from '../common/finance-balance.util';
+import { creditWallet, debitWalletAtomic } from '../common/ledger.util';
 import { FINANCE_TX_CATEGORY } from '../investment/dto/investment.dto';
+import { reverseGoalContributionByTransaction } from '../financial-goal/finance-goal-contribution.util';
 import type {
   CreateTransactionDto,
   UpdateTransactionDto,
 } from './dto/transaction.dto';
+
+/**
+ * Categorias gerenciadas exclusivamente pelos fluxos de domínio
+ * (deposit/withdraw/trade/goals). Não podem ser forjadas pelo endpoint genérico,
+ * pois disparam lógica especial de reversão de saldo/portfólio.
+ */
+const RESERVED_TX_CATEGORIES = new Set<string>(
+  Object.values(FINANCE_TX_CATEGORY),
+);
 
 @Injectable()
 export class TransactionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, data: CreateTransactionDto) {
+    if (!(data.amount > 0)) {
+      throw new BadRequestException('Amount must be greater than zero.');
+    }
+
+    if (data.category && RESERVED_TX_CATEGORIES.has(data.category)) {
+      throw new BadRequestException(
+        'This category is managed by deposit, withdraw, trade or goal flows.',
+      );
+    }
+
+    if (data.type === TransactionType.TRANSFER) {
+      if (!data.fromWalletId || !data.toWalletId) {
+        throw new BadRequestException(
+          'Transfers require both source and destination wallets.',
+        );
+      }
+      if (data.fromWalletId === data.toWalletId) {
+        throw new BadRequestException(
+          'Source and destination wallets must differ.',
+        );
+      }
+    }
+
     await this.assertWalletsOwnership(userId, [
       data.fromWalletId,
       data.toWalletId,
@@ -24,17 +58,11 @@ export class TransactionService {
 
     const transaction = await this.prisma.$transaction(async (tx) => {
       if (data.type === TransactionType.INCOME && data.toWalletId) {
-        await tx.wallet.update({
-          where: { id: data.toWalletId },
-          data: { balance: { increment: data.amount } },
-        });
+        await creditWallet(tx, data.toWalletId, data.amount);
       }
 
       if (data.type === TransactionType.EXPENSE && data.fromWalletId) {
-        await tx.wallet.update({
-          where: { id: data.fromWalletId },
-          data: { balance: { decrement: data.amount } },
-        });
+        await debitWalletAtomic(tx, data.fromWalletId, data.amount);
       }
 
       if (
@@ -42,14 +70,8 @@ export class TransactionService {
         data.fromWalletId &&
         data.toWalletId
       ) {
-        await tx.wallet.update({
-          where: { id: data.fromWalletId },
-          data: { balance: { decrement: data.amount } },
-        });
-        await tx.wallet.update({
-          where: { id: data.toWalletId },
-          data: { balance: { increment: data.amount } },
-        });
+        await debitWalletAtomic(tx, data.fromWalletId, data.amount);
+        await creditWallet(tx, data.toWalletId, data.amount);
       }
 
       return tx.transaction.create({
@@ -101,10 +123,19 @@ export class TransactionService {
     const existing = await this.findOne(id, userId);
 
     await this.prisma.$transaction(async (tx) => {
+      if (existing.category === FINANCE_TX_CATEGORY.FINANCIAL_GOAL_CONTRIBUTION) {
+        await reverseGoalContributionByTransaction(tx, userId, id);
+        return;
+      }
+
       if (
         existing.type === TransactionType.INCOME &&
         existing.toWalletId &&
-        existing.category === FINANCE_TX_CATEGORY.DEPOSIT
+        (existing.category === FINANCE_TX_CATEGORY.DEPOSIT ||
+          existing.category === FINANCE_TX_CATEGORY.DEPOSIT_CARD ||
+          existing.category === FINANCE_TX_CATEGORY.DEPOSIT_CASH ||
+          existing.category === FINANCE_TX_CATEGORY.DEPOSIT_SALARY ||
+          existing.category === FINANCE_TX_CATEGORY.DEPOSIT_EXTRA_INCOME)
       ) {
         await tx.wallet.update({
           where: { id: existing.toWalletId },

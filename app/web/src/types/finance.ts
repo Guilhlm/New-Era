@@ -57,6 +57,8 @@ export type FinanceSummaryRecord = {
     title: string;
     subtitle: string;
     amount: number;
+    currency?: QuoteCurrency;
+    alreadyConverted?: boolean;
   }>;
   performance: {
     period: string;
@@ -101,6 +103,8 @@ export type DepositFundsInput = {
   currency?: QuoteCurrency;
   walletId?: string;
   description?: string;
+  source?: 'CARD' | 'CASH' | 'MONTHLY_SALARY' | 'EXTRA_INCOME';
+  cardId?: string;
 };
 
 export type WithdrawFundsInput = DepositFundsInput;
@@ -173,4 +177,151 @@ export type MarketTradeInput = {
   shares: number;
   price: number;
   budgetUsdt?: number;
+};
+
+export type MonthlyExpenseRecord = {
+  id: string;
+  date: string;
+  title: string;
+  categoryId: string | null;
+  categoryName: string;
+  amount: number;
+  account: string;
+  status: 'paid' | 'pending';
+  fixed: boolean;
+  source: string;
+  linkedTransactionId: string | null;
+  editable: boolean;
+  deletable?: boolean;
+};
+
+export type MonthlyExpenseCategoryRecord = {
+  id: string;
+  name: string;
+  budget: number;
+  spent: number;
+  isSystem: boolean;
+  isLocked: boolean;
+  systemKey: string | null;
+};
+
+export type MonthlyExpenseCardRecord = {
+  id: string;
+  holderName: string;
+  lastFour: string;
+  brand: string;
+  color: string;
+  limitTotal: number;
+  limitUsage: number;
+  type: 'CREDIT' | 'DEBIT';
+};
+
+export type MonthlyExpensesSummaryRecord = {
+  month: string;
+  summary: {
+    spent: number;
+    budget: number;
+    remaining: number;
+    vsLastMonth: number;
+    income: number;
+    cardLimit: number;
+    fixedCommitments: number;
+  };
+  categories: MonthlyExpenseCategoryRecord[];
+  cards: MonthlyExpenseCardRecord[];
+  expenses: MonthlyExpenseRecord[];
+};
+
+export type CreateMonthlyExpenseInput = {
+  title: string;
+  amount: number;
+  categoryId?: string;
+  account?: string;
+  date?: string;
+  status?: 'paid' | 'pending';
+};
+
+export type UpdateMonthlyExpenseInput = Partial<CreateMonthlyExpenseInput>;
+
+export type CreateMonthlyExpenseCategoryInput = {
+  name: string;
+  budget?: number;
+  spentAdjustment?: number;
+};
+
+export type UpdateMonthlyExpenseCategoryInput = Partial<CreateMonthlyExpenseCategoryInput>;
+
+export type CreateMonthlyExpenseCardInput = {
+  holderName: string;
+  lastFour: string;
+  brand?: string;
+  color?: string;
+  limitTotal: number;
+  limitUsage?: number;
+  type?: 'CREDIT' | 'DEBIT';
+};
+
+export type UpdateMonthlyExpenseCardInput = Partial<CreateMonthlyExpenseCardInput>;
+
+export type FinancialGoalRecord = {
+  id: string;
+  title: string;
+  description: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string | null;
+  isSystem: boolean;
+  isLocked: boolean;
+  systemKey: string | null;
+  activities: Array<{
+    id: string;
+    label: string;
+    amount: number;
+    date: string;
+    source?: string | null;
+    canDelete?: boolean;
+  }>;
+};
+
+export type FinancialGoalsListRecord = {
+  goals: FinancialGoalRecord[];
+  trends: {
+    saved: number;
+    progress: number;
+  };
+};
+
+export type CreateFinancialGoalInput = {
+  title: string;
+  description?: string;
+  targetAmount: number;
+  currentAmount?: number;
+  deadline?: string;
+};
+
+export type UpdateFinancialGoalInput = Partial<CreateFinancialGoalInput>;
+
+export type UpdateFinancialGoalProgressInput = {
+  amount: number;
+  mode?: 'set' | 'add';
+  label?: string;
+};
+
+export type NotificationRecord = {
+  id: string;
+  category: 'tasks' | 'finance' | 'goals' | 'wallet' | 'diet' | 'training' | 'body' | 'system';
+  kind: 'alert' | 'reminder' | 'insight' | 'update';
+  priority: 'urgent' | 'normal' | 'low';
+  period: 'daily' | 'weekly' | 'monthly';
+  title: string;
+  body: string;
+  read: boolean;
+  href?: string | null;
+  ctaLabel?: string | null;
+  createdAt: string;
+};
+
+export type NotificationsResponseRecord = {
+  unreadCount: number;
+  items: NotificationRecord[];
 };

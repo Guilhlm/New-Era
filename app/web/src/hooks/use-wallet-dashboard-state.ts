@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import type { WalletCashMode } from '@/components/wallet/wallet-cash-dialog';
 import { useIsClientMounted } from '@/hooks/use-is-client-mounted';
@@ -20,6 +20,7 @@ import type { WalletInvestmentRowVm } from '@/types/wallet';
 import type {
   WalletInvestmentTab,
   WalletPerformancePeriod,
+  WalletCurrency,
 } from '@/types/wallet';
 import {
   buildEmptyWalletStats,
@@ -29,7 +30,7 @@ import {
 } from '@/utils/finance-mapper';
 import { mapMarketRowToVm } from '@/utils/market-mapper';
 import { clampFinanceUsdt, convertUsdtToDisplay } from '@/utils/wallet';
-import { getMarketAssetRow } from '@/services/finance';
+import { getMarketAssetRow, getMonthlyExpenseCards } from '@/services/finance';
 import { HttpError } from '@/services/http';
 
 const INVESTMENT_TABS: { id: WalletInvestmentTab; label: string }[] = [
@@ -60,6 +61,11 @@ export function useWalletDashboardState() {
   const summaryQuery = useWalletSummaryQuery(performancePeriod);
   const marketQuery = useWalletMarketQuery(investmentTab, currency as QuoteCurrency);
   const fxQuery = useWalletFxQuery();
+  const cardsQuery = useQuery({
+    queryKey: queryKeys.monthlyExpenseCards,
+    queryFn: getMonthlyExpenseCards,
+    staleTime: 30_000,
+  });
   const mutations = useWalletMutations({ investmentTab, performancePeriod, currency });
   const mounted = useIsClientMounted();
 
@@ -111,9 +117,11 @@ export function useWalletDashboardState() {
   }, [marketQuery.data, currency, pinnedMarketRow]);
 
   const marketTotal = firstMarketPage?.total ?? marketRows.length;
-  const fxRate =
-    firstMarketPage?.fxRate ??
-    (currency === 'BRL' ? (fxQuery.data?.rate ?? 1) : 1);
+  const brlFxRate =
+    fxQuery.data?.rate ??
+    (firstMarketPage?.currency === 'BRL' ? firstMarketPage.fxRate : undefined) ??
+    1;
+  const fxRate = currency === 'BRL' ? brlFxRate : 1;
   const isSummaryLoading = mounted && summaryQuery.isPending && !summaryQuery.data;
   const isMarketLoading =
     mounted &&
@@ -125,7 +133,7 @@ export function useWalletDashboardState() {
   const hasMoreMarketRows = Boolean(marketQuery.hasNextPage);
   const isLoadingMoreMarketRows = marketQuery.isFetchingNextPage;
 
-  const displayOptions = { currency, fxRate };
+  const displayOptions = { currency: currency as WalletCurrency, fxRate };
 
   const data = useMemo(
     () => ({
@@ -168,11 +176,18 @@ export function useWalletDashboardState() {
       performancePeriods: PERFORMANCE_PERIODS,
       primaryWalletId: summary?.primaryWalletId ?? null,
       walletCashAvailable: summary?.walletCashAvailable ?? 0,
+      cards: (cardsQuery.data ?? []).map((card) => ({
+        id: card.id,
+        label: `${card.brand === 'mastercard' ? 'Mastercard' : 'Visa'} •••• ${card.lastFour}`,
+        limit: card.limitTotal,
+        used: card.limitUsage,
+      })),
       marketQuotedAt: firstMarketPage?.quotedAt ?? null,
       marketTotal,
       fxRate,
+      brlFxRate,
     }),
-    [summary, firstMarketPage, marketRows, marketTotal, currency, fxRate],
+    [summary, firstMarketPage, marketRows, marketTotal, currency, fxRate, brlFxRate, fxQuery.data?.rate, cardsQuery.data],
   );
 
   return {
@@ -280,6 +295,7 @@ export function useWalletDashboardState() {
         amount: number;
         currency: QuoteCurrency;
         mode: WalletCashMode;
+        source?: 'MONTHLY_SALARY' | 'EXTRA_INCOME';
       }) => {
         setSaving(true);
         try {
@@ -287,6 +303,7 @@ export function useWalletDashboardState() {
             amount: input.amount,
             currency: input.currency,
             walletId: summary?.primaryWalletId ?? undefined,
+            source: input.mode === 'deposit' ? input.source : undefined,
           };
           if (input.mode === 'withdraw') {
             await mutations.withdrawFunds(payload);

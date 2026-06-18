@@ -4,14 +4,19 @@ import { useState } from 'react';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { formatCpfInput } from '@/components/auth/auth-form-shared';
 import { usePasswordToggle } from '@/hooks/use-password-toggle';
-import { resetPassword } from '@/services/auth';
+import { requestPasswordReset, resetPassword } from '@/services/auth';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 
-const MIN_PASSWORD_LEN = 6;
+const MIN_PASSWORD_LEN = 8;
+const MIN_TOKEN_LEN = 16;
+
+type ResetStep = 'request' | 'confirm';
 
 export function useResetPasswordForm() {
+  const [step, setStep] = useState<ResetStep>('request');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
+  const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const passwordToggle = usePasswordToggle(false);
@@ -20,13 +25,9 @@ export function useResetPasswordForm() {
     setCpf(formatCpfInput(value));
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submitRequest(e: React.FormEvent) {
     e.preventDefault();
     const emailNormalized = email.trim().toLowerCase();
-    if (!emailNormalized) {
-      toastAuthError('Enter your email.');
-      return;
-    }
     if (!emailNormalized.includes('@')) {
       toastAuthError('Enter a valid email.');
       return;
@@ -38,6 +39,28 @@ export function useResetPasswordForm() {
       return;
     }
 
+    setLoading(true);
+    try {
+      await requestPasswordReset({ email: emailNormalized, cpf: cpfDigits });
+      toastUpdated(CRUD_TOAST.passwordResetRequested);
+      setStep('confirm');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Could not request password reset.';
+      toastAuthError(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitConfirm(e: React.FormEvent) {
+    e.preventDefault();
+    const cleanToken = token.trim();
+    if (cleanToken.length < MIN_TOKEN_LEN) {
+      toastAuthError('Enter the reset code you received.');
+      return;
+    }
+
     if (newPassword.trim().length < MIN_PASSWORD_LEN) {
       toastAuthError(`Password must be at least ${MIN_PASSWORD_LEN} characters.`);
       return;
@@ -45,9 +68,11 @@ export function useResetPasswordForm() {
 
     setLoading(true);
     try {
-      await resetPassword({ email: emailNormalized, cpf: cpfDigits, newPassword });
+      await resetPassword({ token: cleanToken, newPassword });
       toastUpdated(CRUD_TOAST.passwordUpdated);
+      setToken('');
       setNewPassword('');
+      setStep('request');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not reset password.';
       toastAuthError(message);
@@ -58,8 +83,10 @@ export function useResetPasswordForm() {
 
   return {
     data: {
+      step,
       email,
       cpf,
+      token,
       newPassword,
       loading,
       cpfViewValue: formatCpfInput(cpf),
@@ -68,8 +95,11 @@ export function useResetPasswordForm() {
     actions: {
       setEmail,
       setCpfValue,
+      setToken,
       setNewPassword,
-      submit,
+      backToRequest: () => setStep('request'),
+      submitRequest,
+      submitConfirm,
     },
   };
 }

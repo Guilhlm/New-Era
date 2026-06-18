@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import { DietMacroDonut } from '@/components/diet/diet-macro-donut';
+import { DietMacroLegendRow } from '@/components/diet/diet-macro-legend-row';
 import type { DietMacroLegendVm, DietMacroSegmentVm } from '@/types/diet';
 
 type DietDailyMacrosCardProps = {
@@ -18,33 +19,16 @@ type DietDailyMacrosCardProps = {
 
 export function DietDailyMacrosCard({ data, className }: DietDailyMacrosCardProps) {
   return (
-    <Card
-      className={cn(
-        'flex h-full min-h-0 flex-col items-center justify-center gap-6 px-5 py-6 lg:px-6',
-        className,
-      )}
-    >
-      <p className={cn('w-full shrink-0 text-center', typeClass.title, typeToneClass.default)}>{data.title}</p>
+    <Card className={cn('flex h-full min-h-0 flex-col overflow-hidden p-5 lg:p-6', className)}>
+      <p className={cn('shrink-0 text-center', typeClass.title, typeToneClass.default)}>{data.title}</p>
 
-      <DietMacroDonut data={{ totalKcalLabel: data.totalKcalLabel, segments: data.segments }} />
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-3">
+        <DietMacroDonut data={{ totalKcalLabel: data.totalKcalLabel, segments: data.segments }} />
+      </div>
 
-      <div className="w-full shrink-0 space-y-3">
+      <div className="flex w-full shrink-0 flex-col gap-2">
         {data.legend.map((item) => (
-          <div key={item.key} className={cn('flex items-center justify-between gap-3', typeClass.body)}>
-            <div className="flex min-w-0 items-center gap-3">
-              <span
-                className={cn('h-4 w-4 shrink-0 rounded-[3px]', item.colorClassName)}
-                aria-hidden
-              />
-              <span className="truncate text-text/70">{item.label}</span>
-            </div>
-            <span className={cn('shrink-0 tabular-nums', typeClass.bodyStrong)}>
-              <span className={item.overTarget ? 'text-red' : 'text-red/90'}>
-                {Math.round(item.currentGrams)}
-              </span>
-              <span className={cn(typeClass.body, 'text-text/75')}> / {Math.round(item.targetGrams)}g</span>
-            </span>
-          </div>
+          <DietMacroLegendRow key={item.key} item={item} />
         ))}
       </div>
     </Card>

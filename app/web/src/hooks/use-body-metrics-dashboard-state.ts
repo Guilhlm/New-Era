@@ -15,7 +15,7 @@ export function useBodyMetricsDashboardState() {
   const historyState = useBodyMeasureHistory(query.measureSyncSignature);
   const vitalsState = useHealthVitals();
   const vitalHistoryState = useBodyVitalHistory(vitalsState.data.syncSignature);
-  const goalsState = useFitnessMacroGoal({ currentWeightKg: query.currentWeightKg });
+  const goalsState = useFitnessMacroGoal();
 
   return {
     data: {

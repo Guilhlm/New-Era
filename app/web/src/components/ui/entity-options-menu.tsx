@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { TbDotsVertical } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
 import { NativeDialog } from '@/components/ui/native-dialog';
 import { useAnchoredMenu } from '@/hooks/use-anchored-menu';
 import { typeClass, typeToneClass } from '@/lib/typography';
+import { walletDialogFieldClass, walletDialogSelectClass } from '@/components/wallet/wallet-dialog-layout';
 
 export type EntityOptionsMenuLabels = {
   triggerAriaLabel: string;
@@ -25,6 +27,9 @@ type EntityOptionsMenuProps = {
   onRename: (name: string) => void;
   onDelete: () => void;
   disabled?: boolean;
+  compact?: boolean;
+  fullWidth?: boolean;
+  triggerLabel?: string;
   labels: EntityOptionsMenuLabels;
 };
 
@@ -33,6 +38,9 @@ export function EntityOptionsMenu({
   onRename,
   onDelete,
   disabled = false,
+  compact = false,
+  fullWidth = false,
+  triggerLabel,
   labels,
 }: EntityOptionsMenuProps) {
   const [renameOpen, setRenameOpen] = useState(false);
@@ -83,10 +91,29 @@ export function EntityOptionsMenu({
         type="button"
         aria-label={labels.triggerAriaLabel}
         disabled={disabled}
-        className="inline-flex h-[2.7rem] w-[2.7rem] shrink-0 items-center justify-center rounded-md bg-layer2-half text-text/70 disabled:opacity-60"
+        className={cn(
+          'inline-flex shrink-0 items-center justify-center transition disabled:opacity-50',
+          fullWidth &&
+            cn(
+              'h-8 w-full gap-1.5 rounded-[5px] bg-layer2-half hover:bg-layer2',
+              typeClass.micro,
+              typeToneClass.muted60,
+            ),
+          compact && !fullWidth && 'h-7 w-7 rounded-md text-text/50 hover:bg-layer2 hover:text-text',
+          !compact && !fullWidth && 'h-[2.7rem] w-[2.7rem] rounded-md bg-layer2-half text-text/70 disabled:opacity-60',
+        )}
         onClick={() => setOpen((value) => !value)}
       >
-        <span className={cn(typeClass.title, 'leading-none')}>···</span>
+        {fullWidth && triggerLabel ? (
+          <>
+            <TbDotsVertical className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            {triggerLabel}
+          </>
+        ) : compact ? (
+          <TbDotsVertical className="h-3.5 w-3.5" aria-hidden />
+        ) : (
+          <span className={cn(typeClass.title, 'leading-none')}>···</span>
+        )}
       </button>
 
       {menu}
@@ -105,13 +132,15 @@ export function EntityOptionsMenu({
           }}
         >
           <p className={cn(typeClass.title, typeToneClass.default)}>{labels.renameTitle}</p>
-          <input
-            type="text"
-            value={draftName}
-            disabled={disabled}
-            className={cn('rounded-md bg-layer2 px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-red/60', typeClass.body, typeToneClass.default)}
-            onChange={(event) => setDraftName(event.target.value)}
-          />
+          <label className={walletDialogFieldClass}>
+            <input
+              type="text"
+              value={draftName}
+              disabled={disabled}
+              className={cn('w-full disabled:opacity-60', walletDialogSelectClass, typeClass.body, typeToneClass.default)}
+              onChange={(event) => setDraftName(event.target.value)}
+            />
+          </label>
           <div className="flex gap-2">
             <Button
               type="submit"

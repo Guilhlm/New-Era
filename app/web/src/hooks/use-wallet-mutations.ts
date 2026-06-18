@@ -30,22 +30,22 @@ import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 function formatWalletMutationError(message: string): string {
   switch (message) {
     case 'Insufficient wallet balance.':
-      return 'Saldo insuficiente. Deposite fundos antes de comprar.';
+      return 'Insufficient balance. Deposit funds before buying.';
     case 'Market price unavailable for this asset.':
-      return 'Cotação indisponível. Aguarde a atualização do mercado e tente novamente.';
+      return 'Quote unavailable. Wait for the market update and try again.';
     case 'Insufficient shares.':
-      return 'Quantidade de shares insuficiente para vender.';
+      return 'Insufficient shares to sell.';
     case 'No position to sell.':
-      return 'Você não possui posição neste ativo.';
+      return 'You do not hold a position in this asset.';
     default:
       if (message.includes('shares must not be less than')) {
-        return 'Quantidade abaixo do mínimo permitido (0,000001).';
+        return 'Quantity below the minimum allowed (0.000001).';
       }
       if (message.includes('budgetUsdt must not be greater than')) {
-        return 'Valor da compra excede o limite permitido. Verifique o valor em USDT.';
+        return 'Purchase amount exceeds the allowed limit. Check the USDT value.';
       }
       if (message.includes('amount must not be greater than')) {
-        return 'Valor excede o limite permitido. Use "Withdraw all" ou confira a moeda selecionada.';
+        return 'Amount exceeds the allowed limit. Use "Withdraw all" or check the selected currency.';
       }
       return message;
   }
@@ -71,6 +71,8 @@ export function useWalletMutations(options?: {
       queryClient.invalidateQueries({ queryKey: queryKeys.walletMarket(investmentTab, 'BRL') }),
       queryClient.invalidateQueries({ queryKey: queryKeys.walletFx }),
       queryClient.invalidateQueries({ queryKey: queryKeys.wallets }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.monthlyExpenseCards }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.monthlyExpenses() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.me }),
     ]);
   }

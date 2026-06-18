@@ -184,7 +184,7 @@ export function WalletTradeDialog({
   const displayCurrency = currency as WalletCurrency;
   const amountOpts = { currency: displayCurrency, alreadyConverted: true as const };
   const balanceDisplayOpts = { currency: displayCurrency, fxRate };
-  const quantityLabel = fractional ? 'Quantidade' : 'Shares';
+  const quantityLabel = fractional ? 'Quantity' : 'Shares';
   const amountLabel = currency === 'BRL' ? 'Valor (BRL)' : 'Valor (USDT)';
 
   const availableDisplayAmount = convertUsdtToDisplay(availableBalanceUsdt, {
@@ -230,7 +230,7 @@ export function WalletTradeDialog({
           </p>
           {fractional ? (
             <p className={cn('mt-1', typeClass.micro, typeToneClass.muted60)}>
-              Frações permitidas (ex.: 0,001 BTC)
+              Fractional shares allowed (e.g. 0.001 BTC)
             </p>
           ) : null}
         </div>
@@ -258,7 +258,7 @@ export function WalletTradeDialog({
           </div>
         ) : (
           <div className={cn(walletDialogSectionClass, typeClass.caption)}>
-            <span className={typeToneClass.muted}>Crédito na carteira após venda </span>
+            <span className={typeToneClass.muted}>Wallet credit after sale </span>
             <span className={typeClass.bodyStrong}>
               {formatWalletAmount(parsed.totalDisplay, amountOpts)}
             </span>
@@ -301,7 +301,7 @@ export function WalletTradeDialog({
           )}
           {isSell && activeRow.hasPosition ? (
             <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-              Disponível: {formatPositionShares(activeRow.shares, activeRow.type)} {activeRow.ticker}
+              Available: {formatPositionShares(activeRow.shares, activeRow.type)} {activeRow.ticker}
             </span>
           ) : null}
           {inputMode === 'amount' && fractional && parsed.shares > 0 ? (
@@ -311,22 +311,22 @@ export function WalletTradeDialog({
           ) : null}
           {belowMinShares ? (
             <span className={cn(typeClass.micro, typeToneClass.negative)}>
-              Quantidade mínima: {formatPositionShares(MIN_TRADE_SHARES, activeRow.type)} {activeRow.ticker}
+              Minimum quantity: {formatPositionShares(MIN_TRADE_SHARES, activeRow.type)} {activeRow.ticker}
             </span>
           ) : null}
           {exceedsPosition ? (
             <span className={cn(typeClass.micro, typeToneClass.negative)}>
-              Quantidade maior que a posição.
+              Quantity exceeds position.
             </span>
           ) : null}
           {priceUnavailable ? (
             <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-              {quoteLoading ? 'Aguardando cotação do ativo…' : 'Cotação indisponível para este ativo.'}
+              {quoteLoading ? 'Waiting for asset quote…' : 'Quote unavailable for this asset.'}
             </span>
           ) : null}
           {fxUnavailable ? (
             <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-              Aguardando cotação BRL/USDT…
+              Waiting for BRL/USDT quote…
             </span>
           ) : null}
           {insufficientBalance ? (
