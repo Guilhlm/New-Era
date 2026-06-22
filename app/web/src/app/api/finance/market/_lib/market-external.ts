@@ -45,7 +45,23 @@ type ExternalCryptoQuote = {
   priceUsdt: number;
   changePct24h: number;
 };
-const cryptoPageCache = new Map<string, CacheEntry<Awaited<ReturnType<typeof fetchCoinGeckoPageRows>>>>();
+type CoinGeckoPageRow = {
+  id: null;
+  ticker: string;
+  name: string;
+  type: 'CRYPTO';
+  shares: number;
+  avgPrice: number;
+  currentPrice: number;
+  priceUsdt: number;
+  value: number;
+  gainPct: number;
+  gainAmount: number;
+  changePct24h: number;
+  hasPosition: boolean;
+  lastAction: null;
+};
+const cryptoPageCache = new Map<string, CacheEntry<CoinGeckoPageRow[]>>();
 const cryptoQuoteCache = new Map<string, CacheEntry<ExternalCryptoQuote>>();
 const CRYPTO_PAGE_CACHE_MS = 60_000;
 const CRYPTO_QUOTE_CACHE_MS = 60_000;
@@ -216,7 +232,10 @@ async function fetchYahooQuote(asset: ExternalMarketAsset) {
   };
 }
 
-async function fetchCoinGeckoPageRows(offset: number, limit: number) {
+async function fetchCoinGeckoPageRows(
+  offset: number,
+  limit: number,
+): Promise<CoinGeckoPageRow[]> {
   const page = Math.floor(offset / limit) + 1;
   const cacheKey = `${page}:${limit}`;
   const cached = cryptoPageCache.get(cacheKey);

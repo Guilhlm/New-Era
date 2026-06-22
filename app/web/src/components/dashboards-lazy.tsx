@@ -53,3 +53,16 @@ export const NotificationsDashboard = dynamic(
     ),
   { loading: () => <DashboardSkeleton /> },
 );
+
+export const HomeTasksContainer = dynamic(
+  () =>
+    import('@/components/home/home-tasks-container').then(
+      (m) => m.HomeTasksContainer,
+    ),
+  { loading: () => <DashboardSkeleton /> },
+);
+
+export const PerfilDashboard = dynamic(
+  () => import('@/components/perfil/perfil-dashboard').then((m) => m.PerfilDashboard),
+  { loading: () => <DashboardSkeleton /> },
+);

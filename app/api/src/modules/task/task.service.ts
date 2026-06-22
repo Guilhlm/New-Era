@@ -128,6 +128,18 @@ function disciplineFromTasks(total: number, done: number) {
   };
 }
 
+function linkedTaskKey(task: { sourceType: TaskSourceType; sourceId: string | null }) {
+  return task.sourceId ? `${task.sourceType}:${task.sourceId}` : null;
+}
+
+function manualTaskKey(task: { title: string; scheduledAt: string; sourceId: string | null }) {
+  return task.sourceId ? null : `${task.title.trim().toLowerCase()}:${task.scheduledAt}`;
+}
+
+function normalizedTaskTitle(title: string) {
+  return title.trim().toLowerCase();
+}
+
 @Injectable()
 export class TaskService {
   constructor(private readonly prisma: PrismaService) {}
@@ -293,12 +305,17 @@ export class TaskService {
 
   async findSuggestions(userId: string, weekday: number) {
     const existing = await this.prisma.dailyTask.findMany({
-      where: { userId, weekday, isActive: true, sourceId: { not: null } },
-      select: { sourceType: true, sourceId: true },
+      where: { userId, weekday, isActive: true },
+      select: { sourceType: true, sourceId: true, title: true },
     });
 
     const linkedKeys = new Set(
-      existing.map((task) => `${task.sourceType}:${task.sourceId}`),
+      existing
+        .filter((task) => task.sourceId)
+        .map((task) => `${task.sourceType}:${task.sourceId}`),
+    );
+    const existingTitles = new Set(
+      existing.map((task) => normalizedTaskTitle(task.title)),
     );
 
     const suggestions: Array<{
@@ -317,11 +334,12 @@ export class TaskService {
 
     if (workout?.isActive && workout.groups.length > 0) {
       const key = `${TaskSourceType.WORKOUT}:${workout.id}`;
-      if (!linkedKeys.has(key)) {
+      const title = `Treinar: ${workout.title}`;
+      if (!linkedKeys.has(key) && !existingTitles.has(normalizedTaskTitle(title))) {
         suggestions.push({
           sourceType: TaskSourceType.WORKOUT,
           sourceId: workout.id,
-          title: `Treinar: ${workout.title}`,
+          title,
           defaultScheduledAt: DEFAULT_WORKOUT_TIME,
         });
       }
@@ -334,11 +352,12 @@ export class TaskService {
 
     for (const meal of meals) {
       const key = `${TaskSourceType.DIET_MEAL}:${meal.id}`;
-      if (linkedKeys.has(key)) continue;
+      const title = `Meal: ${meal.name}`;
+      if (linkedKeys.has(key) || existingTitles.has(normalizedTaskTitle(title))) continue;
       suggestions.push({
         sourceType: TaskSourceType.DIET_MEAL,
         sourceId: meal.id,
-        title: `Meal: ${meal.name}`,
+        title,
         defaultScheduledAt: meal.mealTime ?? DEFAULT_MEAL_TIME,
       });
     }
@@ -382,6 +401,60 @@ export class TaskService {
       await this.recalculateSortOrder(tx, data.userId, data.weekday);
       return tx.dailyTask.findMany({
         where: { userId: data.userId, weekday: data.weekday, isActive: true },
+        orderBy: [{ sortOrder: 'asc' }, { scheduledAt: 'asc' }],
+      });
+    });
+  }
+
+  async copyDay(userId: string, sourceWeekday: number, targetWeekday: number) {
+    if (sourceWeekday === targetWeekday) {
+      return this.findByWeekday(userId, targetWeekday);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const sourceTasks = await tx.dailyTask.findMany({
+        where: { userId, weekday: sourceWeekday, isActive: true },
+        orderBy: [{ sortOrder: 'asc' }, { scheduledAt: 'asc' }],
+      });
+
+      const targetTasks = await tx.dailyTask.findMany({
+        where: { userId, weekday: targetWeekday, isActive: true },
+        orderBy: [{ sortOrder: 'asc' }, { scheduledAt: 'asc' }],
+      });
+
+      const targetLinkedKeys = new Set(
+        targetTasks.map(linkedTaskKey).filter((key): key is string => Boolean(key)),
+      );
+      const targetManualKeys = new Set(
+        targetTasks.map(manualTaskKey).filter((key): key is string => Boolean(key)),
+      );
+
+      for (const task of sourceTasks) {
+        const linkedKey = linkedTaskKey(task);
+        if (linkedKey && targetLinkedKeys.has(linkedKey)) continue;
+
+        const manualKey = manualTaskKey(task);
+        if (manualKey && targetManualKeys.has(manualKey)) continue;
+
+        await tx.dailyTask.create({
+          data: {
+            userId,
+            weekday: targetWeekday,
+            title: task.title,
+            scheduledAt: task.scheduledAt,
+            sourceType: task.sourceType,
+            sourceId: task.sourceId,
+          },
+        });
+
+        if (linkedKey) targetLinkedKeys.add(linkedKey);
+        if (manualKey) targetManualKeys.add(manualKey);
+      }
+
+      await this.recalculateSortOrder(tx, userId, targetWeekday);
+
+      return tx.dailyTask.findMany({
+        where: { userId, weekday: targetWeekday, isActive: true },
         orderBy: [{ sortOrder: 'asc' }, { scheduledAt: 'asc' }],
       });
     });

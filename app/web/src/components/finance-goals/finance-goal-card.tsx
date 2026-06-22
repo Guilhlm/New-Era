@@ -1,13 +1,14 @@
 'use client';
 
 import { cn } from '@/components/ui/cn';
+import { ProgressBar } from '@/components/ui/progress-bar';
 import {
   computeGoalPercent,
   computeGoalRemaining,
   type FinanceGoalVm,
 } from '@/components/finance-goals/finance-goals-types';
 import { typeClass, typeToneClass } from '@/lib/typography';
-import { formatWalletAmount } from '@/utils/wallet';
+import { formatBrlAmount } from '@/utils/wallet';
 
 type FinanceGoalCardProps = {
   goal: FinanceGoalVm;
@@ -43,17 +44,17 @@ export function FinanceGoalCard({ goal, variant = 'default', className }: Financ
               {goal.label}
             </p>
             <p className={cn('mt-1 truncate tabular-nums', typeClass.micro, typeToneClass.muted60)}>
-              Target: {formatWalletAmount(goal.target)}
+              Target: {formatBrlAmount(goal.target)}
             </p>
             <p className={cn('mt-auto truncate tabular-nums', typeClass.micro, typeToneClass.muted60)}>
-              Saved: {formatWalletAmount(goal.current)}
+              Saved: {formatBrlAmount(goal.current)}
             </p>
           </div>
 
           <div className="flex shrink-0 flex-col text-right">
             <p className={cn('tabular-nums', typeClass.micro, typeToneClass.muted60)}>{goal.deadline}</p>
             <p className={cn('mt-1 tabular-nums', typeClass.micro, typeToneClass.muted60)}>
-              Remaining: {formatWalletAmount(remaining)}
+              Remaining: {formatBrlAmount(remaining)}
             </p>
             <p
               className={cn(
@@ -67,13 +68,12 @@ export function FinanceGoalCard({ goal, variant = 'default', className }: Financ
           </div>
         </div>
 
-        <div className={cn('w-full shrink-0 rounded-full bg-layer2', compact ? 'mt-2 h-1.5' : 'mt-3 h-2')}>
-          <div
-            className={cn('rounded-full transition-[width]', compact ? 'h-1.5' : 'h-2', goal.accent.barClassName)}
-            style={{ width: `${percent}%` }}
-            aria-hidden
-          />
-        </div>
+        <ProgressBar
+          percent={percent}
+          fillClassName={goal.accent.barClassName}
+          size={compact ? 'sm' : 'md'}
+          className={compact ? 'mt-2' : 'mt-3'}
+        />
       </div>
     </div>
   );

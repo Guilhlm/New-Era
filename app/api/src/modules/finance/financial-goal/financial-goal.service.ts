@@ -1,10 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { TransactionType } from '@prisma/client';
+import {
+  NotificationCategory,
+  NotificationKind,
+  NotificationPeriod,
+  TransactionType,
+} from '@prisma/client';
 import {
   assertResourceExists,
   assertResourceOwner,
 } from '../../../common/auth/ownership.util';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { NotificationService } from '../../notification/notification.service';
 import { decimalUsdt } from '../common/money.util';
 import { FINANCE_TX_CATEGORY } from '../investment/dto/investment.dto';
 import {
@@ -20,7 +26,27 @@ import type {
 
 @Injectable()
 export class FinancialGoalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
+
+  private async notifyGoalReached(
+    userId: string,
+    goal: { id: string; title: string; targetAmount: unknown },
+  ) {
+    await this.notifications.emit(userId, {
+      dedupeKey: `goal-reached-${goal.id}`,
+      period: NotificationPeriod.MONTHLY,
+      category: NotificationCategory.GOALS,
+      kind: NotificationKind.UPDATE,
+      title: 'Goal reached!',
+      body: `You reached the "${goal.title}" goal. Congratulations on the achievement!`,
+      href: '/finance-goals',
+      ctaLabel: 'View goals',
+      metadata: { goalId: goal.id, target: Number(goal.targetAmount) },
+    });
+  }
 
   private async assertMonthlyIncomeConfigured(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -196,7 +222,13 @@ export class FinancialGoalService {
 
     const label = data.label?.trim() || (mode === 'add' ? 'Contribution' : 'Progress adjustment');
 
-    return this.prisma.$transaction(async (tx) => {
+    const target = Number(existing.targetAmount);
+    const justReached =
+      target > 0 &&
+      Number(existing.currentAmount) < target &&
+      Math.max(0, nextAmount) >= target;
+
+    const result = await this.prisma.$transaction(async (tx) => {
       const goal = await tx.financialGoal.update({
         where: { id },
         data: { currentAmount: Math.max(0, nextAmount) },
@@ -242,6 +274,12 @@ export class FinancialGoalService {
 
       return goal;
     });
+
+    if (justReached) {
+      await this.notifyGoalReached(userId, existing);
+    }
+
+    return result;
   }
 
   async removeActivity(goalId: string, activityId: string, userId: string) {
@@ -269,6 +307,8 @@ export class FinancialGoalService {
         source: 'COMPLETED',
       },
     });
+
+    await this.notifyGoalReached(userId, existing);
     return updated;
   }
 

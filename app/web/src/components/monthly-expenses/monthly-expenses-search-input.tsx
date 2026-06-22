@@ -1,7 +1,6 @@
 'use client';
 
-import { cn } from '@/components/ui/cn';
-import { typeClass } from '@/lib/typography';
+import { FilterSearchInput } from '@/components/ui/filter-search-input';
 
 type MonthlyExpensesSearchInputProps = {
   value: string;
@@ -10,8 +9,6 @@ type MonthlyExpensesSearchInputProps = {
   className?: string;
 };
 
-const toolbarControlClass = 'h-10 shrink-0';
-
 export function MonthlyExpensesSearchInput({
   value,
   onChange,
@@ -19,18 +16,12 @@ export function MonthlyExpensesSearchInput({
   className,
 }: MonthlyExpensesSearchInputProps) {
   return (
-    <input
-      type="search"
+    <FilterSearchInput
       value={value}
+      onChange={onChange}
       disabled={disabled}
       placeholder="Search expenses…"
-      className={cn(
-        toolbarControlClass,
-        'min-w-[11rem] flex-1 rounded-md border border-grey/60 bg-layer2 px-3 outline-none placeholder:text-text/40 focus-visible:ring-2 focus-visible:ring-red/60 sm:max-w-[16rem]',
-        typeClass.micro,
-        className,
-      )}
-      onChange={(event) => onChange(event.target.value)}
+      className={className}
     />
   );
 }

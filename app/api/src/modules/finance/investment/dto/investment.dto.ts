@@ -14,45 +14,6 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class CreateInvestmentDto {
-  @IsString()
-  @MinLength(1)
-  @MaxLength(12)
-  ticker!: string;
-
-  @IsString()
-  @MinLength(1)
-  @MaxLength(160)
-  name!: string;
-
-  @IsEnum(InvestmentType)
-  type!: InvestmentType;
-
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  shares!: number;
-
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  avgPrice!: number;
-
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  currentPrice!: number;
-
-  @IsOptional()
-  @IsEnum(InvestmentLastAction)
-  lastAction?: InvestmentLastAction;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  notes?: string | null;
-}
-
 export class UpdateInvestmentDto {
   @IsOptional()
   @IsString()
@@ -69,28 +30,6 @@ export class UpdateInvestmentDto {
   @IsOptional()
   @IsEnum(InvestmentType)
   type?: InvestmentType;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  shares?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  avgPrice?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  currentPrice?: number;
-
-  @IsOptional()
-  @IsEnum(InvestmentLastAction)
-  lastAction?: InvestmentLastAction;
 
   @IsOptional()
   @IsString()
@@ -196,6 +135,7 @@ export const FINANCE_TX_CATEGORY = {
   DEPOSIT_EXTRA_INCOME: 'DEPOSIT_EXTRA_INCOME',
   WITHDRAW: 'WITHDRAW',
   FINANCIAL_GOAL_CONTRIBUTION: 'FINANCIAL_GOAL_CONTRIBUTION',
+  CARD_INVOICE_PAYMENT: 'CARD_INVOICE_PAYMENT',
   INVESTMENT_BUY: 'INVESTMENT_BUY',
   INVESTMENT_SELL: 'INVESTMENT_SELL',
   POSITION_REGISTER: 'POSITION_REGISTER',

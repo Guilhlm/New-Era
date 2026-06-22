@@ -9,10 +9,19 @@ import {
 } from '@/services/diet';
 import { HttpError } from '@/services/http';
 import type { DietFoodItemVm, DietMealVm } from '@/types/diet';
-import type { FoodSearchResult } from '@/types/foods';
+import type { FoodMacrosPer100g, FoodSearchResult } from '@/types/foods';
 import { collapseOtherMeals } from '@/utils/diet-constants';
-import { buildIngredientDraft, updateDraftGrams } from '@/utils/food-nutrition';
+import {
+  buildIngredientDraft,
+  formatIngredientDescription,
+  scaleMacrosFrom100g,
+  updateDraftGrams,
+} from '@/utils/food-nutrition';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
+
+export type DietManualDraftPatch = {
+  name?: string;
+} & Partial<FoodMacrosPer100g>;
 
 type UseDietIngredientDraftParams = {
   meals: DietMealVm[];
@@ -63,12 +72,70 @@ export function useDietIngredientDraft({ meals, setMeals, setSaving }: UseDietIn
     );
   }
 
+  function startManualDraft(mealId: string) {
+    setMeals((prev) =>
+      prev.map((meal) => {
+        if (meal.id !== mealId || !meal.draft) return meal;
+        return {
+          ...meal,
+          draft: {
+            ...meal.draft,
+            status: 'draft',
+            externalSource: 'manual',
+            externalFoodId: null,
+            name: '',
+            description: '',
+            totalGrams: 0,
+            per100g: { calories: 0, protein: 0, carbs: 0, fats: 0 },
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fats: 0,
+          },
+        };
+      }),
+    );
+  }
+
+  function changeManualDraft(mealId: string, patch: DietManualDraftPatch) {
+    setMeals((prev) =>
+      prev.map((meal) => {
+        if (meal.id !== mealId || meal.draft?.externalSource !== 'manual') return meal;
+        const draft = meal.draft;
+        const name = patch.name ?? draft.name;
+        const per100g: FoodMacrosPer100g = {
+          calories: patch.calories ?? draft.per100g.calories,
+          protein: patch.protein ?? draft.per100g.protein,
+          carbs: patch.carbs ?? draft.per100g.carbs,
+          fats: patch.fats ?? draft.per100g.fats,
+        };
+        const scaled = scaleMacrosFrom100g(per100g, draft.totalGrams);
+        return {
+          ...meal,
+          draft: {
+            ...draft,
+            name,
+            per100g,
+            description: formatIngredientDescription(draft.totalGrams, name),
+            calories: scaled.calories,
+            protein: scaled.protein,
+            carbs: scaled.carbs,
+            fats: scaled.fats,
+          },
+        };
+      }),
+    );
+  }
+
   function changeDraftGrams(mealId: string, grams: number) {
     if (!Number.isFinite(grams) || grams <= 0) return;
     setMeals((prev) =>
       prev.map((meal) => {
-        if (meal.id !== mealId || !meal.draft?.externalFoodId) return meal;
-        return { ...meal, draft: updateDraftGrams(meal.draft, grams) };
+        if (meal.id !== mealId || !meal.draft) return meal;
+        const draft = meal.draft;
+        const ready = Boolean(draft.externalFoodId) || draft.externalSource === 'manual';
+        if (!ready) return meal;
+        return { ...meal, draft: updateDraftGrams(draft, grams) };
       }),
     );
   }
@@ -76,15 +143,21 @@ export function useDietIngredientDraft({ meals, setMeals, setSaving }: UseDietIn
   async function confirmDraft(mealId: string) {
     const meal = meals.find((entry) => entry.id === mealId);
     const draft = meal?.draft;
-    if (!draft?.externalFoodId || !draft.externalSource) return;
+    if (!draft) return;
+
+    const isManual = draft.externalSource === 'manual';
+    const isTaco = draft.externalSource === 'taco' && Boolean(draft.externalFoodId);
+    if (!isManual && !isTaco) return;
+    if (draft.totalGrams <= 0) return;
+    if (isManual && !draft.name.trim()) return;
 
     setSaving(true);
     try {
       const { item } = await createDietFoodItem(mealId, {
-        name: draft.name,
+        name: draft.name.trim(),
         totalGrams: draft.totalGrams,
-        externalSource: draft.externalSource,
-        externalFoodId: draft.externalFoodId,
+        externalSource: isManual ? 'manual' : 'taco',
+        externalFoodId: draft.externalFoodId ?? null,
         caloriesPer100g: draft.per100g.calories,
         proteinPer100g: draft.per100g.protein,
         carbsPer100g: draft.per100g.carbs,
@@ -178,6 +251,8 @@ export function useDietIngredientDraft({ meals, setMeals, setSaving }: UseDietIn
     actions: {
       startIngredientDraft,
       selectDraftFood,
+      startManualDraft,
+      changeManualDraft,
       changeDraftGrams,
       confirmDraft,
       cancelDraft,

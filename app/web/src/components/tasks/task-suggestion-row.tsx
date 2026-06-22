@@ -3,7 +3,7 @@
 import { cn } from '@/components/ui/cn';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import type { TaskSuggestionVm } from '@/types/task';
-import { normalizeTimeInputValue, sourceTypeLabel } from '@/utils/task-mapper';
+import { normalizeTimeInputValue } from '@/utils/task-mapper';
 import { MdOutlineRestaurant } from 'react-icons/md';
 import { TbBarbell } from 'react-icons/tb';
 import { IoCheckmark } from 'react-icons/io5';
@@ -28,6 +28,7 @@ function SuggestionIcon({ sourceType }: { sourceType: TaskSuggestionVm['sourceTy
 export function TaskSuggestionRow({ item, toggleDisabled, onToggle, onTimeChange }: TaskSuggestionRowProps) {
   const selected = Boolean(item.selected);
   const scheduledAt = normalizeTimeInputValue(item.scheduledAt ?? item.defaultScheduledAt);
+  const title = item.title.replace(/^(Meal|Training):\s*/i, '');
 
   return (
     <div
@@ -55,10 +56,7 @@ export function TaskSuggestionRow({ item, toggleDisabled, onToggle, onTimeChange
       </button>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-3">
-        <p className={cn('truncate', typeClass.body, typeToneClass.default)}>{item.title}</p>
-        <span className={cn('mt-1 inline-flex w-fit rounded-md bg-layer2 px-2 py-0.5', typeClass.overline, 'text-text/60')}>
-          {sourceTypeLabel(item.sourceType)}
-        </span>
+        <p className={cn('truncate', typeClass.body, typeToneClass.default)}>{title}</p>
       </div>
 
       <div className="flex w-[5.5rem] shrink-0 items-center justify-center border-l border-grey/50 px-2">
@@ -66,7 +64,7 @@ export function TaskSuggestionRow({ item, toggleDisabled, onToggle, onTimeChange
           type="time"
           disabled={!selected}
           value={scheduledAt}
-          aria-label={`Time for ${item.title}`}
+          aria-label={`Time for ${title}`}
           className={            cn(
             'w-full rounded-md bg-layer2 px-1.5 py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-red/60 disabled:cursor-not-allowed disabled:opacity-40',
             typeClass.micro,

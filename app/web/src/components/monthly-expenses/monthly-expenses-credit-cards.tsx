@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { TbDotsVertical, TbPlus } from 'react-icons/tb';
+import { TbCreditCard, TbDotsVertical, TbPlus, TbReceipt } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
@@ -10,6 +10,12 @@ import { NativeDialog } from '@/components/ui/native-dialog';
 import { dashboardMainBodyCardPaddingClass } from '@/components/ui/dashboard-two-column-layout';
 import { MonthlyExpensesCreditCardDialog } from '@/components/monthly-expenses/monthly-expenses-credit-card-dialog';
 import type { CreditCardCreateInput, CreditCardUpdateInput, CreditCardVm } from '@/components/monthly-expenses/monthly-expenses-credit-cards.types';
+import { CreditCardDecor } from '@/components/monthly-expenses/credit-card-decor';
+import {
+  creditCardBackgroundStyle,
+  creditCardTextTone,
+  isLightCardColor,
+} from '@/components/monthly-expenses/credit-card-visual';
 import { useAnchoredMenu } from '@/hooks/use-anchored-menu';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import { formatBrlAmount } from '@/utils/wallet';
@@ -19,78 +25,204 @@ type MonthlyExpensesCreditCardsProps = {
   onCreateCard: (values: CreditCardCreateInput) => Promise<unknown> | unknown;
   onUpdateCard: (id: string, values: CreditCardUpdateInput) => Promise<unknown> | unknown;
   onDeleteCard: (id: string) => Promise<unknown> | unknown;
+  onPayInvoice: (id: string) => Promise<unknown> | unknown;
+  salaryRemaining: number;
   saving?: boolean;
   className?: string;
 };
 
-function BrandMark({ brand }: { brand: CreditCardVm['brand'] }) {
+function BrandMark({ brand, light }: { brand: CreditCardVm['brand']; light?: boolean }) {
   if (brand === 'mastercard') {
     return (
-      <div className="flex items-center gap-0.5" aria-hidden>
-        <span className="h-5 w-5 rounded-full bg-red/90" />
-        <span className="-ml-3 h-5 w-5 rounded-full bg-amber-500/80" />
+      <div className="flex items-center" aria-hidden>
+        <span className="h-[18px] w-[18px] rounded-full bg-[#eb001b]" />
+        <span className="-ml-2 h-[18px] w-[18px] rounded-full bg-[#f79e1b]" />
       </div>
     );
   }
-  return <span className={cn(typeClass.label, 'tracking-widest text-text/80')}>VISA</span>;
+  return (
+    <span
+      className={cn(
+        typeClass.label,
+        'tracking-[0.22em]',
+        light ? 'text-slate-900/80' : 'text-white/88',
+      )}
+    >
+      VISA
+    </span>
+  );
+}
+
+function CardChip({ tone }: { tone: ReturnType<typeof creditCardTextTone> }) {
+  return (
+    <div
+      className={cn(
+        'h-7 w-9 shrink-0 rounded-[5px] bg-gradient-to-br shadow-sm ring-1',
+        tone.chipLine,
+        tone.chipRing,
+      )}
+      aria-hidden
+    >
+      <div className="mx-auto mt-[10px] h-px w-5 bg-black/15" />
+      <div className="mx-auto mt-1 h-px w-5 bg-black/10" />
+      <div className="mx-auto mt-1 h-px w-5 bg-black/10" />
+    </div>
+  );
+}
+
+function CreditCardSurface({
+  card,
+  className,
+  children,
+}: {
+  card: CreditCardVm;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const tone = creditCardTextTone(card.color);
+  const light = isLightCardColor(card.color);
+
+  return (
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-[14px] shadow-[0_14px_34px_-18px_rgba(0,0,0,0.58)]',
+        className,
+      )}
+      style={creditCardBackgroundStyle(card.color)}
+    >
+      <CreditCardDecor color={card.color} light={light} />
+      <div className={cn('relative z-10 flex h-full flex-col px-5 py-4', tone.primary)}>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function CardStack({
   frontCard,
   backCard,
-  onSwitch,
-  canSwitch,
+  saving,
+  salaryRemaining,
+  onPayInvoice,
 }: {
   frontCard: CreditCardVm;
   backCard?: CreditCardVm;
-  onSwitch: () => void;
-  canSwitch: boolean;
+  saving?: boolean;
+  salaryRemaining: number;
+  onPayInvoice: (id: string) => Promise<unknown> | unknown;
 }) {
+  const [showInvoice, setShowInvoice] = useState(false);
+  const invoice = frontCard.openInvoices?.[0] ?? frontCard.invoice ?? null;
+  const invoiceOpen = invoice?.status === 'open';
+  const canPayInvoice = Boolean(invoiceOpen && invoice && invoice.amount <= salaryRemaining);
+  const tone = creditCardTextTone(frontCard.color);
+  const lightCard = isLightCardColor(frontCard.color);
+
   return (
     <div
       className={cn('relative shrink-0', backCard ? 'h-[calc(11rem+0.75rem)] w-[16rem]' : 'h-[11rem] w-[16rem]')}
     >
       {backCard ? (
-        <div
-          className="absolute top-0 left-0 h-[11rem] w-full translate-x-3 rounded-2xl opacity-80"
-          style={{ backgroundColor: backCard.color }}
-          aria-hidden
-        />
+        <div className="absolute top-0 left-0 h-[11rem] w-full translate-x-3 opacity-80" aria-hidden>
+          <CreditCardSurface card={backCard} className="h-full w-full">
+            <span />
+          </CreditCardSurface>
+        </div>
       ) : null}
 
-      <div
-        className={cn(
-          'absolute inset-x-0 h-[11rem] overflow-hidden rounded-2xl px-5 py-4 ring-1',
-          backCard ? 'top-3' : 'top-0',
-          frontCard.highlighted ? 'ring-red/70' : 'ring-grey/60',
-        )}
-        style={{ backgroundColor: frontCard.color }}
+      <CreditCardSurface
+        card={frontCard}
+        className={cn('absolute inset-x-0 h-[11rem]', backCard ? 'top-3' : 'top-0')}
       >
-        <div className="flex items-start justify-between gap-2">
-          <BrandMark brand={frontCard.brand} />
-          <BrandMark brand="visa" />
+        <div className="flex items-start justify-between gap-3">
+          {showInvoice ? (
+            <p className={cn('uppercase tracking-[0.16em]', typeClass.overline, tone.muted)}>
+              Current invoice
+            </p>
+          ) : (
+            <CardChip tone={tone} />
+          )}
+          <BrandMark brand={frontCard.brand} light={lightCard} />
         </div>
 
-        <div className="mt-6 space-y-1.5">
-          <p className={cn('tracking-[0.18em]', typeClass.body, 'text-on-accent/85')}>
-            •••• •••• •••• {frontCard.lastFour}
-          </p>
-          <p className={cn('truncate uppercase', typeClass.caption, typeToneClass.onAccent)}>{frontCard.holder}</p>
-        </div>
+        {showInvoice ? (
+          <div className="mt-auto space-y-1 pb-0.5">
+            <p className={cn('tabular-nums', typeClass.title, tone.primary)}>
+              {invoice ? formatBrlAmount(invoice.amount) : 'No invoice'}
+            </p>
+            <p className={cn(typeClass.caption, tone.muted)}>
+              {invoice ? `Due ${formatDueDate(invoice.dueDate)}` : `Due day ${frontCard.dueDay}`}
+            </p>
+            {invoiceOpen && !canPayInvoice ? (
+              <p className={cn(typeClass.micro, tone.muted)}>Above salary available.</p>
+            ) : null}
+            {invoice ? (
+              <button
+                type="button"
+                disabled={saving || !canPayInvoice}
+                className={cn(
+                  'mt-2 rounded-md px-3 py-1.5 ring-1 transition disabled:cursor-not-allowed disabled:opacity-45',
+                  typeClass.micro,
+                  tone.action,
+                  lightCard ? 'ring-black/8' : 'ring-white/12',
+                )}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!invoiceOpen) return;
+                  void onPayInvoice(invoice.id);
+                }}
+              >
+                {invoice.status === 'paid' ? 'Paid' : 'Pay invoice'}
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            <div className="mt-7">
+              <p
+                className={cn(
+                  'tabular-nums font-medium tracking-[0.22em]',
+                  typeClass.body,
+                  tone.secondary,
+                )}
+              >
+                •••• •••• •••• {frontCard.lastFour}
+              </p>
+            </div>
+            <div className="mt-auto pb-0.5">
+              <p
+                className={cn(
+                  'truncate uppercase tracking-[0.14em]',
+                  typeClass.micro,
+                  tone.muted,
+                )}
+              >
+                {frontCard.holder}
+              </p>
+            </div>
+          </>
+        )}
 
         <button
           type="button"
-          aria-label="Switch card"
-          disabled={!canSwitch}
+          aria-label={invoice ? (showInvoice ? 'Show card front' : 'Show card invoice') : 'Show card invoice'}
+          disabled={!invoice}
           className={cn(
-            'absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-layer1 text-text/80 shadow-lg ring-2 ring-background/40 transition',
-            canSwitch ? 'hover:text-on-accent hover:ring-red' : 'cursor-default opacity-50',
+            'absolute right-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/80 text-white ring-1 ring-white/25 backdrop-blur-md transition hover:bg-black/95',
+            invoice ? 'hover:scale-105' : 'cursor-default opacity-45',
           )}
-          onClick={onSwitch}
+          onClick={() => {
+            if (!invoice) return;
+            setShowInvoice((value) => !value);
+          }}
         >
-          <span className={cn(typeClass.bodyStrong)}>⇄</span>
+          {showInvoice ? (
+            <TbCreditCard className="h-4 w-4 shrink-0" aria-hidden />
+          ) : (
+            <TbReceipt className="h-4 w-4 shrink-0" aria-hidden />
+          )}
         </button>
-      </div>
+      </CreditCardSurface>
     </div>
   );
 }
@@ -100,7 +232,20 @@ function formatCardInfoLabel(card: CreditCardVm) {
   return `**** ${card.lastFour} - ${brandLabel}`;
 }
 
-function CardDetails({ card, stackPeek = false }: { card: CreditCardVm; stackPeek?: boolean }) {
+function formatDueDate(value?: string | null) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' });
+}
+
+function CardDetails({
+  card,
+  stackPeek = false,
+}: {
+  card: CreditCardVm;
+  stackPeek?: boolean;
+}) {
   const usedPct = Math.min(100, Math.round((card.used / card.limit) * 100));
 
   return (
@@ -231,6 +376,8 @@ export function MonthlyExpensesCreditCards({
   onCreateCard,
   onUpdateCard,
   onDeleteCard,
+  onPayInvoice,
+  salaryRemaining,
   saving = false,
   className,
 }: MonthlyExpensesCreditCardsProps) {
@@ -278,6 +425,17 @@ export function MonthlyExpensesCreditCards({
         <div className="flex shrink-0 items-start justify-between gap-3">
           <h2 className={cn(typeClass.title, typeToneClass.default)}>My Cards</h2>
           <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              aria-label="Switch card"
+              disabled={saving || cards.length <= 1}
+              className="h-8 shrink-0 justify-center gap-1 px-3"
+              onClick={handleSwitch}
+            >
+              Switch card
+            </Button>
             {activeCard ? (
               <CardOptionsMenu
                 card={activeCard}
@@ -308,11 +466,15 @@ export function MonthlyExpensesCreditCards({
             <CardStack
               frontCard={activeCard}
               backCard={backCard}
-              canSwitch={cards.length > 1}
-              onSwitch={handleSwitch}
+              saving={saving}
+              salaryRemaining={salaryRemaining}
+              onPayInvoice={onPayInvoice}
             />
 
-            <CardDetails card={activeCard} stackPeek={Boolean(backCard)} />
+            <CardDetails
+              card={activeCard}
+              stackPeek={Boolean(backCard)}
+            />
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 items-start gap-10 lg:gap-12">

@@ -7,7 +7,7 @@ import { cn } from '@/components/ui/cn';
 import { NativeDialog } from '@/components/ui/native-dialog';
 import type { FinanceGoalActivityVm } from '@/components/finance-goals/finance-goals-types';
 import { typeClass, typeToneClass } from '@/lib/typography';
-import { formatWalletAmount } from '@/utils/wallet';
+import { formatBrlAmount } from '@/utils/wallet';
 
 type FinanceGoalRecentActivitiesProps = {
   activities: FinanceGoalActivityVm[];
@@ -55,7 +55,7 @@ export function FinanceGoalRecentActivities({
                       positive ? typeToneClass.positive : typeToneClass.negative,
                     )}
                   >
-                    {formatWalletAmount(activity.amount, { signed: true })}
+                    {formatBrlAmount(activity.amount, { signed: true })}
                   </p>
                   {activity.canDelete && onDelete ? (
                     <button
@@ -89,7 +89,7 @@ export function FinanceGoalRecentActivities({
             <p className={cn(typeClass.title, typeToneClass.default)}>Delete contribution</p>
             <p className={cn('mt-2', typeClass.body, typeToneClass.muted60)}>
               {pendingActivity
-                ? `Remove ${formatWalletAmount(pendingActivity.amount)} from "${pendingActivity.label}"? The financial transaction will also be reversed.`
+                ? `Remove ${formatBrlAmount(pendingActivity.amount)} from "${pendingActivity.label}"? The financial transaction will also be reversed.`
                 : 'The financial transaction will also be reversed.'}
             </p>
           </div>

@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Req,
   UseGuards,
@@ -13,7 +12,6 @@ import type { AuthenticatedRequest } from '../../../common/auth/auth.types';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import {
   CreateTransactionDto,
-  UpdateTransactionDto,
 } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 
@@ -35,15 +33,6 @@ export class TransactionController {
   @Get(':id')
   findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.transactionService.findOne(id, req.user.userId);
-  }
-
-  @Patch(':id')
-  update(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-    @Body() data: UpdateTransactionDto,
-  ) {
-    return this.transactionService.update(id, req.user.userId, data);
   }
 
   @Delete(':id')

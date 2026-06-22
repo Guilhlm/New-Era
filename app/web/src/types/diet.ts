@@ -1,5 +1,7 @@
 import type { FoodMacrosPer100g } from '@/types/foods';
 
+export type DietIngredientSource = 'taco' | 'manual';
+
 export type DietFoodItemVm = {
   id: string;
   mealId?: string;
@@ -7,7 +9,7 @@ export type DietFoodItemVm = {
   name: string;
   description: string;
   totalGrams: number;
-  externalSource?: 'taco' | null;
+  externalSource?: DietIngredientSource | null;
   externalFoodId?: string | null;
   per100g: FoodMacrosPer100g;
   calories: number;
@@ -76,8 +78,8 @@ export type CreateDietMealInput = {
 export type CreateDietFoodItemInput = {
   name: string;
   totalGrams: number;
-  externalSource: 'taco';
-  externalFoodId: string;
+  externalSource: DietIngredientSource;
+  externalFoodId: string | null;
   caloriesPer100g: number;
   proteinPer100g: number;
   carbsPer100g: number;
@@ -86,4 +88,9 @@ export type CreateDietFoodItemInput = {
 
 export type UpdateDietFoodItemInput = {
   totalGrams: number;
+};
+
+export type CopyDietDayInput = {
+  sourceWeekday: number;
+  targetWeekday: number;
 };

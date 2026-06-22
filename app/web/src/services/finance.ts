@@ -1,6 +1,6 @@
 import type {
   CreateFinancialGoalInput,
-  CreateInvestmentInput,
+  CreateCreditCardPurchaseInput,
   CreateMonthlyExpenseCardInput,
   CreateMonthlyExpenseCategoryInput,
   CreateMonthlyExpenseInput,
@@ -18,13 +18,10 @@ import type {
   MonthlyExpenseCategoryRecord,
   MonthlyExpenseRecord,
   MonthlyExpensesSummaryRecord,
-  NotificationsResponseRecord,
   QuoteCurrency,
   RegisterPositionInput,
-  TradeInvestmentInput,
   UpdateFinancialGoalInput,
   UpdateFinancialGoalProgressInput,
-  UpdateInvestmentInput,
   UpdateMonthlyExpenseCardInput,
   UpdateMonthlyExpenseCategoryInput,
   UpdateMonthlyExpenseInput,
@@ -66,27 +63,9 @@ export function getWallets() {
   });
 }
 
-export function createInvestment(input: CreateInvestmentInput) {
-  return postJson<InvestmentRecord, CreateInvestmentInput>('/api/finance/investments', input, {
-    cache: 'no-store',
-    credentials: 'include',
-  });
-}
-
 export function registerPosition(input: RegisterPositionInput) {
   return postJson<InvestmentRecord, RegisterPositionInput>(
     '/api/finance/investments/register',
-    input,
-    {
-      cache: 'no-store',
-      credentials: 'include',
-    },
-  );
-}
-
-export function updateInvestment(id: string, input: UpdateInvestmentInput) {
-  return patchJson<InvestmentRecord, UpdateInvestmentInput>(
-    `/api/finance/investments/${id}`,
     input,
     {
       cache: 'no-store',
@@ -100,17 +79,6 @@ export function deleteInvestment(id: string) {
     cache: 'no-store',
     credentials: 'include',
   });
-}
-
-export function tradeInvestment(id: string, input: TradeInvestmentInput) {
-  return postJson<InvestmentRecord, TradeInvestmentInput>(
-    `/api/finance/investments/${id}/trade`,
-    input,
-    {
-      cache: 'no-store',
-      credentials: 'include',
-    },
-  );
 }
 
 export function depositFunds(input: DepositFundsInput) {
@@ -209,6 +177,38 @@ export function createMonthlyExpense(input: CreateMonthlyExpenseInput) {
   return postJson<MonthlyExpenseRecord, CreateMonthlyExpenseInput>(
     '/api/finance/monthly-expenses',
     input,
+    {
+      cache: 'no-store',
+      credentials: 'include',
+    },
+  );
+}
+
+export function createCreditCardPurchase(input: CreateCreditCardPurchaseInput) {
+  return postJson<MonthlyExpenseRecord, CreateCreditCardPurchaseInput>(
+    '/api/finance/monthly-expenses/card-purchases',
+    input,
+    {
+      cache: 'no-store',
+      credentials: 'include',
+    },
+  );
+}
+
+export function deleteCreditCardPurchase(id: string) {
+  return deleteJson<{ ok: true }>(
+    `/api/finance/monthly-expenses/card-purchases/${encodeURIComponent(id)}`,
+    {
+      cache: 'no-store',
+      credentials: 'include',
+    },
+  );
+}
+
+export function payCreditCardInvoice(id: string, options?: { monthKey?: string; amount?: number }) {
+  return postJson<MonthlyExpenseRecord, { monthKey?: string; amount?: number }>(
+    `/api/finance/monthly-expenses/invoices/${encodeURIComponent(id)}/pay`,
+    options ?? {},
     {
       cache: 'no-store',
       credentials: 'include',
@@ -385,52 +385,10 @@ export function deleteTransaction(id: string) {
   });
 }
 
-export function getNotifications(options?: {
-  period?: 'daily' | 'weekly' | 'monthly';
-  kind?: 'alert' | 'reminder' | 'insight' | 'update';
-  unreadOnly?: boolean;
-  limit?: number;
-}) {
-  const params = new URLSearchParams();
-  if (options?.period) params.set('period', options.period);
-  if (options?.kind) params.set('kind', options.kind);
-  if (options?.unreadOnly) params.set('unreadOnly', 'true');
-  if (typeof options?.limit === 'number') params.set('limit', String(options.limit));
-  const query = params.toString();
-  return getJson<NotificationsResponseRecord>(
-    `/api/finance/notifications${query ? `?${query}` : ''}`,
-    {
-      cache: 'no-store',
-      credentials: 'include',
-    },
-  );
-}
-
-export function generateNotifications() {
-  return postJson<{ ok: true }, Record<string, never>>('/api/finance/notifications/generate', {}, {
-    cache: 'no-store',
-    credentials: 'include',
-  });
-}
-
-export function markNotificationRead(id: string, read = true) {
-  return patchJson<{ ok: true }, { read: boolean }>(
-    `/api/finance/notifications/${id}/read`,
-    { read },
-    {
-      cache: 'no-store',
-      credentials: 'include',
-    },
-  );
-}
-
-export function markAllNotificationsRead() {
-  return postJson<{ ok: true }, Record<string, never>>(
-    '/api/finance/notifications/read-all',
-    {},
-    {
-      cache: 'no-store',
-      credentials: 'include',
-    },
-  );
-}
+export {
+  generateNotifications,
+  getNotifications,
+  getNotificationsUnreadCount,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '@/services/notifications';

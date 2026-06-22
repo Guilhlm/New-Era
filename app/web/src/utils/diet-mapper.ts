@@ -43,7 +43,10 @@ export function mapFoodItemToVm(item: DietFoodItemRecord): DietFoodItemVm {
     name: item.name,
     description: formatIngredientDescription(totalGrams, item.name),
     totalGrams,
-    externalSource: item.externalSource === 'taco' ? 'taco' : null,
+    externalSource:
+      item.externalSource === 'taco' || item.externalSource === 'manual'
+        ? item.externalSource
+        : null,
     externalFoodId: item.externalFoodId ?? null,
     per100g: {
       calories: item.caloriesPer100g ?? 0,

@@ -16,7 +16,7 @@ import {
 import { useFinanceGoalsDashboardState } from '@/hooks/use-finance-goals-dashboard-state';
 import { PlanHeaderCard } from '@/components/ui/plan-header-card';
 import { StatProgressCard } from '@/components/ui/stat-progress-card';
-import { formatWalletAmount } from '@/utils/wallet';
+import { formatBrlAmount } from '@/utils/wallet';
 
 function formatTrendLabel(value: number) {
   if (value === 0) return 'No change vs last month';
@@ -167,7 +167,7 @@ export function FinanceGoalsDashboard() {
                 className="min-w-0"
                 data={{
                   label: 'Total saved',
-                  valueLabel: formatWalletAmount(totals.totalSaved),
+                  valueLabel: formatBrlAmount(totals.totalSaved),
                   percent: totals.savedPercent,
                   barClassName: 'bg-red',
                   footerRight: formatTrendLabel(state.data.trends.saved),
@@ -177,7 +177,7 @@ export function FinanceGoalsDashboard() {
                 className="min-w-0"
                 data={{
                   label: 'Combined target',
-                  valueLabel: formatWalletAmount(totals.totalTarget),
+                  valueLabel: formatBrlAmount(totals.totalTarget),
                   percent: 100,
                   barClassName: 'bg-text/25',
                   footerRight: `${totals.activeCount} ${totals.activeCount === 1 ? 'active goal' : 'active goals'}`,

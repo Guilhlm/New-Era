@@ -8,11 +8,14 @@ import {
   createMonthlyExpense,
   createMonthlyExpenseCard,
   createMonthlyExpenseCategory,
+  createCreditCardPurchase,
+  deleteCreditCardPurchase,
   deleteMonthlyExpense,
   deleteMonthlyExpenseCard,
   deleteMonthlyExpenseCategory,
   deleteTransaction,
   getMonthlyExpenses,
+  payCreditCardInvoice,
   updateMonthlyExpense,
   updateMonthlyExpenseCard,
   updateMonthlyExpenseCategory,
@@ -22,6 +25,7 @@ import type {
   CreateMonthlyExpenseCardInput,
   CreateMonthlyExpenseCategoryInput,
   CreateMonthlyExpenseInput,
+  CreateCreditCardPurchaseInput,
   UpdateMonthlyExpenseCardInput,
   UpdateMonthlyExpenseCategoryInput,
   UpdateMonthlyExpenseInput,
@@ -87,6 +91,9 @@ export function useMonthlyExpensesDashboardState() {
   const createExpenseMutation = useMutation({
     mutationFn: (input: CreateMonthlyExpenseInput) => createMonthlyExpense(input),
   });
+  const createCardPurchaseMutation = useMutation({
+    mutationFn: (input: CreateCreditCardPurchaseInput) => createCreditCardPurchase(input),
+  });
   const updateExpenseMutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateMonthlyExpenseInput }) =>
       updateMonthlyExpense(id, input),
@@ -96,6 +103,13 @@ export function useMonthlyExpensesDashboardState() {
   });
   const deleteTransactionMutation = useMutation({
     mutationFn: (id: string) => deleteTransaction(id),
+  });
+  const deleteCardPurchaseMutation = useMutation({
+    mutationFn: (id: string) => deleteCreditCardPurchase(id),
+  });
+  const payCardInvoiceMutation = useMutation({
+    mutationFn: ({ id, monthKey, amount }: { id: string; monthKey?: string; amount?: number }) =>
+      payCreditCardInvoice(id, { monthKey, amount }),
   });
   const createCategoryMutation = useMutation({
     mutationFn: (input: CreateMonthlyExpenseCategoryInput) =>
@@ -163,6 +177,7 @@ export function useMonthlyExpensesDashboardState() {
         editable: item.editable,
         deletable: item.deletable ?? item.editable,
         linkedTransactionId: item.linkedTransactionId,
+        linkedCreditCardPurchaseId: item.linkedCreditCardPurchaseId,
         source: item.source,
       })),
     [record?.expenses],
@@ -188,6 +203,9 @@ export function useMonthlyExpensesDashboardState() {
         lastFour: item.lastFour,
         limit: item.limitTotal,
         used: item.limitUsage,
+        dueDay: item.dueDay,
+        invoice: item.invoice,
+        openInvoices: item.openInvoices,
         brand: (item.brand === 'mastercard' ? 'mastercard' : 'visa') as 'mastercard' | 'visa',
         color: item.color,
         highlighted: index === 0,
@@ -210,14 +228,40 @@ export function useMonthlyExpensesDashboardState() {
         setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)),
       nextMonth: () =>
         setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)),
-      createExpense: (input: CreateMonthlyExpenseInput) =>
-        runMutation(() => createExpenseMutation.mutateAsync(input), 'Expense created.'),
+      createExpense: (input: CreateMonthlyExpenseInput & { installments?: number }) => {
+        const cardId = input.account?.startsWith('CARD:') ? input.account.slice('CARD:'.length) : null;
+        if (cardId) {
+          return runMutation(
+            () =>
+              createCardPurchaseMutation.mutateAsync({
+                title: input.title,
+                amount: input.amount,
+                cardId,
+                categoryId: input.categoryId,
+                date: input.date,
+                installments: input.installments ?? 1,
+              }),
+            'Card purchase created.',
+          );
+        }
+        return runMutation(() => createExpenseMutation.mutateAsync(input), 'Expense created.');
+      },
       updateExpense: (id: string, input: UpdateMonthlyExpenseInput) =>
         runMutation(
           () => updateExpenseMutation.mutateAsync({ id, input }),
           'Expense updated.',
         ),
-      deleteExpense: (id: string, linkedTransactionId?: string | null) => {
+      deleteExpense: (
+        id: string,
+        linkedTransactionId?: string | null,
+        linkedCreditCardPurchaseId?: string | null,
+      ) => {
+        if (linkedCreditCardPurchaseId) {
+          return runMutation(
+            () => deleteCardPurchaseMutation.mutateAsync(linkedCreditCardPurchaseId),
+            'Card purchase cancelled.',
+          );
+        }
         if (linkedTransactionId) {
           return runMutation(
             () => deleteTransactionMutation.mutateAsync(linkedTransactionId),
@@ -247,6 +291,11 @@ export function useMonthlyExpensesDashboardState() {
         runMutation(() => updateCardMutation.mutateAsync({ id, input }), 'Card updated.'),
       deleteCard: (id: string) =>
         runMutation(() => deleteCardMutation.mutateAsync(id), 'Card removed.'),
+      payCardInvoice: (id: string) =>
+        runMutation(
+          () => payCardInvoiceMutation.mutateAsync({ id }),
+          'Invoice paid.',
+        ),
     },
     ui: {
       loading: summaryQuery.isPending,

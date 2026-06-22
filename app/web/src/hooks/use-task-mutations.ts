@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { invalidateTaskRelatedQueries } from '@/lib/invalidate-task-caches';
 import {
+  copyTaskDay,
   createTask,
   createTasksBulk,
   deleteTask,
@@ -12,11 +13,13 @@ import {
 import { HttpError } from '@/services/http';
 import type { TaskSuggestionVm, TaskVm } from '@/types/task';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
+import { WEEKDAYS } from '@/utils/weekdays';
 
 type UseTaskMutationsParams = {
   selectedWeekday: number;
   tasks: TaskVm[];
   setTasks: (tasks: TaskVm[] | ((prev: TaskVm[]) => TaskVm[])) => void;
+  setTasksForDay: (weekday: number, tasks: TaskVm[]) => void;
   suggestions: TaskSuggestionVm[];
   saving: boolean;
   setSaving: (value: boolean) => void;
@@ -30,6 +33,7 @@ export function useTaskMutations({
   selectedWeekday,
   tasks,
   setTasks,
+  setTasksForDay,
   suggestions,
   saving,
   setSaving,
@@ -130,6 +134,39 @@ export function useTaskMutations({
     }
   }
 
+  async function copyDay(targetWeekday: number | 'all') {
+    if (targetWeekday === selectedWeekday) return false;
+
+    const targetWeekdays =
+      targetWeekday === 'all'
+        ? WEEKDAYS.filter((day) => day.index !== selectedWeekday).map((day) => day.index)
+        : [targetWeekday];
+
+    setSaving(true);
+    try {
+      const copiedDays = await Promise.all(
+        targetWeekdays.map(async (weekday) => {
+          const { tasks: copiedTasks } = await copyTaskDay({
+            sourceWeekday: selectedWeekday,
+            targetWeekday: weekday,
+          });
+          return { weekday, tasks: copiedTasks };
+        }),
+      );
+      for (const day of copiedDays) {
+        setTasksForDay(day.weekday, day.tasks);
+      }
+      await Promise.all(targetWeekdays.map(invalidateTaskCaches));
+      toastUpdated(CRUD_TOAST.taskDayCopied);
+      return true;
+    } catch (error) {
+      toastAuthError(error instanceof HttpError ? error.message : 'Could not copy task day.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return {
     data: {
       tasks,
@@ -144,6 +181,7 @@ export function useTaskMutations({
       saveEditTask,
       removeTask,
       addSelectedSuggestions,
+      copyDay,
     },
     ui: {
       saving,

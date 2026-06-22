@@ -14,9 +14,11 @@ import type { AuthenticatedRequest } from '../../../common/auth/auth.types';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import {
   CreateCardDto,
+  CreateCreditCardPurchaseDto,
   CreateMonthlyExpenseCategoryDto,
   CreateMonthlyExpenseDto,
   MonthlyExpensesSummaryQueryDto,
+  PayCreditCardInvoiceDto,
   UpdateCardDto,
   UpdateMonthlyExpenseCategoryDto,
   UpdateMonthlyExpenseDto,
@@ -42,6 +44,31 @@ export class MonthlyExpenseController {
     @Body() data: CreateMonthlyExpenseDto,
   ) {
     return this.monthlyExpenseService.createExpense(req.user.userId, data);
+  }
+
+  @Post('card-purchases')
+  createCreditCardPurchase(
+    @Req() req: AuthenticatedRequest,
+    @Body() data: CreateCreditCardPurchaseDto,
+  ) {
+    return this.monthlyExpenseService.createCreditCardPurchase(req.user.userId, data);
+  }
+
+  @Delete('card-purchases/:id')
+  cancelCreditCardPurchase(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.monthlyExpenseService.cancelCreditCardPurchase(id, req.user.userId);
+  }
+
+  @Post('invoices/:id/pay')
+  payCreditCardInvoice(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() data: PayCreditCardInvoiceDto,
+  ) {
+    return this.monthlyExpenseService.payCreditCardInvoice(id, req.user.userId, data);
   }
 
   @Get('categories')

@@ -12,6 +12,7 @@ import {
   getMealCollapsedKcalLabel,
 } from '@/components/diet/diet-meal-collapsed-summary';
 import { DietMealOptionsMenu } from '@/components/diet/diet-meal-options-menu';
+import type { DietManualDraftPatch } from '@/hooks/use-diet-ingredient-draft';
 import type { DietIngredientDraftVm, DietMealVm } from '@/types/diet';
 import type { FoodSearchResult } from '@/types/foods';
 import { MdExpandMore } from 'react-icons/md';
@@ -23,7 +24,10 @@ type DietMealCardProps = {
     onAddIngredient: () => void;
     onRenameMeal: (name: string) => void;
     onDeleteMeal: () => void;
+    onDuplicateMeal: () => void;
     onSelectDraftFood: (food: FoodSearchResult) => void;
+    onStartManualDraft: () => void;
+    onChangeManualDraft: (patch: DietManualDraftPatch) => void;
     onChangeDraftGrams: (grams: number) => void;
     onConfirmDraft: () => void;
     onCancelDraft: () => void;
@@ -47,6 +51,7 @@ function MealCardActions({
   onAddIngredient,
   onRenameMeal,
   onDeleteMeal,
+  onDuplicateMeal,
 }: {
   blocked?: boolean;
   hasDraft: boolean;
@@ -54,6 +59,7 @@ function MealCardActions({
   onAddIngredient: () => void;
   onRenameMeal: (name: string) => void;
   onDeleteMeal: () => void;
+  onDuplicateMeal: () => void;
 }) {
   return (
     <>
@@ -73,6 +79,7 @@ function MealCardActions({
         disabled={blocked}
         onRename={onRenameMeal}
         onDelete={onDeleteMeal}
+        onDuplicate={onDuplicateMeal}
       />
     </>
   );
@@ -120,6 +127,7 @@ export function DietMealCard({ data, actions, ui, bindHeaderRef, bindIngredients
                 onAddIngredient={actions.onAddIngredient}
                 onRenameMeal={actions.onRenameMeal}
                 onDeleteMeal={actions.onDeleteMeal}
+                onDuplicateMeal={actions.onDuplicateMeal}
               />
             </div>
 
@@ -142,6 +150,8 @@ export function DietMealCard({ data, actions, ui, bindHeaderRef, bindIngredients
                     ui={{ disabled: blocked, saving: ui?.saving }}
                     actions={{
                       onSelectFood: actions.onSelectDraftFood,
+                      onStartManual: actions.onStartManualDraft,
+                      onChangeManual: actions.onChangeManualDraft,
                       onChangeGrams: actions.onChangeDraftGrams,
                       onConfirm: actions.onConfirmDraft,
                       onCancel: actions.onCancelDraft,
@@ -198,6 +208,7 @@ export function DietMealCard({ data, actions, ui, bindHeaderRef, bindIngredients
                 onAddIngredient={actions.onAddIngredient}
                 onRenameMeal={actions.onRenameMeal}
                 onDeleteMeal={actions.onDeleteMeal}
+                onDuplicateMeal={actions.onDuplicateMeal}
               />
             </div>
           </div>

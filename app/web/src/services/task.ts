@@ -1,4 +1,5 @@
 import type {
+  CopyTaskDayInput,
   CreateTaskInput,
   CreateTasksBulkInput,
   TaskDisciplineChartPeriod,
@@ -63,6 +64,13 @@ export function createTask(input: CreateTaskInput) {
 
 export function createTasksBulk(input: CreateTasksBulkInput) {
   return postJson<{ tasks: TaskVm[] }, CreateTasksBulkInput>('/api/tasks/bulk', input, {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+}
+
+export function copyTaskDay(input: CopyTaskDayInput) {
+  return postJson<{ tasks: TaskVm[] }, CopyTaskDayInput>('/api/tasks/copy-day', input, {
     cache: 'no-store',
     credentials: 'include',
   });

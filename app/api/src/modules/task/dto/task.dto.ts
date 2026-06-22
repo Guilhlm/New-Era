@@ -72,6 +72,18 @@ export class CreateTasksBulkDto {
   tasks!: CreateTaskBulkItemDto[];
 }
 
+export class CopyTaskDayDto {
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  sourceWeekday!: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  targetWeekday!: number;
+}
+
 export class UpdateTaskDto {
   @IsOptional()
   @IsString()

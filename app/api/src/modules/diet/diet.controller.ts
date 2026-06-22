@@ -15,6 +15,7 @@ import { ParseWeekdayPipe } from '../../common/pipes/parse-weekday.pipe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DietService } from './diet.service';
 import {
+  CopyDietDayDto,
   CreateDietFoodItemDto,
   CreateDietMealDto,
   UpdateDietFoodItemDto,
@@ -42,6 +43,23 @@ export class DietController {
       weekday: body.weekday,
       mealTime: body.mealTime,
     });
+  }
+
+  @Post('copy-day')
+  copyDay(@Req() req: AuthenticatedRequest, @Body() body: CopyDietDayDto) {
+    return this.dietService.copyDay(
+      req.user.userId,
+      body.sourceWeekday,
+      body.targetWeekday,
+    );
+  }
+
+  @Post(':mealId/duplicate')
+  duplicateMeal(
+    @Req() req: AuthenticatedRequest,
+    @Param('mealId') mealId: string,
+  ) {
+    return this.dietService.duplicateMeal(req.user.userId, mealId);
   }
 
   @Post(':mealId/items')

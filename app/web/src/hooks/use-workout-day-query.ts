@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { toastAuthError } from '@/lib/app-toast';
 import { queryKeys } from '@/lib/query-keys';
 import { getWorkoutDay } from '@/services/workout';
@@ -21,44 +21,55 @@ function emptyPlan(weekday: number): TrainingDayPlanVm {
   };
 }
 
+function toPlanVm(plan: TrainingDayPlanVm): TrainingDayPlanVm {
+  return {
+    ...plan,
+    groups: Array.isArray(plan.groups)
+      ? plan.groups.map((group) => ({ ...group, expanded: false, draft: null }))
+      : [],
+  };
+}
+
 type UseWorkoutDayQueryParams = {
   selectedWeekday: number;
 };
 
 export function useWorkoutDayQuery({ selectedWeekday }: UseWorkoutDayQueryParams) {
   const queryClient = useQueryClient();
-  const [plan, setPlan] = useState<TrainingDayPlanVm>(emptyPlan(selectedWeekday));
-
   const weekday = TRAINING_WEEKDAYS.find((day) => day.index === selectedWeekday);
 
   const query = useQuery({
     queryKey: queryKeys.workoutDay(selectedWeekday),
     queryFn: async () => {
       const { plan: nextPlan } = await getWorkoutDay(selectedWeekday);
-      return nextPlan;
+      return toPlanVm(nextPlan);
     },
     retry: 3,
   });
-
-  useEffect(() => {
-    if (!query.data || !Array.isArray(query.data.groups)) return;
-    setPlan({
-      ...query.data,
-      groups: query.data.groups.map((group) => ({
-        ...group,
-        expanded: false,
-        draft: null,
-      })),
-    });
-  }, [query.data]);
 
   useEffect(() => {
     if (!query.isError) return;
     const message =
       query.error instanceof HttpError ? query.error.message : 'Could not load workout day.';
     toastAuthError(message);
-    setPlan(emptyPlan(selectedWeekday));
-  }, [query.isError, query.error, selectedWeekday]);
+  }, [query.isError, query.error]);
+
+  const plan = query.data ?? emptyPlan(selectedWeekday);
+
+  const setPlan = useCallback(
+    (next: TrainingDayPlanVm | ((prev: TrainingDayPlanVm) => TrainingDayPlanVm)) => {
+      queryClient.setQueryData<TrainingDayPlanVm>(
+        queryKeys.workoutDay(selectedWeekday),
+        (prev) => {
+          const base = prev ?? emptyPlan(selectedWeekday);
+          return typeof next === 'function'
+            ? (next as (prev: TrainingDayPlanVm) => TrainingDayPlanVm)(base)
+            : next;
+        },
+      );
+    },
+    [queryClient, selectedWeekday],
+  );
 
   const loadDay = useCallback(
     async (weekdayIndex: number) => {

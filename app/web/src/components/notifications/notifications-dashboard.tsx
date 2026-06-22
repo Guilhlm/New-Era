@@ -17,6 +17,7 @@ export function NotificationsDashboard() {
         void state.actions.toggleRead(id, !item.read);
       }}
       onMarkAllRead={() => void state.actions.markAllRead()}
+      onArchive={(id) => void state.actions.archive(id)}
       className="h-full min-h-0"
     />
   );

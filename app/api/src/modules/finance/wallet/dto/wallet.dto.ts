@@ -1,12 +1,9 @@
 import { WalletType } from '@prisma/client';
 import {
   IsEnum,
-  IsNumber,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
 
@@ -30,10 +27,4 @@ export class UpdateWalletDto {
   @IsOptional()
   @IsEnum(WalletType)
   type?: WalletType;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000_000)
-  balance?: number;
 }

@@ -14,6 +14,7 @@ import type { AuthenticatedRequest } from '../../common/auth/auth.types';
 import { ParseWeekdayPipe } from '../../common/pipes/parse-weekday.pipe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
+  CopyTaskDayDto,
   CreateTaskDto,
   CreateTasksBulkDto,
   UpdateTaskDto,
@@ -82,6 +83,15 @@ export class TaskController {
       weekday: body.weekday,
       tasks: body.tasks,
     });
+  }
+
+  @Post('copy-day')
+  copyDay(@Req() req: AuthenticatedRequest, @Body() body: CopyTaskDayDto) {
+    return this.taskService.copyDay(
+      req.user.userId,
+      body.sourceWeekday,
+      body.targetWeekday,
+    );
   }
 
   @Post()

@@ -5,6 +5,7 @@ import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import {
   createDietMeal,
   deleteDietMeal,
+  duplicateDietMeal,
   updateDietMeal,
 } from '@/services/diet';
 import { HttpError } from '@/services/http';
@@ -81,6 +82,19 @@ export function useDietMealMutations({
     }
   }
 
+  async function duplicateMeal(mealId: string) {
+    setSaving(true);
+    try {
+      const { meal } = await duplicateDietMeal(mealId);
+      setMeals((prev) => [...prev, { ...meal, expanded: false, draft: null }]);
+      toastUpdated(CRUD_TOAST.mealDuplicated);
+    } catch (error) {
+      toastAuthError(error instanceof HttpError ? error.message : 'Could not duplicate meal.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function toggleMealExpanded(mealId: string) {
     setMeals((prev) => {
       const target = prev.find((meal) => meal.id === mealId);
@@ -101,6 +115,7 @@ export function useDietMealMutations({
       createMeal,
       renameMeal,
       removeMeal,
+      duplicateMeal,
       toggleMealExpanded,
     },
     ui: {

@@ -9,7 +9,7 @@ import {
 } from '@/components/finance-goals/finance-goals-distribution-donut';
 import { computeGoalsTotals, type FinanceGoalVm } from '@/components/finance-goals/finance-goals-types';
 import { typeClass, typeToneClass } from '@/lib/typography';
-import { formatWalletAmount } from '@/utils/wallet';
+import { formatBrlAmount } from '@/utils/wallet';
 
 type FinanceGoalsDistributionCardProps = {
   goals: FinanceGoalVm[];
@@ -40,7 +40,7 @@ export function FinanceGoalsDistributionCard({
             className="h-full min-h-0 w-full"
             segments={donutSegments}
             centerLabel="Total target"
-            centerValue={formatWalletAmount(totalTarget)}
+            centerValue={formatBrlAmount(totalTarget)}
           />
         </div>
       ) : (

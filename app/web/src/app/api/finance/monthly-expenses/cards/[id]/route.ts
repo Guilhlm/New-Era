@@ -23,6 +23,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (typeof body.limitTotal === 'number') payload.limitTotal = body.limitTotal;
   if (typeof body.limitUsage === 'number') payload.limitUsage = body.limitUsage;
   if (typeof body.type === 'string') payload.type = body.type;
+  if (typeof body.dueDay === 'number') payload.dueDay = body.dueDay;
 
   return proxyFinanceWrite(
     `/finance/monthly-expenses/cards/${encodeURIComponent(id)}`,

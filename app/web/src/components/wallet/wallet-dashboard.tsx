@@ -145,9 +145,7 @@ export function WalletDashboard() {
         investment={state.ui.editInvestment}
         saving={state.ui.saving}
         currency={state.ui.currency}
-        fxRate={state.data.fxRate}
         onClose={state.actions.closeEditPosition}
-        onSave={state.actions.saveEditPosition}
         onDelete={state.actions.deletePosition}
       />
 
@@ -166,12 +164,13 @@ export function WalletDashboard() {
       />
 
       <WalletCashDialog
+        key={state.ui.cashDialogMode}
         open={state.ui.cashDialogOpen}
         saving={state.ui.saving}
         defaultMode={state.ui.cashDialogMode}
-        defaultCurrency={state.ui.currency}
         fxRate={state.data.brlFxRate}
         availableBalanceUsdt={state.data.walletCashAvailable}
+        maxDepositBrl={state.data.monthlySalaryRemaining}
         onClose={state.actions.closeCashDialog}
         onSubmit={state.actions.submitCash}
       />

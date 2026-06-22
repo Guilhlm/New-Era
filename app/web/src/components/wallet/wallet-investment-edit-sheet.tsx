@@ -1,36 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { NativeDialog } from '@/components/ui/native-dialog';
 import { cn } from '@/components/ui/cn';
 import { typeClass, typeToneClass } from '@/lib/typography';
-import { WalletNumericInput } from '@/components/wallet/wallet-numeric-input';
 import {
   walletDialogActionsClass,
-  walletDialogFieldClass,
   walletDialogFormClass,
   walletDialogPrimaryActionsClass,
   walletDialogSectionClass,
 } from '@/components/wallet/wallet-dialog-layout';
-import type { QuoteCurrency, UpdateInvestmentInput } from '@/types/finance';
+import type { QuoteCurrency } from '@/types/finance';
 import type { WalletCurrency, WalletInvestmentRowVm } from '@/types/wallet';
-import { formatWalletAmount, roundUsdt } from '@/utils/wallet';
-import {
-  formatAmountDraft,
-  formatSharesDraft,
-  parseLocaleAmount,
-  parseLocaleShares,
-} from '@/utils/wallet-number-input';
+import { formatWalletAmount } from '@/utils/wallet';
+import { formatPositionShares } from '@/utils/wallet-trade';
 
 type WalletInvestmentEditSheetProps = {
   open: boolean;
   investment: WalletInvestmentRowVm | null;
   saving?: boolean;
   currency?: QuoteCurrency;
-  fxRate?: number;
   onClose: () => void;
-  onSave: (id: string, input: UpdateInvestmentInput) => void;
   onDelete: (id: string) => void;
 };
 
@@ -39,62 +29,19 @@ export function WalletInvestmentEditSheet({
   investment,
   saving,
   currency = 'USDT',
-  fxRate = 1,
   onClose,
-  onSave,
   onDelete,
 }: WalletInvestmentEditSheetProps) {
-  const [shares, setShares] = useState('');
-  const [avgPrice, setAvgPrice] = useState('');
-
-  useEffect(() => {
-    if (!investment) return;
-    setShares(formatSharesDraft(investment.shares));
-    setAvgPrice(formatAmountDraft(investment.avgPrice));
-  }, [investment]);
-
   if (!investment) return null;
 
   const amountOpts = { currency: currency as WalletCurrency, alreadyConverted: true as const };
 
   return (
     <NativeDialog open={open} size="wide" ariaLabelledBy="edit-investment-title" onClose={onClose}>
-      <form
-        method="dialog"
-        className={walletDialogFormClass}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const parsedShares = parseLocaleShares(shares);
-          const parsedAvg = parseLocaleAmount(avgPrice);
-          if (
-            !investment.id ||
-            parsedShares == null ||
-            parsedShares <= 0 ||
-            parsedAvg == null ||
-            parsedAvg < 0
-          ) {
-            return;
-          }
-
-          const avgPriceUsdt =
-            currency === 'BRL' && fxRate > 0
-              ? roundUsdt(parsedAvg / fxRate)
-              : roundUsdt(parsedAvg);
-          const currentPriceUsdt =
-            currency === 'BRL' && fxRate > 0
-              ? roundUsdt(investment.currentPrice / fxRate)
-              : roundUsdt(investment.currentPrice);
-
-          onSave(investment.id, {
-            shares: parsedShares,
-            avgPrice: avgPriceUsdt,
-            currentPrice: currentPriceUsdt,
-          });
-        }}
-      >
+      <div className={walletDialogFormClass}>
         <div>
           <p id="edit-investment-title" className={cn(typeClass.title, typeToneClass.default)}>
-            Edit position
+            Position details
           </p>
           <p className={cn('mt-1', typeClass.caption, typeToneClass.muted)}>
             {investment.ticker} · {investment.name}
@@ -108,22 +55,28 @@ export function WalletInvestmentEditSheet({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-          <label className={cn(walletDialogFieldClass, typeClass.body)}>
+        <div className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', typeClass.body)}>
+          <div className={walletDialogSectionClass}>
             <span className={typeToneClass.muted}>Quantity</span>
-            <WalletNumericInput value={shares} disabled={saving} hint={false} onChange={setShares} />
-          </label>
-          <label className={cn(walletDialogFieldClass, typeClass.body)}>
-            <span className={typeToneClass.muted}>Average price ({currency})</span>
-            <WalletNumericInput value={avgPrice} disabled={saving} onChange={setAvgPrice} />
-          </label>
+            <span className={typeClass.bodyStrong}>
+              {formatPositionShares(investment.shares, investment.type)} {investment.ticker}
+            </span>
+          </div>
+          <div className={walletDialogSectionClass}>
+            <span className={typeToneClass.muted}>Average price</span>
+            <span className={typeClass.bodyStrong}>
+              {formatWalletAmount(investment.avgPrice, amountOpts)}
+            </span>
+          </div>
+        </div>
+
+        <div className={cn(walletDialogSectionClass, typeClass.caption, typeToneClass.muted)}>
+          Position quantity and pricing are ledger-controlled. Use Buy/Sell for trades or
+          Register position for manual entries.
         </div>
 
         <div className={walletDialogActionsClass}>
           <div className={cn(walletDialogPrimaryActionsClass, 'sm:flex-wrap')}>
-            <Button type="submit" variant="primary" disabled={saving} className="flex-1">
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
             <Button type="button" variant="secondary" disabled={saving} onClick={onClose} className="flex-1 sm:flex-none sm:min-w-[7.5rem]">
               Cancel
             </Button>
@@ -138,7 +91,7 @@ export function WalletInvestmentEditSheet({
             </Button>
           </div>
         </div>
-      </form>
+      </div>
     </NativeDialog>
   );
 }

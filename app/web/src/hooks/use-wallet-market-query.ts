@@ -61,6 +61,7 @@ export function useWalletMarketQuery(tab: WalletInvestmentTab, currency: QuoteCu
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -68,10 +69,11 @@ export function useWalletFxQuery() {
   return useQuery({
     queryKey: queryKeys.walletFx,
     queryFn: () => getFxRate(),
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 }

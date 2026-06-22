@@ -17,11 +17,13 @@ import { formatBrlAmount } from '@/utils/wallet';
 export function MonthlyExpensesDashboard() {
   const state = useMonthlyExpensesDashboardState();
   const totals = state.data.totals;
+  const monthlySpending = -totals.spent;
+  const budgetUsage = Math.max(0, totals.spent);
   const spentPercent =
-    totals.budget > 0 ? Math.round((Math.abs(totals.spent) / totals.budget) * 100) : 0;
+    totals.budget > 0 ? Math.round((budgetUsage / totals.budget) * 100) : 0;
   const budgetRemainingPercent =
     totals.budget > 0
-      ? Math.round(((totals.budget - Math.abs(totals.spent)) / totals.budget) * 100)
+      ? Math.round(((totals.budget - budgetUsage) / totals.budget) * 100)
       : 0;
   const remainingPercent =
     totals.income > 0 ? Math.round((Math.max(0, totals.remaining) / totals.income) * 100) : 0;
@@ -46,10 +48,10 @@ export function MonthlyExpensesDashboard() {
               className="min-w-0"
               data={{
                 label: 'Monthly spending',
-                valueLabel: formatBrlAmount(-Math.abs(totals.spent), { signed: true }),
+                valueLabel: formatBrlAmount(monthlySpending, { signed: true }),
                 percent: spentPercent,
-                barClassName: 'bg-red',
-                valueClassName: 'text-red',
+                barClassName: monthlySpending >= 0 ? 'bg-green' : 'bg-red',
+                valueClassName: monthlySpending >= 0 ? 'text-green' : 'text-red',
                 footerRight: `Goals + fixed: ${formatBrlAmount(totals.fixedCommitments)}`,
               }}
             />
@@ -91,6 +93,7 @@ export function MonthlyExpensesDashboard() {
               lastFour: values.lastFour,
               limitTotal: values.limit,
               limitUsage: values.used,
+              dueDay: values.dueDay,
               brand: values.brand,
               color: values.color,
               type: 'CREDIT',
@@ -102,12 +105,15 @@ export function MonthlyExpensesDashboard() {
               lastFour: values.lastFour,
               limitTotal: values.limit,
               limitUsage: values.used,
+              dueDay: values.dueDay,
               brand: values.brand,
               color: values.color,
               type: 'CREDIT',
             })
           }
           onDeleteCard={state.actions.deleteCard}
+          onPayInvoice={state.actions.payCardInvoice}
+          salaryRemaining={totals.remaining}
         />
         <MonthlyExpensesTransactionsCard
           expenses={state.data.expenses}
@@ -116,15 +122,10 @@ export function MonthlyExpensesDashboard() {
             id: item.id,
             label: `${item.brand === 'mastercard' ? 'Mastercard' : 'Visa'} •••• ${item.lastFour}`,
           }))}
-          monthLabel={state.data.monthLabel}
-          monthShortLabel={state.data.monthShortLabel}
-          onPrevMonth={state.actions.prevMonth}
-          onNextMonth={state.actions.nextMonth}
           onCreateExpense={state.actions.createExpense}
           onUpdateExpense={state.actions.updateExpense}
           onDeleteExpense={state.actions.deleteExpense}
           saving={state.ui.saving}
-          spent={totals.spent}
           vsLastMonth={totals.vsLastMonth}
           className="h-full min-h-0"
         />

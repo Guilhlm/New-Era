@@ -1,5 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InvestmentLastAction } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
 import {
   assertResourceExists,
   assertResourceOwner,
@@ -7,19 +6,13 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { syncUserFinanceState } from '../common/finance-balance.util';
 import { realignOpeningSnapshotAfterPositionRemoval } from '../common/finance-snapshot.util';
-import {
-  deriveInvestmentValues,
-  toNumber,
-} from '../common/investment-value.util';
 import { FinanceExecutionService } from '../execution/finance-execution.service';
 import { PortfolioReadService } from '../portfolio/portfolio-read.service';
 import { FINANCE_TX_CATEGORY } from './dto/investment.dto';
 import type {
-  CreateInvestmentDto,
   DepositFundsDto,
   FinanceTab,
   RegisterPositionDto,
-  TradeInvestmentDto,
   UpdateInvestmentDto,
   WithdrawFundsDto,
 } from './dto/investment.dto';
@@ -32,33 +25,6 @@ export class InvestmentService {
     private readonly execution: FinanceExecutionService,
     private readonly portfolioRead: PortfolioReadService,
   ) {}
-
-  async create(userId: string, data: CreateInvestmentDto) {
-    const derived = deriveInvestmentValues({
-      shares: data.shares,
-      avgPrice: data.avgPrice,
-      currentPrice: data.currentPrice,
-    });
-
-    const investment = await this.prisma.investment.create({
-      data: {
-        userId,
-        ticker: data.ticker.toUpperCase(),
-        name: data.name,
-        type: data.type,
-        shares: derived.shares,
-        avgPrice: derived.avgPrice,
-        currentPrice: derived.currentPrice,
-        currentValue: derived.currentValue,
-        costValue: derived.costValue,
-        lastAction: data.lastAction ?? InvestmentLastAction.BUY,
-        notes: data.notes ?? null,
-      },
-    });
-
-    await syncUserFinanceState(this.prisma, userId);
-    return investment;
-  }
 
   registerPosition(userId: string, data: RegisterPositionDto) {
     return this.execution.registerPosition(userId, data);
@@ -85,12 +51,7 @@ export class InvestmentService {
   }
 
   async update(id: string, userId: string, data: UpdateInvestmentDto) {
-    const existing = await this.findOne(id, userId);
-
-    const shares = data.shares ?? toNumber(existing.shares);
-    const avgPrice = data.avgPrice ?? toNumber(existing.avgPrice);
-    const currentPrice = data.currentPrice ?? toNumber(existing.currentPrice);
-    const derived = deriveInvestmentValues({ shares, avgPrice, currentPrice });
+    await this.findOne(id, userId);
 
     const investment = await this.prisma.investment.update({
       where: { id },
@@ -98,20 +59,6 @@ export class InvestmentService {
         ...(data.ticker !== undefined ? { ticker: data.ticker.toUpperCase() } : {}),
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.type !== undefined ? { type: data.type } : {}),
-        ...(data.shares !== undefined ? { shares: derived.shares } : {}),
-        ...(data.avgPrice !== undefined ? { avgPrice: derived.avgPrice } : {}),
-        ...(data.currentPrice !== undefined
-          ? { currentPrice: derived.currentPrice }
-          : {}),
-        ...(data.shares !== undefined ||
-        data.avgPrice !== undefined ||
-        data.currentPrice !== undefined
-          ? {
-              currentValue: derived.currentValue,
-              costValue: derived.costValue,
-            }
-          : {}),
-        ...(data.lastAction !== undefined ? { lastAction: data.lastAction } : {}),
         ...(data.notes !== undefined ? { notes: data.notes } : {}),
       },
     });
@@ -148,11 +95,6 @@ export class InvestmentService {
     );
     await syncUserFinanceState(this.prisma, userId);
     return { ok: true };
-  }
-
-  /** @deprecated Prefer POST /finance/market/trade */
-  trade(id: string, userId: string, data: TradeInvestmentDto) {
-    return this.execution.tradeByInvestmentId(id, userId, data);
   }
 
   depositFunds(userId: string, data: DepositFundsDto) {

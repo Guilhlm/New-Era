@@ -33,6 +33,7 @@ export type LivePositionRow = {
   currentPrice: number;
   currentValue: number;
   costValue: number;
+  changePct24h: number;
   lastAction: InvestmentLastAction;
 };
 
@@ -61,15 +62,16 @@ export class PortfolioReadService {
       investments.map(async (inv) => {
         const ticker = inv.ticker.toUpperCase();
         const quote = await this.marketProviders.fetchQuoteForTicker(ticker);
-        return [ticker, quote?.priceUsdt ?? 0] as const;
+        return [ticker, quote] as const;
       }),
     );
-    const livePrices = new Map(quoteEntries);
+    const liveQuotes = new Map(quoteEntries);
 
     return investments.map((inv) => {
       const shares = toNumber(inv.shares);
       const storedPrice = toNumber(inv.currentPrice);
-      const livePrice = livePrices.get(inv.ticker.toUpperCase()) ?? 0;
+      const quote = liveQuotes.get(inv.ticker.toUpperCase());
+      const livePrice = quote?.priceUsdt ?? 0;
       const currentPrice = livePrice > 0 ? livePrice : storedPrice;
       const costValue = toNumber(inv.costValue);
 
@@ -83,19 +85,29 @@ export class PortfolioReadService {
         currentPrice,
         currentValue: shares * currentPrice,
         costValue,
+        changePct24h: quote?.changePct24h ?? 0,
         lastAction: inv.lastAction,
       };
     });
   }
 
   async equityUsdt(userId: string): Promise<EquitySnapshot> {
-    const [wallets, positions] = await Promise.all([
-      this.prisma.wallet.findMany({
-        where: { userId },
-        select: { balance: true },
-      }),
-      this.livePositions(userId),
-    ]);
+    const positions = await this.livePositions(userId);
+    return this.equityFromPositions(userId, positions);
+  }
+
+  /**
+   * Derives the equity snapshot from already-loaded positions, avoiding a second
+   * `livePositions` round-trip (DB + external quotes) when the caller already has them.
+   */
+  async equityFromPositions(
+    userId: string,
+    positions: LivePositionRow[],
+  ): Promise<EquitySnapshot> {
+    const wallets = await this.prisma.wallet.findMany({
+      where: { userId },
+      select: { balance: true },
+    });
 
     const walletTotal = wallets.reduce((sum, w) => sum + toNumber(w.balance), 0);
     const investedTotal = positions.reduce((sum, p) => sum + p.currentValue, 0);
@@ -109,9 +121,44 @@ export class PortfolioReadService {
     };
   }
 
-  async ensureOpeningSnapshot(userId: string, equity: EquitySnapshot): Promise<void> {
+  async ensureOpeningSnapshot(userId: string, _equity: EquitySnapshot): Promise<void> {
     const today = this.startOfUtcDay();
-    await createPortfolioSnapshotIfMissing(this.prisma, userId, today, SNAPSHOT_KIND.OPENING, {
+    const existing = await findPortfolioSnapshot(
+      this.prisma,
+      userId,
+      today,
+      SNAPSHOT_KIND.OPENING,
+    );
+    if (existing) return;
+
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const previousClosing = await findPortfolioSnapshot(
+      this.prisma,
+      userId,
+      yesterday,
+      SNAPSHOT_KIND.CLOSING,
+    );
+
+    const openingTotals = previousClosing
+      ? {
+          totalBalance: toNumber(previousClosing.totalValue),
+          investedTotal: toNumber(previousClosing.investedValue),
+        }
+      : { totalBalance: 0, investedTotal: 0 };
+
+    await createPortfolioSnapshotIfMissing(
+      this.prisma,
+      userId,
+      today,
+      SNAPSHOT_KIND.OPENING,
+      openingTotals,
+    );
+  }
+
+  async ensureClosingSnapshot(userId: string, equity: EquitySnapshot): Promise<void> {
+    const today = this.startOfUtcDay();
+    await upsertPortfolioSnapshot(this.prisma, userId, today, SNAPSHOT_KIND.CLOSING, {
       totalBalance: equity.totalBalance,
       investedTotal: equity.investedTotal,
     });
@@ -159,6 +206,32 @@ export class PortfolioReadService {
           totalBalance: equityNow,
           investedTotal: equity.investedTotal,
         });
+      } else if (Math.abs(startOfDayBalance - equityNow) < 0.01) {
+        const yesterday = new Date(today);
+        yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+        const previousClosing = await findPortfolioSnapshot(
+          this.prisma,
+          userId,
+          yesterday,
+          SNAPSHOT_KIND.CLOSING,
+        );
+
+        if (previousClosing) {
+          const previousClosingBalance = toNumber(previousClosing.totalValue);
+          if (Math.abs(previousClosingBalance - equityNow) > 0.01) {
+            startOfDayBalance = previousClosingBalance;
+            await upsertPortfolioSnapshot(this.prisma, userId, today, SNAPSHOT_KIND.OPENING, {
+              totalBalance: previousClosingBalance,
+              investedTotal: toNumber(previousClosing.investedValue),
+            });
+          }
+        } else if (startOfDayBalance > 0.01) {
+          startOfDayBalance = 0;
+          await upsertPortfolioSnapshot(this.prisma, userId, today, SNAPSHOT_KIND.OPENING, {
+            totalBalance: 0,
+            investedTotal: 0,
+          });
+        }
       }
     }
 

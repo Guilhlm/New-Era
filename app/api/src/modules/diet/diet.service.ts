@@ -77,7 +77,7 @@ export class DietService {
         name: data.name,
         totalGrams: data.totalGrams,
         externalSource: data.externalSource,
-        externalFoodId: data.externalFoodId,
+        externalFoodId: data.externalFoodId ?? null,
         caloriesPer100g: data.caloriesPer100g,
         proteinPer100g: data.proteinPer100g,
         carbsPer100g: data.carbsPer100g,
@@ -88,6 +88,87 @@ export class DietService {
         fats: scaled.fats,
       },
     });
+  }
+
+  async duplicateMeal(userId: string, mealId: string) {
+    const meal = await this.assertMealOwner(userId, mealId);
+    const items = await this.prisma.dietFoodItem.findMany({
+      where: { mealId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return this.prisma.dietMeal.create({
+      data: {
+        userId,
+        name: `${meal.name} (copy)`,
+        weekday: meal.weekday,
+        mealTime: meal.mealTime,
+        items: {
+          create: items.map((item) => ({
+            name: item.name,
+            totalGrams: item.totalGrams,
+            externalSource: item.externalSource,
+            externalFoodId: item.externalFoodId,
+            caloriesPer100g: item.caloriesPer100g,
+            proteinPer100g: item.proteinPer100g,
+            carbsPer100g: item.carbsPer100g,
+            fatsPer100g: item.fatsPer100g,
+            calories: item.calories,
+            protein: item.protein,
+            carbodrate: item.carbodrate,
+            fats: item.fats,
+          })),
+        },
+      },
+      include: { items: { orderBy: { createdAt: 'asc' } } },
+    });
+  }
+
+  async copyDay(userId: string, sourceWeekday: number, targetWeekday: number) {
+    if (sourceWeekday === targetWeekday) {
+      return this.findByWeekday(userId, targetWeekday);
+    }
+
+    const sourceMeals = await this.prisma.dietMeal.findMany({
+      where: { userId, weekday: sourceWeekday, isActive: true },
+      include: { items: { orderBy: { createdAt: 'asc' } } },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.dietMeal.deleteMany({
+        where: { userId, weekday: targetWeekday },
+      });
+
+      for (const meal of sourceMeals) {
+        await tx.dietMeal.create({
+          data: {
+            userId,
+            name: meal.name,
+            weekday: targetWeekday,
+            mealTime: meal.mealTime,
+            items: {
+              create: meal.items.map((item) => ({
+                name: item.name,
+                totalGrams: item.totalGrams,
+                externalSource: item.externalSource,
+                externalFoodId: item.externalFoodId,
+                caloriesPer100g: item.caloriesPer100g,
+                proteinPer100g: item.proteinPer100g,
+                carbsPer100g: item.carbsPer100g,
+                fatsPer100g: item.fatsPer100g,
+                calories: item.calories,
+                protein: item.protein,
+                carbodrate: item.carbodrate,
+                fats: item.fats,
+              })),
+            },
+          },
+        });
+      }
+    });
+
+    return this.findByWeekday(userId, targetWeekday);
   }
 
   async updateItem(

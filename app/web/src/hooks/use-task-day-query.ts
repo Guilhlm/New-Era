@@ -50,6 +50,13 @@ export function useTaskDayQuery() {
     [queryClient],
   );
 
+  const setTasksForDay = useCallback(
+    (weekdayIndex: number, nextTasks: TaskVm[]) => {
+      queryClient.setQueryData<TaskVm[]>(queryKeys.taskDay(weekdayIndex), nextTasks);
+    },
+    [queryClient],
+  );
+
   return {
     data: {
       selectedWeekday,
@@ -59,6 +66,7 @@ export function useTaskDayQuery() {
     },
     actions: {
       setTasks,
+      setTasksForDay,
       loadDay,
       prevDay,
       nextDay,

@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
 import { CreateEntityDialog } from '@/components/ui/create-entity-dialog';
+import { DialogFormActions } from '@/components/ui/dialog-form-actions';
+import { DialogFormField } from '@/components/ui/dialog-form-field';
+import { dialogFormInputClass } from '@/components/ui/dialog-form-layout';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import { formatBrlAmount } from '@/utils/wallet';
-import { walletDialogFieldClass, walletDialogSelectClass } from '@/components/wallet/wallet-dialog-layout';
 
-const INPUT_CLASS = cn('w-full placeholder:text-text/40 disabled:opacity-60', walletDialogSelectClass);
+const INPUT_CLASS = cn('w-full placeholder:text-text/40 disabled:opacity-60', dialogFormInputClass);
 
 type CategoryFormValues = {
   name: string;
@@ -69,8 +70,10 @@ function CategoryForm({ mode, initial, saving = false, onSubmit, onClose }: Cate
         </p>
       </div>
 
-      <label className={walletDialogFieldClass}>
-        <span className={cn(typeClass.caption, typeToneClass.muted60)}>Name</span>
+      <DialogFormField
+        label="Name"
+        hint={nameLocked ? 'Fixed category: the name cannot be changed.' : undefined}
+      >
         <input
           type="text"
           autoFocus
@@ -80,15 +83,9 @@ function CategoryForm({ mode, initial, saving = false, onSubmit, onClose }: Cate
           className={INPUT_CLASS}
           onChange={(event) => setName(event.target.value)}
         />
-        {nameLocked ? (
-          <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-            Fixed category: the name cannot be changed.
-          </span>
-        ) : null}
-      </label>
+      </DialogFormField>
 
-      <label className={walletDialogFieldClass}>
-        <span className={cn(typeClass.caption, typeToneClass.muted60)}>Monthly budget</span>
+      <DialogFormField label="Monthly budget">
         <input
           type="text"
           inputMode="decimal"
@@ -98,11 +95,13 @@ function CategoryForm({ mode, initial, saving = false, onSubmit, onClose }: Cate
           className={cn(INPUT_CLASS, 'tabular-nums')}
           onChange={(event) => setBudget(event.target.value.replace(/[^\d.,]/g, ''))}
         />
-      </label>
+      </DialogFormField>
 
       {mode === 'edit' && initial.spent != null ? (
-        <label className={walletDialogFieldClass}>
-          <span className={cn(typeClass.caption, typeToneClass.muted60)}>Spending adjustment</span>
+        <DialogFormField
+          label="Spending adjustment"
+          hint={`Current spending: ${formatBrlAmount(initial.spent)} · positive adds, negative removes`}
+        >
           <input
             type="text"
             inputMode="decimal"
@@ -112,27 +111,15 @@ function CategoryForm({ mode, initial, saving = false, onSubmit, onClose }: Cate
             className={cn(INPUT_CLASS, 'tabular-nums')}
             onChange={(event) => setSpentAdjustment(event.target.value.replace(/[^\d.,+-]/g, ''))}
           />
-          <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-            Current spending: {formatBrlAmount(initial.spent)} · positive adds, negative removes
-          </span>
-        </label>
+        </DialogFormField>
       ) : null}
 
-      <div className="flex items-center gap-2">
-        <Button type="submit" variant="primary" size="sm" disabled={saving || !canSubmit} className="flex-1">
-          {saving ? 'Saving…' : mode === 'create' ? 'Create category' : 'Save changes'}
-        </Button>
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={saving}
-          className={cn('bg-layer2 text-text hover:bg-layer2-half')}
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-      </div>
+      <DialogFormActions
+        submitLabel={saving ? 'Saving…' : mode === 'create' ? 'Create category' : 'Save changes'}
+        saving={saving}
+        disabled={!canSubmit}
+        onCancel={onClose}
+      />
     </form>
   );
 }

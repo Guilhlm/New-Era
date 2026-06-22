@@ -12,6 +12,31 @@ export type CreditCardVm = {
   holder: string;
   limit: number;
   used: number;
+  dueDay: number;
+  invoice?: {
+    id: string;
+    monthKey: string;
+    dueDate: string;
+    closingDate: string;
+    amount: number;
+    totalAmount: number;
+    paidAmount: number;
+    cycleStatus: 'open' | 'closed';
+    status: 'open' | 'paid';
+    paidAt: string | null;
+  } | null;
+  openInvoices?: Array<{
+    id: string;
+    monthKey: string;
+    dueDate: string;
+    closingDate: string;
+    amount: number;
+    totalAmount: number;
+    paidAmount: number;
+    cycleStatus: 'open' | 'closed';
+    status: 'open' | 'paid';
+    paidAt: string | null;
+  }>;
   brand: CreditCardBrand;
   color: string;
   highlighted?: boolean;
@@ -22,6 +47,7 @@ export type CreditCardCreateInput = {
   lastFour: string;
   limit: number;
   used: number;
+  dueDay: number;
   brand: CreditCardBrand;
   color: string;
 };

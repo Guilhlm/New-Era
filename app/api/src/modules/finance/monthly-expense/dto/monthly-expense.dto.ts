@@ -151,6 +151,12 @@ export class CreateCardDto {
   @IsOptional()
   @IsEnum(CardType)
   type?: CardType;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(28)
+  dueDay?: number;
 }
 
 export class UpdateCardDto {
@@ -191,6 +197,57 @@ export class UpdateCardDto {
   @IsOptional()
   @IsEnum(CardType)
   type?: CardType;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(28)
+  dueDay?: number;
+}
+
+export class CreateCreditCardPurchaseDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(160)
+  title!: string;
+
+  @IsNumber()
+  @Min(0.01)
+  @Max(1_000_000_000)
+  amount!: number;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(64)
+  cardId!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  categoryId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(120)
+  installments!: number;
+}
+
+export class PayCreditCardInvoiceDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(7)
+  @MaxLength(7)
+  monthKey?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  @Max(1_000_000_000)
+  amount?: number;
 }
 
 export class MonthlyExpensesCategorySummaryQueryDto {

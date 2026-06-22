@@ -1,7 +1,12 @@
 import type { FoodSearchResult } from '@/types/foods';
 import { getJson, postJson, patchJson, deleteJson } from '@/services/http';
 import type { DietMealVm } from '@/types/diet';
-import type { CreateDietFoodItemInput, CreateDietMealInput, UpdateDietFoodItemInput } from '@/types/diet';
+import type {
+  CopyDietDayInput,
+  CreateDietFoodItemInput,
+  CreateDietMealInput,
+  UpdateDietFoodItemInput,
+} from '@/types/diet';
 
 export function searchFoods(query: string, limit = 10) {
   const params = new URLSearchParams({ q: query, limit: String(limit) });
@@ -34,6 +39,21 @@ export function updateDietMeal(mealId: string, input: { name: string }) {
 
 export function deleteDietMeal(mealId: string) {
   return deleteJson<{ ok: true }>(`/api/diet/meals/${mealId}`, {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+}
+
+export function duplicateDietMeal(mealId: string) {
+  return postJson<{ meal: DietMealVm }, Record<string, never>>(
+    `/api/diet/meals/${mealId}/duplicate`,
+    {},
+    { cache: 'no-store', credentials: 'include' },
+  );
+}
+
+export function copyDietDay(input: CopyDietDayInput) {
+  return postJson<{ meals: DietMealVm[] }, CopyDietDayInput>('/api/diet/day/copy', input, {
     cache: 'no-store',
     credentials: 'include',
   });

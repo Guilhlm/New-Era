@@ -8,7 +8,6 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { SNAPSHOT_KIND } from '../common/finance-snapshot.util';
 import {
-  computeGain,
   toNumber,
 } from '../common/investment-value.util';
 import {
@@ -29,6 +28,21 @@ const ALLOCATION_COLORS: Record<string, string> = {
 
 const RECENT_TX_LIMIT = 10;
 
+/** Transações exibidas em Recent Transactions da wallet (exclui aportes em metas). */
+const WALLET_RECENT_TX_CATEGORIES = [
+  FINANCE_TX_CATEGORY.DEPOSIT,
+  FINANCE_TX_CATEGORY.DEPOSIT_CARD,
+  FINANCE_TX_CATEGORY.DEPOSIT_CASH,
+  FINANCE_TX_CATEGORY.DEPOSIT_SALARY,
+  FINANCE_TX_CATEGORY.DEPOSIT_EXTRA_INCOME,
+  FINANCE_TX_CATEGORY.WITHDRAW,
+  FINANCE_TX_CATEGORY.CARD_INVOICE_PAYMENT,
+  FINANCE_TX_CATEGORY.INVESTMENT_BUY,
+  FINANCE_TX_CATEGORY.INVESTMENT_SELL,
+  FINANCE_TX_CATEGORY.POSITION_REGISTER,
+  FINANCE_TX_CATEGORY.DIVIDEND,
+] as const;
+
 @Injectable()
 export class FinanceSummaryService {
   constructor(
@@ -48,12 +62,14 @@ export class FinanceSummaryService {
 
   async getSummary(userId: string, performancePeriod = '1W') {
     await this.assertMonthlyIncomeConfigured(userId);
-    const [equity, positions, cash, transactions, monthlyExpenses, snapshots] = await Promise.all([
-      this.portfolioRead.equityUsdt(userId),
+    const [positions, cash, transactions, monthlyExpenses, snapshots] = await Promise.all([
       this.portfolioRead.livePositions(userId),
       this.portfolioRead.primaryCashAvailable(userId),
       this.prisma.transaction.findMany({
-        where: { userId },
+        where: {
+          userId,
+          category: { in: [...WALLET_RECENT_TX_CATEGORIES] },
+        },
         orderBy: { date: 'desc' },
         take: RECENT_TX_LIMIT,
         include: { fromWallet: true, toWallet: true },
@@ -71,7 +87,10 @@ export class FinanceSummaryService {
       this.getPerformanceSnapshots(userId, performancePeriod),
     ]);
 
+    const equity = await this.portfolioRead.equityFromPositions(userId, positions);
+
     await this.portfolioRead.ensureOpeningSnapshot(userId, equity);
+    await this.portfolioRead.ensureClosingSnapshot(userId, equity);
 
     const wallets = await this.prisma.wallet.findMany({
       where: { userId },
@@ -108,13 +127,7 @@ export class FinanceSummaryService {
       .sort((a, b) => b.date.getTime() - a.date.getTime())
       .slice(0, RECENT_TX_LIMIT)
       .map(({ date: _date, ...item }) => item);
-    const performance = this.buildPerformance(
-      performancePeriod,
-      snapshots,
-      totalBalance,
-      allTimeGainAmount,
-      allTimeGainPct,
-    );
+    const performance = this.buildPerformance(performancePeriod, snapshots, totalBalance);
 
     const investedPctOfTotal =
       totalBalance > 0 ? (investedTotal / totalBalance) * 100 : 0;
@@ -147,17 +160,14 @@ export class FinanceSummaryService {
       this.portfolioRead.equityUsdt(userId),
     ]);
 
-    const { totalBalance, investedTotal, costTotal } = equity;
-    const { gainAmount, gainPct } = this.portfolioRead.computeAllTimeGain(
-      investedTotal,
-      costTotal,
-    );
+    const { totalBalance } = equity;
+    await this.portfolioRead.ensureClosingSnapshot(userId, equity);
 
-    return this.buildPerformance(period, snapshots, totalBalance, gainAmount, gainPct);
+    return this.buildPerformance(period, snapshots, totalBalance);
   }
 
   private async getPerformanceSnapshots(userId: string, period: string) {
-    const days = this.periodToDays(period);
+    const days = Math.max(this.periodToDays(period), 2);
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - days);
     since.setUTCHours(0, 0, 0, 0);
@@ -266,10 +276,10 @@ export class FinanceSummaryService {
       };
     }
 
-    const rows = investments.map((inv) => {
-      const { gainPct } = computeGain(inv.currentValue, inv.costValue);
-      return { ticker: inv.ticker || inv.name, gainPct };
-    });
+    const rows = investments.map((inv) => ({
+      ticker: inv.ticker || inv.name,
+      gainPct: inv.changePct24h,
+    }));
 
     const winnersCount = rows.filter((r) => r.gainPct > 0).length;
     const losersCount = rows.filter((r) => r.gainPct < 0).length;
@@ -321,6 +331,9 @@ export class FinanceSummaryService {
     } else if (category === FINANCE_TX_CATEGORY.FINANCIAL_GOAL_CONTRIBUTION) {
       title = 'Goal contribution';
       subtitle = tx.description ?? 'Funds allocated to a goal';
+    } else if (category === FINANCE_TX_CATEGORY.CARD_INVOICE_PAYMENT) {
+      title = 'Card invoice payment';
+      subtitle = tx.description ?? 'Invoice paid';
     } else if (category === FINANCE_TX_CATEGORY.POSITION_REGISTER) {
       title = 'Position registered';
       subtitle = tx.description?.includes('•')
@@ -360,28 +373,72 @@ export class FinanceSummaryService {
     };
   }
 
+  private startOfUtcDay(date = new Date()): Date {
+    const day = new Date(date);
+    day.setUTCHours(0, 0, 0, 0);
+    return day;
+  }
+
+  private dayKey(date: Date): string {
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+  }
+
+  private buildDailyPerformancePoints(
+    days: number,
+    snapshots: Array<{ date: Date; totalValue: unknown }>,
+    currentBalance: number,
+  ) {
+    const effectiveDays = Math.max(days, 2);
+    const end = this.startOfUtcDay();
+    const start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - (effectiveDays - 1));
+
+    const byDay = new Map<string, number>();
+    for (const snapshot of snapshots) {
+      byDay.set(this.dayKey(snapshot.date), toNumber(snapshot.totalValue));
+    }
+
+    const points: Array<{ label: string; value: number }> = [];
+    let lastKnown = 0;
+    const cursor = new Date(start);
+
+    while (cursor.getTime() <= end.getTime()) {
+      const key = this.dayKey(cursor);
+      if (byDay.has(key)) {
+        lastKnown = byDay.get(key)!;
+      }
+      const isLast = cursor.getTime() === end.getTime();
+      points.push({
+        label: cursor.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }),
+        value: isLast ? currentBalance : lastKnown,
+      });
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    return points;
+  }
+
   private buildPerformance(
     period: string,
     snapshots: Array<{ date: Date; totalValue: unknown }>,
     totalBalance: number,
-    gainAmount: number,
-    gainPct: number,
   ) {
-    const points =
-      snapshots.length > 0
-        ? snapshots.map((snapshot) => ({
-            label: new Date(snapshot.date).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-            }),
-            value: toNumber(snapshot.totalValue),
-          }))
-        : [{ label: 'Now', value: totalBalance }];
+    const days = this.periodToDays(period);
+    const points = this.buildDailyPerformancePoints(days, snapshots, totalBalance);
+    const firstValue = points[0]?.value ?? 0;
+    const lastValue = points[points.length - 1]?.value ?? totalBalance;
+    const gainAmount = lastValue - firstValue;
+    const gainPct =
+      firstValue > 0 ? (gainAmount / firstValue) * 100 : lastValue > 0 ? 100 : 0;
 
     return {
       period,
-      gainAmount,
-      gainPct,
+      gainAmount: Number(gainAmount.toFixed(2)),
+      gainPct: Number(gainPct.toFixed(1)),
       points,
     };
   }

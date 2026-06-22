@@ -9,11 +9,23 @@ import { cn } from '@/components/ui/cn';
 import { NotificationCard } from '@/components/notifications/notification-card';
 import {
   countUnreadNotifications,
+  filterByCategory,
+  filterByKind,
+  filterByPeriod,
+  filterByPriority,
   filterNotifications,
+  NOTIFICATION_CATEGORY_FILTERS,
   NOTIFICATION_FILTERS,
+  NOTIFICATION_KIND_FILTERS,
+  NOTIFICATION_PERIOD_FILTERS,
+  NOTIFICATION_PRIORITY_FILTERS,
   searchNotifications,
   sortNotifications,
+  type NotificationCategory,
   type NotificationFilter,
+  type NotificationKind,
+  type NotificationPeriod,
+  type NotificationPriority,
   type NotificationVm,
 } from '@/components/notifications/notifications-types';
 import { typeClass, typeToneClass } from '@/lib/typography';
@@ -24,8 +36,12 @@ type NotificationsInboxProps = {
   onFilterChange: (filter: NotificationFilter) => void;
   onToggleRead: (id: string) => void;
   onMarkAllRead: () => void;
+  onArchive?: (id: string) => void;
   className?: string;
 };
+
+const selectClass =
+  'h-9 shrink-0 rounded-lg bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50';
 
 export function NotificationsInbox({
   items,
@@ -33,23 +49,32 @@ export function NotificationsInbox({
   onFilterChange,
   onToggleRead,
   onMarkAllRead,
+  onArchive,
   className,
 }: NotificationsInboxProps) {
   const [search, setSearch] = useState('');
+  const [kind, setKind] = useState<'all' | NotificationKind>('all');
+  const [category, setCategory] = useState<'all' | NotificationCategory>('all');
+  const [period, setPeriod] = useState<'all' | NotificationPeriod>('all');
+  const [priority, setPriority] = useState<'all' | NotificationPriority>('all');
 
   const unreadCount = useMemo(() => countUnreadNotifications(items), [items]);
 
   const visibleItems = useMemo(() => {
-    const filtered = filterNotifications(items, filter);
-    const searched = searchNotifications(filtered, search);
-    return sortNotifications(searched);
-  }, [items, filter, search]);
+    let result = filterNotifications(items, filter);
+    result = filterByKind(result, kind);
+    result = filterByCategory(result, category);
+    result = filterByPeriod(result, period);
+    result = filterByPriority(result, priority);
+    result = searchNotifications(result, search);
+    return sortNotifications(result);
+  }, [items, filter, kind, category, period, priority, search]);
 
   return (
     <Card className={cn('flex h-full min-h-0 flex-col overflow-hidden p-5 lg:p-6', className)}>
-      <h1 className={cn('shrink-0 mb-10', typeClass.title, typeToneClass.default)}>Notifications</h1>
+      <h1 className={cn('shrink-0 mb-6', typeClass.title, typeToneClass.default)}>Notifications</h1>
 
-      <div className="mt-4 grid w-full min-w-0 shrink-0 grid-cols-1 gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-3">
+      <div className="mt-2 grid w-full min-w-0 shrink-0 grid-cols-1 gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-3">
         <div className="scrollbar-none flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5">
           {NOTIFICATION_FILTERS.map((option) => {
             const active = filter === option.id;
@@ -69,7 +94,10 @@ export function NotificationsInbox({
               >
                 {option.label}
                 {showUnreadBadge ? (
-                  <Badge variant={active ? 'muted' : 'solid'} className="min-w-[1.25rem] px-1.5 py-0 text-[0.65rem]">
+                  <Badge
+                    variant={active ? 'muted' : 'solid'}
+                    className={cn('min-w-[1.25rem] px-1.5 py-0', typeClass.micro)}
+                  >
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </Badge>
                 ) : null}
@@ -78,7 +106,7 @@ export function NotificationsInbox({
           })}
         </div>
 
-        <div className="flex w-full min-w-0 items-center gap-2 xl:w-auto xl:justify-end">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 xl:w-auto xl:flex-nowrap xl:justify-end">
           {unreadCount > 0 ? (
             <Button
               type="button"
@@ -91,7 +119,59 @@ export function NotificationsInbox({
             </Button>
           ) : null}
 
-          <label className="relative ml-auto flex h-9 min-w-0 flex-1 items-center sm:max-w-[20rem] xl:ml-0 xl:w-[22rem] xl:max-w-none xl:flex-none">
+          <select
+            aria-label="Filter by type"
+            value={kind}
+            onChange={(event) => setKind(event.target.value as 'all' | NotificationKind)}
+            className={cn(selectClass, typeClass.caption)}
+          >
+            {NOTIFICATION_KIND_FILTERS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Filter by area"
+            value={category}
+            onChange={(event) => setCategory(event.target.value as 'all' | NotificationCategory)}
+            className={cn(selectClass, typeClass.caption)}
+          >
+            {NOTIFICATION_CATEGORY_FILTERS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Filter by period"
+            value={period}
+            onChange={(event) => setPeriod(event.target.value as 'all' | NotificationPeriod)}
+            className={cn(selectClass, typeClass.caption)}
+          >
+            {NOTIFICATION_PERIOD_FILTERS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Filter by priority"
+            value={priority}
+            onChange={(event) => setPriority(event.target.value as 'all' | NotificationPriority)}
+            className={cn(selectClass, typeClass.caption)}
+          >
+            {NOTIFICATION_PRIORITY_FILTERS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <label className="relative ml-auto flex h-9 min-w-0 flex-1 items-center sm:max-w-[20rem] xl:ml-0 xl:w-[18rem] xl:max-w-none xl:flex-none">
             <TbSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text/40" aria-hidden />
             <input
               type="search"
@@ -118,14 +198,19 @@ export function NotificationsInbox({
               <p className={cn('mt-1', typeClass.caption, typeToneClass.muted60)}>
                 {search
                   ? `No results for "${search}".`
-                  : `No results in "${NOTIFICATION_FILTERS.find((entry) => entry.id === filter)?.label}".`}
+                  : 'Adjust the filters to see other notifications.'}
               </p>
             </div>
           </div>
         ) : (
           <>
             {visibleItems.map((item) => (
-              <NotificationCard key={item.id} item={item} onToggleRead={onToggleRead} />
+              <NotificationCard
+                key={item.id}
+                item={item}
+                onToggleRead={onToggleRead}
+                onArchive={onArchive}
+              />
             ))}
 
             <div className="flex items-center gap-3 py-4">

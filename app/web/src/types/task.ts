@@ -60,6 +60,11 @@ export type CreateTasksBulkInput = {
   }>;
 };
 
+export type CopyTaskDayInput = {
+  sourceWeekday: number;
+  targetWeekday: number;
+};
+
 export type UpdateTaskInput = {
   title?: string;
   scheduledAt?: string;

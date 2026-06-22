@@ -22,6 +22,7 @@ export type NotificationCategory =
 
 export type NotificationKind = 'alert' | 'reminder' | 'insight' | 'update';
 export type NotificationPriority = 'urgent' | 'normal' | 'low';
+export type NotificationPeriod = 'daily' | 'weekly' | 'monthly';
 export type NotificationFilter = 'all' | 'unread' | NotificationKind;
 
 export type NotificationVm = {
@@ -29,12 +30,15 @@ export type NotificationVm = {
   category: NotificationCategory;
   kind: NotificationKind;
   priority: NotificationPriority;
+  period: NotificationPeriod;
   title: string;
   body: string;
   timeLabel: string;
+  createdAt: string;
   read: boolean;
   href?: string;
   ctaLabel?: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 type CategoryConfig = {
@@ -57,11 +61,50 @@ export const NOTIFICATION_CATEGORY_CONFIG: Record<NotificationCategory, Category
 export const NOTIFICATION_FILTERS: { id: NotificationFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'unread', label: 'Unread' },
+];
+
+export const NOTIFICATION_KIND_FILTERS: { id: 'all' | NotificationKind; label: string }[] = [
+  { id: 'all', label: 'Any type' },
   { id: 'alert', label: 'Alerts' },
   { id: 'reminder', label: 'Reminders' },
   { id: 'update', label: 'Updates' },
   { id: 'insight', label: 'Insights' },
 ];
+
+export const NOTIFICATION_CATEGORY_FILTERS: { id: 'all' | NotificationCategory; label: string }[] = [
+  { id: 'all', label: 'All areas' },
+  { id: 'tasks', label: 'Tasks' },
+  { id: 'finance', label: 'Finance' },
+  { id: 'goals', label: 'Goals' },
+  { id: 'wallet', label: 'Wallet' },
+  { id: 'diet', label: 'Diet' },
+  { id: 'training', label: 'Training' },
+  { id: 'body', label: 'Body' },
+  { id: 'system', label: 'System' },
+];
+
+export const NOTIFICATION_PERIOD_FILTERS: { id: 'all' | NotificationPeriod; label: string }[] = [
+  { id: 'all', label: 'Any period' },
+  { id: 'daily', label: 'Daily' },
+  { id: 'weekly', label: 'Weekly' },
+  { id: 'monthly', label: 'Monthly' },
+];
+
+export const NOTIFICATION_PRIORITY_FILTERS: { id: 'all' | NotificationPriority; label: string }[] = [
+  { id: 'all', label: 'Any priority' },
+  { id: 'urgent', label: 'Urgent' },
+  { id: 'normal', label: 'Normal' },
+  { id: 'low', label: 'Low' },
+];
+
+export const NOTIFICATION_PRIORITY_CONFIG: Record<
+  NotificationPriority,
+  { label: string; className: string }
+> = {
+  urgent: { label: 'Urgent', className: 'bg-red/15 text-red' },
+  normal: { label: 'Normal', className: 'bg-layer2 text-text/60' },
+  low: { label: 'Low', className: 'bg-layer2 text-text/40' },
+};
 
 export const INITIAL_NOTIFICATIONS: NotificationVm[] = [];
 
@@ -80,6 +123,32 @@ export function filterNotifications(items: NotificationVm[], filter: Notificatio
   return items.filter((item) => item.kind === filter);
 }
 
+export function filterByKind(items: NotificationVm[], kind: 'all' | NotificationKind) {
+  if (kind === 'all') return items;
+  return items.filter((item) => item.kind === kind);
+}
+
+export function filterByCategory(
+  items: NotificationVm[],
+  category: 'all' | NotificationCategory,
+) {
+  if (category === 'all') return items;
+  return items.filter((item) => item.category === category);
+}
+
+export function filterByPeriod(items: NotificationVm[], period: 'all' | NotificationPeriod) {
+  if (period === 'all') return items;
+  return items.filter((item) => item.period === period);
+}
+
+export function filterByPriority(
+  items: NotificationVm[],
+  priority: 'all' | NotificationPriority,
+) {
+  if (priority === 'all') return items;
+  return items.filter((item) => item.priority === priority);
+}
+
 export function searchNotifications(items: NotificationVm[], query: string) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return items;
@@ -92,6 +161,9 @@ export function searchNotifications(items: NotificationVm[], query: string) {
 export function sortNotifications(items: NotificationVm[]) {
   return [...items].sort((a, b) => {
     if (a.read !== b.read) return a.read ? 1 : -1;
-    return a.id.localeCompare(b.id);
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+    if (Number.isNaN(aTime) || Number.isNaN(bTime)) return b.id.localeCompare(a.id);
+    return bTime - aTime;
   });
 }

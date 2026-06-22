@@ -17,7 +17,6 @@ export async function POST(request: Request) {
   const payload: Record<string, unknown> = {};
   if (typeof body.name === 'string') payload.name = body.name.trim();
   if (typeof body.type === 'string') payload.type = body.type;
-  if (typeof body.balance === 'number') payload.balance = body.balance;
 
   return proxyFinanceWrite('/finance/wallet', 'POST', payload);
 }

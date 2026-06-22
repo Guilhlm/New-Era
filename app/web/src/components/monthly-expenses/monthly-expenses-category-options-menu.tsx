@@ -1,19 +1,13 @@
 'use client';
 
+import { createEntityOptionsLabels } from '@/components/ui/entity-options-labels';
 import { EntityOptionsMenu } from '@/components/ui/entity-options-menu';
 
-const CATEGORY_OPTIONS_LABELS = {
+const CATEGORY_OPTIONS_LABELS = createEntityOptionsLabels({
+  noun: 'category',
   triggerAriaLabel: 'Category options',
-  rename: 'Rename',
-  delete: 'Delete category',
-  renameTitle: 'Rename category',
-  deleteTitle: 'Delete category',
-  deleteDescription: (entityName: string) =>
-    `Are you sure you want to delete ${entityName}? Linked transactions will not be removed.`,
-  save: 'Save',
-  cancel: 'Cancel',
-  confirmDelete: 'Delete',
-} as const;
+  deleteHint: 'Linked transactions will not be removed.',
+});
 
 type MonthlyExpensesCategoryOptionsMenuProps = {
   categoryName: string;

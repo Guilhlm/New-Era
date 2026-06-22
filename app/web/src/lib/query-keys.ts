@@ -20,12 +20,14 @@ export const queryKeys = {
   workoutPlan: ['workout-plan'] as const,
   taskSuggestions: (weekday: number) => ['task-suggestions', weekday] as const,
   taskWeekdaySummary: ['task-weekday-summary'] as const,
+  walletSummaryAll: ['wallet-summary'] as const,
   walletSummary: (period?: string) => ['wallet-summary', period ?? '1W'] as const,
   walletInvestments: (tab?: string) => ['wallet-investments', tab ?? 'all'] as const,
   walletMarket: (tab?: string, currency?: string) =>
     ['wallet-market', tab ?? 'stocks', currency ?? 'USDT'] as const,
   walletFx: ['wallet-fx'] as const,
   wallets: ['wallets'] as const,
+  monthlyExpensesAll: ['monthly-expenses'] as const,
   monthlyExpenses: (month?: string) => ['monthly-expenses', month ?? 'current'] as const,
   monthlyExpenseCategories: (month?: string) =>
     ['monthly-expense-categories', month ?? 'current'] as const,

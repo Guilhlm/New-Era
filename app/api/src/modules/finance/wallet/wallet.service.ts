@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   assertResourceExists,
   assertResourceOwner,
@@ -38,12 +38,6 @@ export class WalletService {
 
   async update(id: string, userId: string, data: UpdateWalletDto) {
     await this.findOne(id, userId);
-
-    if (data.balance !== undefined) {
-      throw new BadRequestException(
-        'Direct balance updates are not allowed. Use deposit, withdraw, or trade endpoints.',
-      );
-    }
 
     const wallet = await this.prisma.wallet.update({
       where: { id },

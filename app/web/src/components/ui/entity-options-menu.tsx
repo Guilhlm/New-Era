@@ -22,6 +22,11 @@ export type EntityOptionsMenuLabels = {
   confirmDelete: string;
 };
 
+export type EntityOptionsMenuExtraAction = {
+  label: string;
+  onClick: () => void;
+};
+
 type EntityOptionsMenuProps = {
   entityName: string;
   onRename: (name: string) => void;
@@ -31,6 +36,7 @@ type EntityOptionsMenuProps = {
   fullWidth?: boolean;
   triggerLabel?: string;
   labels: EntityOptionsMenuLabels;
+  extraActions?: EntityOptionsMenuExtraAction[];
 };
 
 export function EntityOptionsMenu({
@@ -42,6 +48,7 @@ export function EntityOptionsMenu({
   fullWidth = false,
   triggerLabel,
   labels,
+  extraActions,
 }: EntityOptionsMenuProps) {
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -69,6 +76,19 @@ export function EntityOptionsMenu({
             >
               {labels.rename}
             </button>
+            {extraActions?.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                className={cn('block w-full px-3 py-2 text-left hover:bg-layer2-half', typeClass.body, typeToneClass.default)}
+                onClick={() => {
+                  setOpen(false);
+                  action.onClick();
+                }}
+              >
+                {action.label}
+              </button>
+            ))}
             <button
               type="button"
               className={cn('block w-full px-3 py-2 text-left hover:bg-layer2-half', typeClass.body, typeToneClass.accent)}

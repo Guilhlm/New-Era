@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -21,11 +22,12 @@ import { WaterLogModule } from './modules/water-log/water-log.module';
 import { TaskModule } from './modules/task/task.module';
 import { MonthlyExpenseModule } from './modules/finance/monthly-expense/monthly-expense.module';
 import { FinancialGoalModule } from './modules/finance/financial-goal/financial-goal.module';
-import { NotificationModule } from './modules/finance/notification/notification.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'default',

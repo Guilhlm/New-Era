@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MdBarChart, MdViewList } from 'react-icons/md';
 import { TbCheck, TbDotsVertical, TbPlus } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,8 +9,7 @@ import { cn } from '@/components/ui/cn';
 import { NativeDialog } from '@/components/ui/native-dialog';
 import { dashboardMainBodyCardPaddingClass } from '@/components/ui/dashboard-two-column-layout';
 import { MonthlyExpensesSearchInput } from '@/components/monthly-expenses/monthly-expenses-search-input';
-import { MonthlyExpensesSpendingChart } from '@/components/monthly-expenses/monthly-expenses-spending-chart';
-import { WeekdayNavigator } from '@/components/ui/weekday-navigator';
+import { ScrollSelect } from '@/components/ui/scroll-select';
 import { useAnchoredMenu } from '@/hooks/use-anchored-menu';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import { formatBrlAmount } from '@/utils/wallet';
@@ -28,26 +26,24 @@ export type ExpenseRowVm = {
   editable?: boolean;
   deletable?: boolean;
   linkedTransactionId?: string | null;
+  linkedCreditCardPurchaseId?: string | null;
   source?: string;
 };
 
-type ExpensesView = 'list' | 'chart';
 const LIST_CHUNK_SIZE = 8;
+const INSTALLMENT_OPTIONS = Array.from({ length: 24 }, (_, index) => index + 1);
 
 type MonthlyExpensesTransactionsCardProps = {
   expenses: ExpenseRowVm[];
   categories: Array<{ id: string; label: string }>;
   cards: Array<{ id: string; label: string }>;
-  monthLabel: string;
-  monthShortLabel: string;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
   onCreateExpense: (values: {
     title: string;
     amount: number;
     categoryId?: string;
     account?: string;
     status: 'paid' | 'pending';
+    installments?: number;
   }) => Promise<unknown | { error: string }>;
   onUpdateExpense: (
     id: string,
@@ -59,9 +55,12 @@ type MonthlyExpensesTransactionsCardProps = {
       account?: string;
     },
   ) => void;
-  onDeleteExpense: (id: string, linkedTransactionId?: string | null) => void;
+  onDeleteExpense: (
+    id: string,
+    linkedTransactionId?: string | null,
+    linkedCreditCardPurchaseId?: string | null,
+  ) => void;
   saving?: boolean;
-  spent: number;
   vsLastMonth: number;
   className?: string;
   style?: React.CSSProperties;
@@ -224,20 +223,14 @@ export function MonthlyExpensesTransactionsCard({
   expenses,
   categories,
   cards,
-  monthLabel,
-  monthShortLabel,
-  onPrevMonth,
-  onNextMonth,
   onCreateExpense,
   onUpdateExpense,
   onDeleteExpense,
   saving = false,
-  spent,
   vsLastMonth,
   className,
   style,
 }: MonthlyExpensesTransactionsCardProps) {
-  const [view, setView] = useState<ExpensesView>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(LIST_CHUNK_SIZE);
   const [createOpen, setCreateOpen] = useState(false);
@@ -246,17 +239,10 @@ export function MonthlyExpensesTransactionsCard({
   const [formCategoryId, setFormCategoryId] = useState('');
   const [formAccount, setFormAccount] = useState('CASH');
   const [formStatus, setFormStatus] = useState<'paid' | 'pending'>('paid');
+  const [formInstallments, setFormInstallments] = useState(1);
   const [createError, setCreateError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-
-  const chartPoints = useMemo(() => {
-    const labels = ['M-5', 'M-4', 'M-3', 'M-2', 'M-1', 'Atual'];
-    return labels.map((label, index) => ({
-      label,
-      value: index === labels.length - 1 ? Math.abs(spent) : 0,
-    }));
-  }, [spent]);
 
   const filteredExpenses = useMemo(
     () => filterExpenses(expenses, searchQuery),
@@ -265,12 +251,21 @@ export function MonthlyExpensesTransactionsCard({
 
   const visibleExpenses = filteredExpenses.slice(0, visibleCount);
   const hasMore = visibleCount < filteredExpenses.length;
-  const vsLastMonthLabel = `${vsLastMonth < 0 ? '↓' : '↑'} ${Math.abs(vsLastMonth).toFixed(1)}% vs last month`;
+  const vsLastMonthLabel =
+    vsLastMonth === 0
+      ? 'No change vs last month'
+      : `${vsLastMonth < 0 ? '↓' : '↑'} ${Math.abs(vsLastMonth).toFixed(1)}% vs last month`;
+  const vsLastMonthTone =
+    vsLastMonth === 0
+      ? typeToneClass.muted60
+      : vsLastMonth < 0
+        ? typeToneClass.negative
+        : typeToneClass.positive;
 
   useEffect(() => {
     const root = scrollRef.current;
     const target = loadMoreRef.current;
-    if (!root || !target || !hasMore || view !== 'list') return;
+    if (!root || !target || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -284,12 +279,15 @@ export function MonthlyExpensesTransactionsCard({
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [filteredExpenses.length, hasMore, view]);
+  }, [filteredExpenses.length, hasMore]);
 
   const canCreateExpense =
     formTitle.trim().length > 0 &&
     Number.isFinite(Number(formAmount.replace(',', '.'))) &&
-    Number(formAmount.replace(',', '.')) > 0;
+    Number(formAmount.replace(',', '.')) > 0 &&
+    formInstallments >= 1;
+  const isExtraIncome = formAccount === 'DEPOSIT_EXTRA_INCOME';
+  const isCardPurchase = formAccount.startsWith('CARD:');
 
   const resetCreateForm = () => {
     setFormTitle('');
@@ -297,6 +295,7 @@ export function MonthlyExpensesTransactionsCard({
     setFormCategoryId('');
     setFormAccount('CASH');
     setFormStatus('paid');
+    setFormInstallments(1);
     setCreateError(null);
   };
 
@@ -312,13 +311,11 @@ export function MonthlyExpensesTransactionsCard({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <p className={cn('min-w-0 truncate', typeClass.title, typeToneClass.default)}>
-            {view === 'chart' ? 'Spending trend' : 'Transactions'}
+            Transactions
           </p>
-          {view === 'list' ? (
-            <span className={cn('shrink-0 tabular-nums', typeClass.caption, typeToneClass.positive)}>
-              {vsLastMonthLabel}
-            </span>
-          ) : null}
+          <span className={cn('shrink-0 tabular-nums', typeClass.caption, vsLastMonthTone)}>
+            {vsLastMonthLabel}
+          </span>
         </div>
 
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
@@ -328,70 +325,24 @@ export function MonthlyExpensesTransactionsCard({
               setSearchQuery(value);
               setVisibleCount(LIST_CHUNK_SIZE);
             }}
-            disabled={view === 'chart'}
+            disabled={false}
           />
 
           <Button
             type="button"
-            variant="ghost"
+            variant="primary"
             size="sm"
-            aria-label="View chart"
-            aria-pressed={view === 'chart'}
-            className={cn(
-              'h-10 w-10 shrink-0 p-0',
-              view === 'chart'
-                ? 'bg-red text-on-accent hover:bg-layer2-half hover:text-text'
-                : 'bg-layer2 text-text hover:bg-layer2-half',
-            )}
-            onClick={() => setView('chart')}
+            disabled={saving}
+            className="h-10 gap-1.5"
+            onClick={() => setCreateOpen(true)}
           >
-            <MdBarChart className="h-5 w-5 shrink-0" aria-hidden />
+            <TbPlus className="h-4 w-4 shrink-0" aria-hidden />
+            New transaction
           </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label="View list"
-            aria-pressed={view === 'list'}
-            className={cn(
-              'h-10 w-10 shrink-0 p-0',
-              view === 'list'
-                ? 'bg-red text-on-accent hover:bg-layer2-half hover:text-text'
-                : 'bg-layer2 text-text hover:bg-layer2-half',
-            )}
-            onClick={() => setView('list')}
-          >
-            <MdViewList className="h-5 w-5 shrink-0" aria-hidden />
-          </Button>
-
-          <div className="relative inline-grid shrink-0 [&>*]:col-start-1 [&>*]:row-start-1">
-            <WeekdayNavigator
-              weekdayLabel={monthLabel}
-              weekdayShortLabel={monthShortLabel}
-              onPrevDay={onPrevMonth}
-              onNextDay={onNextMonth}
-              className={cn(view === 'list' && 'pointer-events-none invisible')}
-              aria-hidden={view === 'list'}
-            />
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              disabled={saving}
-              className={cn('h-10 gap-1.5', view === 'chart' && 'pointer-events-none invisible')}
-              aria-hidden={view === 'chart'}
-              onClick={() => setCreateOpen(true)}
-            >
-              <TbPlus className="h-4 w-4 shrink-0" aria-hidden />
-              New expense
-            </Button>
-          </div>
         </div>
       </div>
 
-      {view === 'list' ? (
-        <div ref={scrollRef} className="scrollbar-none min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="scrollbar-none min-h-0 flex-1 overflow-auto">
           {filteredExpenses.length === 0 ? (
             <div
               className={cn(
@@ -405,47 +356,47 @@ export function MonthlyExpensesTransactionsCard({
           ) : (
             <table
               className={cn(
-                'w-full min-w-[640px] table-fixed border-collapse [&_td]:align-middle [&_th]:align-middle',
+                'w-full min-w-[44rem] table-fixed border-collapse [&_td]:align-middle [&_th]:align-middle',
                 typeClass.caption,
               )}
             >
               <colgroup>
                 <col className="w-[5.5rem]" />
-                <col className="w-[6rem]" />
+                <col className="w-[7.5rem]" />
                 <col />
+                <col className="w-[9.5rem]" />
+                <col className="w-[8.5rem]" />
                 <col className="w-[5.5rem]" />
                 <col className="w-[5.5rem]" />
-                <col className="w-[4.5rem]" />
-                <col className="w-[4.5rem]" />
               </colgroup>
               <thead className="sticky top-0 z-10 bg-layer1">
                 <tr className="border-b border-grey text-text/55">
                   <th className={cn('pb-3 pr-2 pt-1 text-left', typeClass.label)}>Date</th>
                   <th className={cn('pb-3 px-2 pt-1 text-left', typeClass.label)}>Category</th>
                   <th className={cn('pb-3 px-2 pt-1 text-left', typeClass.label)}>Description</th>
-                  <th className={cn('pb-3 px-2 pt-1 text-left -translate-x-5', typeClass.label)}>Account</th>
-                  <th className={cn('pb-3 px-2 pt-1 text-right -translate-x-10', typeClass.label)}>Amount</th>
-                  <th className={cn('pb-3 px-2 pt-1 text-center -translate-x-5', typeClass.label)}>Status</th>
+                  <th className={cn('pb-3 px-2 pt-1 text-left', typeClass.label)}>Account</th>
+                  <th className={cn('pb-3 px-2 pt-1 text-right', typeClass.label)}>Amount</th>
+                  <th className={cn('pb-3 px-2 pt-1 text-center', typeClass.label)}>Status</th>
                   <th className={cn('pb-3 pl-2 pt-1 text-center', typeClass.label)}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleExpenses.map((expense) => (
                   <tr key={expense.id} className="border-b border-grey/60 transition hover:bg-layer2-half/40">
-                    <td className={cn('py-3 pr-2', typeClass.micro, typeToneClass.muted60)}>
+                    <td className={cn('py-3 pr-2 whitespace-nowrap', typeClass.micro, typeToneClass.muted60)}>
                       {expense.date}
                     </td>
-                    <td className={cn('px-2 py-3', typeClass.micro, typeToneClass.default)}>
+                    <td className={cn('px-2 py-3 truncate', typeClass.micro, typeToneClass.default)}>
                       {expense.category}
                     </td>
-                    <td className={cn('px-2 py-3', typeClass.bodyStrong)}>{expense.description}</td>
-                    <td className={cn('px-2 py-3 -translate-x-5', typeClass.micro, typeToneClass.muted60)}>
+                    <td className={cn('px-2 py-3 truncate', typeClass.bodyStrong)}>{expense.description}</td>
+                    <td className={cn('px-2 py-3 truncate', typeClass.micro, typeToneClass.muted60)}>
                       {expense.account}
                     </td>
-                    <td className="px-2 py-3 -translate-x-10">
+                    <td className="px-2 py-3">
                       <p
                         className={cn(
-                          'truncate text-right tabular-nums',
+                          'whitespace-nowrap text-right tabular-nums',
                           typeClass.label,
                           expense.amount >= 0 ? typeToneClass.positive : typeToneClass.negative,
                         )}
@@ -453,7 +404,7 @@ export function MonthlyExpensesTransactionsCard({
                         {formatBrlAmount(expense.amount, { signed: true })}
                       </p>
                     </td>
-                    <td className="px-2 py-3 text-center -translate-x-5">
+                    <td className="px-2 py-3 text-center">
                       <StatusBadge status={expense.status} />
                     </td>
                     <td className="py-3 pl-2 text-center">
@@ -466,7 +417,13 @@ export function MonthlyExpensesTransactionsCard({
                             status: expense.status === 'paid' ? 'pending' : 'paid',
                           })
                         }
-                        onDelete={() => onDeleteExpense(expense.id, expense.linkedTransactionId)}
+                        onDelete={() =>
+                          onDeleteExpense(
+                            expense.id,
+                            expense.linkedTransactionId,
+                            expense.linkedCreditCardPurchaseId,
+                          )
+                        }
                       />
                     </td>
                   </tr>
@@ -476,10 +433,7 @@ export function MonthlyExpensesTransactionsCard({
           )}
 
           {hasMore ? <div ref={loadMoreRef} className="h-8 w-full shrink-0" aria-hidden /> : null}
-        </div>
-      ) : (
-        <MonthlyExpensesSpendingChart points={chartPoints} className="min-h-0 flex-1" />
-      )}
+      </div>
 
       <NativeDialog
         open={createOpen}
@@ -498,9 +452,10 @@ export function MonthlyExpensesTransactionsCard({
             const result = await onCreateExpense({
               title: formTitle.trim(),
               amount: Number(formAmount.replace(',', '.')),
-              categoryId: formCategoryId || undefined,
+              categoryId: isExtraIncome ? undefined : formCategoryId || undefined,
               account: formAccount,
               status: formStatus,
+              installments: isCardPurchase ? formInstallments : undefined,
             });
             if (result && typeof result === 'object' && 'error' in result) {
               setCreateError(result.error as string);
@@ -510,7 +465,7 @@ export function MonthlyExpensesTransactionsCard({
             resetCreateForm();
           }}
         >
-          <p className={cn(typeClass.title, typeToneClass.default)}>New expense</p>
+          <p className={cn(typeClass.title, typeToneClass.default)}>New transaction</p>
           {createError ? (
             <p className={cn(typeClass.caption, typeToneClass.negative)} role="alert">
               {createError}
@@ -525,7 +480,7 @@ export function MonthlyExpensesTransactionsCard({
               value={formTitle}
               onChange={(event) => setFormTitle(event.target.value)}
               className="h-9 rounded-md bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50"
-              placeholder="e.g. Groceries"
+              placeholder={isExtraIncome ? 'e.g. Freelance payment' : isCardPurchase ? 'e.g. Online purchase' : 'e.g. Groceries'}
             />
           </label>
 
@@ -543,14 +498,27 @@ export function MonthlyExpensesTransactionsCard({
             />
           </label>
 
+          {isCardPurchase ? (
+            <label className={cn('flex flex-col gap-1.5', typeClass.caption)}>
+              <span className={typeToneClass.muted60}>Installments</span>
+              <ScrollSelect
+                value={formInstallments}
+                onChange={setFormInstallments}
+                options={INSTALLMENT_OPTIONS}
+                formatOption={(count) => (count === 1 ? '1x — Pay in full' : `${count}x`)}
+              />
+            </label>
+          ) : null}
+
           <label className={cn('flex flex-col gap-1.5', typeClass.caption)}>
             <span className={typeToneClass.muted60}>Category</span>
             <select
               value={formCategoryId}
+              disabled={isExtraIncome}
               onChange={(event) => setFormCategoryId(event.target.value)}
               className="h-9 rounded-md bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50"
             >
-              <option value="">No category</option>
+              <option value="">{isExtraIncome ? 'Income does not use category' : 'No category'}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.label}
@@ -563,10 +531,15 @@ export function MonthlyExpensesTransactionsCard({
             <span className={typeToneClass.muted60}>Account/Source</span>
             <select
               value={formAccount}
-              onChange={(event) => setFormAccount(event.target.value)}
+              onChange={(event) => {
+                const nextAccount = event.target.value;
+                setFormAccount(nextAccount);
+                if (nextAccount === 'DEPOSIT_EXTRA_INCOME') setFormCategoryId('');
+              }}
               className="h-9 rounded-md bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50"
             >
               <option value="CASH">Cash</option>
+              <option value="DEPOSIT_EXTRA_INCOME">Extra income</option>
               {cards.map((card) => (
                 <option key={card.id} value={`CARD:${card.id}`}>
                   {card.label}
@@ -589,7 +562,7 @@ export function MonthlyExpensesTransactionsCard({
 
           <div className="flex gap-2">
             <Button type="submit" variant="primary" size="sm" disabled={saving || !canCreateExpense} className="flex-1">
-              {saving ? 'Saving…' : 'Save expense'}
+              {saving ? 'Saving…' : 'Save transaction'}
             </Button>
             <Button
               type="button"

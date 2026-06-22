@@ -3,7 +3,8 @@ import { getCalendarWeekday } from '@/hooks/use-calendar-day-change';
 import { queryKeys } from '@/lib/query-keys';
 import { getLatestBodyMeasure, getBodyMeasureHistory, getLatestBodyVital } from '@/services/body-measure';
 import { getDietDay } from '@/services/diet';
-import { getFinancialGoals, getMonthlyExpenses, getNotifications } from '@/services/finance';
+import { getFinancialGoals, getMonthlyExpenses } from '@/services/finance';
+import { getNotifications } from '@/services/notifications';
 import { getTasksDay, getTasksSummary, getTasksToday, getTaskDisciplineHistory } from '@/services/task';
 import { getWorkoutDay, getWorkoutPlanSummary } from '@/services/workout';
 

@@ -1,4 +1,4 @@
-import { PerfilDashboard } from '@/components/perfil/perfil-dashboard';
+import { PerfilDashboard } from '@/components/dashboards-lazy';
 
 export default function PerfilPage() {
   return (

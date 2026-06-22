@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import {
+  NotificationCategory,
+  NotificationKind,
+  NotificationPeriod,
+} from '@prisma/client';
+import {
   assertResourceExists,
   assertResourceOwner,
 } from '../../common/auth/ownership.util';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
 import type {
   CreateBodyMeasureDto,
   CreateBodyVitalDto,
@@ -19,12 +25,45 @@ function withRecordedAt<T extends { recordedAt?: string }>(data: T) {
 
 @Injectable()
 export class BodyMeasureService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
 
-  createMeasure(userId: string, data: CreateBodyMeasureDto) {
-    return this.prisma.bodyMeasure.create({
+  async createMeasure(userId: string, data: CreateBodyMeasureDto) {
+    const previous = await this.prisma.bodyMeasure.findFirst({
+      where: { userId, weight: { not: null } },
+      orderBy: { recordedAt: 'desc' },
+      select: { weight: true },
+    });
+
+    const created = await this.prisma.bodyMeasure.create({
       data: { ...withRecordedAt(data), userId },
     });
+
+    const newWeight = Number(created.weight ?? 0);
+    const prevWeight = Number(previous?.weight ?? 0);
+    if (newWeight > 0 && prevWeight > 0) {
+      const delta = Math.round((newWeight - prevWeight) * 100) / 100;
+      if (Math.abs(delta) >= 0.3) {
+        await this.notifications.emit(userId, {
+          dedupeKey: `body-weight-change-${created.id}`,
+          period: NotificationPeriod.DAILY,
+          category: NotificationCategory.BODY,
+          kind: NotificationKind.INSIGHT,
+          title: 'Change in your weight',
+          body:
+            delta < 0
+              ? `You logged ${Math.abs(delta)} kg less than your last measurement.`
+              : `You logged ${delta} kg more than your last measurement.`,
+          href: '/body-metrics',
+          ctaLabel: 'View metrics',
+          metadata: { delta, weight: newWeight, previous: prevWeight },
+        });
+      }
+    }
+
+    return created;
   }
 
   findMeasuresByUser(userId: string) {

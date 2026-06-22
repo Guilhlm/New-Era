@@ -1,24 +1,19 @@
 'use client';
 
+import { createEntityOptionsLabels } from '@/components/ui/entity-options-labels';
 import { EntityOptionsMenu } from '@/components/ui/entity-options-menu';
 
-const MEAL_OPTIONS_LABELS = {
+const MEAL_OPTIONS_LABELS = createEntityOptionsLabels({
+  noun: 'meal',
   triggerAriaLabel: 'Meal options',
-  rename: 'Rename',
-  delete: 'Delete meal',
-  renameTitle: 'Rename meal',
-  deleteTitle: 'Delete meal',
-  deleteDescription: (entityName: string) =>
-    `Are you sure you want to delete ${entityName}? Ingredients in this meal will also be removed.`,
-  save: 'Save',
-  cancel: 'Cancel',
-  confirmDelete: 'Delete',
-} as const;
+  deleteHint: 'Ingredients in this meal will also be removed.',
+});
 
 type DietMealOptionsMenuProps = {
   mealName: string;
   onRename: (name: string) => void;
   onDelete: () => void;
+  onDuplicate?: () => void;
   disabled?: boolean;
   compact?: boolean;
   fullWidth?: boolean;
@@ -29,6 +24,7 @@ export function DietMealOptionsMenu({
   mealName,
   onRename,
   onDelete,
+  onDuplicate,
   disabled = false,
   compact = false,
   fullWidth = false,
@@ -44,6 +40,7 @@ export function DietMealOptionsMenu({
       fullWidth={fullWidth}
       triggerLabel={triggerLabel}
       labels={MEAL_OPTIONS_LABELS}
+      extraActions={onDuplicate ? [{ label: 'Duplicate meal', onClick: onDuplicate }] : undefined}
     />
   );
 }

@@ -107,6 +107,9 @@ model User {
   workoutDayPlans   WorkoutDayPlan[]
   wallets           Wallet[]
   cards             Card[]
+  creditCardPurchases CreditCardPurchase[]
+  creditCardInstallments CreditCardInstallment[]
+  creditCardInvoices CreditCardInvoice[]
   financialGoals    FinancialGoal[]
   financialGoalActivities FinancialGoalActivity[]
   monthlyExpenses   MonthlyExpense[]
@@ -245,7 +248,6 @@ model WaterLog {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, logDate])
-  @@index([userId, logDate])
 }
 
 model WorkoutDayPlan {
@@ -310,6 +312,7 @@ model Wallet {
   toTxns       Transaction[] @relation("ToWallet")
 
   @@index([userId])
+  @@index([userId, type])
 }
 
 model Card {
@@ -318,6 +321,7 @@ model Card {
   nameCard   String
   limitTotal Decimal? @db.Decimal(12, 2)
   limitUsage Decimal? @db.Decimal(12, 2)
+  dueDay     Int      @default(10)
   type       CardType
   holderName String?
   lastFour   String?
@@ -326,8 +330,80 @@ model Card {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCardPurchases CreditCardPurchase[]
+  creditCardInstallments CreditCardInstallment[]
+  creditCardInvoices CreditCardInvoice[]
 
   @@index([userId])
+}
+
+model CreditCardPurchase {
+  id                String                  @id @default(cuid())
+  userId            String
+  cardId            String
+  title             String
+  amount            Decimal                 @db.Decimal(12, 2)
+  installmentsCount Int
+  category          String?
+  categoryId        String?
+  purchaseDate      DateTime
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card              Card                    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  installments      CreditCardInstallment[]
+
+  @@index([userId, purchaseDate(sort: Desc)])
+  @@index([cardId, purchaseDate(sort: Desc)])
+}
+
+model CreditCardInstallment {
+  id                 String              @id @default(cuid())
+  userId             String
+  cardId             String
+  purchaseId         String
+  invoiceId          String?
+  monthKey           String
+  dueDate            DateTime
+  installmentNumber  Int
+  installmentsTotal  Int
+  amount             Decimal             @db.Decimal(12, 2)
+  status             String              @default("open")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card               Card                @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  purchase           CreditCardPurchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  invoice            CreditCardInvoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, monthKey])
+  @@index([cardId, monthKey])
+  @@index([invoiceId])
+  @@index([purchaseId])
+}
+
+model CreditCardInvoice {
+  id            String                  @id @default(cuid())
+  userId        String
+  cardId        String
+  monthKey      String
+  dueDate       DateTime
+  closingDate   DateTime
+  amount        Decimal                 @default(0) @db.Decimal(12, 2)
+  paidAmount    Decimal                 @default(0) @db.Decimal(12, 2)
+  status        String                  @default("open")
+  paidAt        DateTime?
+  transactionId String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card          Card                    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  installments  CreditCardInstallment[]
+  transaction   Transaction?            @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@unique([cardId, monthKey])
+  @@index([userId, monthKey])
+  @@index([transactionId])
 }
 
 model FinancialGoal {
@@ -372,6 +448,9 @@ model MonthlyExpense {
   @@index([userId])
   @@index([userId, monthKey])
   @@index([userId, categoryId])
+  @@index([userId, status])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([transactionId])
 }
 
 model MonthlyExpenseCategory {
@@ -411,8 +490,12 @@ model Transaction {
   fromWallet      Wallet?         @relation("FromWallet", fields: [fromWalletId], references: [id], onDelete: SetNull)
   toWallet        Wallet?         @relation("ToWallet", fields: [toWalletId], references: [id], onDelete: SetNull)
   monthlyExpenses MonthlyExpense[]
+  creditCardInvoices CreditCardInvoice[]
 
   @@index([userId, date])
+  @@index([userId, category, date(sort: Desc)])
+  @@index([fromWalletId])
+  @@index([toWalletId])
 }
 
 model Investment {
@@ -499,25 +582,29 @@ model FinancialGoalActivity {
 }
 
 model Notification {
-  id         String               @id @default(cuid())
-  userId     String
-  category   NotificationCategory
-  kind       NotificationKind
-  priority   NotificationPriority @default(NORMAL)
-  period     NotificationPeriod
-  title      String
-  body       String
-  read       Boolean              @default(false)
-  href       String?
-  ctaLabel   String?
-  dedupeKey  String?
-  metadata   Json?
-  readAt     DateTime?
-  createdAt  DateTime             @default(now())
-  updatedAt  DateTime             @updatedAt
-  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String               @id @default(cuid())
+  userId       String
+  category     NotificationCategory
+  kind         NotificationKind
+  priority     NotificationPriority @default(NORMAL)
+  period       NotificationPeriod
+  title        String
+  body         String
+  read         Boolean              @default(false)
+  href         String?
+  ctaLabel     String?
+  dedupeKey    String?
+  metadata     Json?
+  readAt       DateTime?
+  archivedAt   DateTime?
+  snoozedUntil DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, dedupeKey])
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, read, createdAt(sort: Desc)])
+  @@index([userId, archivedAt])
 }

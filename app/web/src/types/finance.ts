@@ -68,17 +68,6 @@ export type FinanceSummaryRecord = {
   };
 };
 
-export type CreateInvestmentInput = {
-  ticker: string;
-  name: string;
-  type: InvestmentTypeRecord;
-  shares: number;
-  avgPrice: number;
-  currentPrice: number;
-  lastAction?: InvestmentLastActionRecord;
-  notes?: string;
-};
-
 export type RegisterPositionInput = {
   ticker: string;
   shares: number;
@@ -88,14 +77,6 @@ export type RegisterPositionInput = {
   name?: string;
   type?: InvestmentTypeRecord;
   notes?: string;
-};
-
-export type UpdateInvestmentInput = Partial<CreateInvestmentInput>;
-
-export type TradeInvestmentInput = {
-  action: InvestmentLastActionRecord;
-  shares: number;
-  price: number;
 };
 
 export type DepositFundsInput = {
@@ -191,6 +172,7 @@ export type MonthlyExpenseRecord = {
   fixed: boolean;
   source: string;
   linkedTransactionId: string | null;
+  linkedCreditCardPurchaseId?: string | null;
   editable: boolean;
   deletable?: boolean;
 };
@@ -214,6 +196,22 @@ export type MonthlyExpenseCardRecord = {
   limitTotal: number;
   limitUsage: number;
   type: 'CREDIT' | 'DEBIT';
+  dueDay: number;
+  invoice: CreditCardInvoiceRecord | null;
+  openInvoices: CreditCardInvoiceRecord[];
+};
+
+export type CreditCardInvoiceRecord = {
+  id: string;
+  monthKey: string;
+  dueDate: string;
+  closingDate: string;
+  amount: number;
+  totalAmount: number;
+  paidAmount: number;
+  cycleStatus: 'open' | 'closed';
+  status: 'open' | 'paid';
+  paidAt: string | null;
 };
 
 export type MonthlyExpensesSummaryRecord = {
@@ -241,6 +239,15 @@ export type CreateMonthlyExpenseInput = {
   status?: 'paid' | 'pending';
 };
 
+export type CreateCreditCardPurchaseInput = {
+  title: string;
+  amount: number;
+  cardId: string;
+  categoryId?: string;
+  date?: string;
+  installments: number;
+};
+
 export type UpdateMonthlyExpenseInput = Partial<CreateMonthlyExpenseInput>;
 
 export type CreateMonthlyExpenseCategoryInput = {
@@ -259,6 +266,7 @@ export type CreateMonthlyExpenseCardInput = {
   limitTotal: number;
   limitUsage?: number;
   type?: 'CREDIT' | 'DEBIT';
+  dueDay?: number;
 };
 
 export type UpdateMonthlyExpenseCardInput = Partial<CreateMonthlyExpenseCardInput>;
@@ -307,21 +315,7 @@ export type UpdateFinancialGoalProgressInput = {
   label?: string;
 };
 
-export type NotificationRecord = {
-  id: string;
-  category: 'tasks' | 'finance' | 'goals' | 'wallet' | 'diet' | 'training' | 'body' | 'system';
-  kind: 'alert' | 'reminder' | 'insight' | 'update';
-  priority: 'urgent' | 'normal' | 'low';
-  period: 'daily' | 'weekly' | 'monthly';
-  title: string;
-  body: string;
-  read: boolean;
-  href?: string | null;
-  ctaLabel?: string | null;
-  createdAt: string;
-};
-
-export type NotificationsResponseRecord = {
-  unreadCount: number;
-  items: NotificationRecord[];
-};
+export type {
+  NotificationRecord,
+  NotificationsResponseRecord,
+} from '@/types/notifications';

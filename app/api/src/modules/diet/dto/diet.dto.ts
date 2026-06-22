@@ -56,12 +56,13 @@ export class CreateDietFoodItemDto {
   @Max(100000)
   totalGrams!: number;
 
-  @IsIn(['taco'])
-  externalSource!: 'taco';
+  @IsIn(['taco', 'manual'])
+  externalSource!: 'taco' | 'manual';
 
+  @IsOptional()
   @IsString()
   @MaxLength(64)
-  externalFoodId!: string;
+  externalFoodId?: string | null;
 
   @IsNumber()
   @Min(0)
@@ -85,6 +86,18 @@ export class UpdateDietFoodItemDto {
   @Min(0)
   @Max(100000)
   totalGrams!: number;
+}
+
+export class CopyDietDayDto {
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  sourceWeekday!: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  targetWeekday!: number;
 }
 
 export type CreateDietMealInput = CreateDietMealDto & { userId: string };

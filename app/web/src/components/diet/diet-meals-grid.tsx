@@ -6,6 +6,7 @@ import { DietCreateMealDialog } from '@/components/diet/diet-create-meal-dialog'
 import { DietMealCard } from '@/components/diet/diet-meal-card';
 import { DietMealsEmptyState } from '@/components/diet/diet-meals-empty-state';
 import { AccordionEntityGrid } from '@/components/ui/accordion-entity-grid';
+import type { DietManualDraftPatch } from '@/hooks/use-diet-ingredient-draft';
 import type { DietMealVm } from '@/types/diet';
 import type { FoodSearchResult } from '@/types/foods';
 
@@ -19,9 +20,12 @@ type DietMealsGridProps = {
     onCloseCreateMeal: () => void;
     onRenameMeal: (mealId: string, name: string) => void;
     onDeleteMeal: (mealId: string) => void;
+    onDuplicateMeal: (mealId: string) => void;
     onToggleMealExpanded: (mealId: string) => void;
     onStartIngredientDraft: (mealId: string) => void;
     onSelectDraftFood: (mealId: string, food: FoodSearchResult) => void;
+    onStartManualDraft: (mealId: string) => void;
+    onChangeManualDraft: (mealId: string, patch: DietManualDraftPatch) => void;
     onChangeDraftGrams: (mealId: string, grams: number) => void;
     onConfirmDraft: (mealId: string) => void;
     onCancelDraft: (mealId: string) => void;
@@ -89,7 +93,10 @@ export function DietMealsGrid({ data, actions, ui, className, style }: DietMeals
             onAddIngredient: () => actions.onStartIngredientDraft(meal.id),
             onRenameMeal: (name) => actions.onRenameMeal(meal.id, name),
             onDeleteMeal: () => actions.onDeleteMeal(meal.id),
+            onDuplicateMeal: () => actions.onDuplicateMeal(meal.id),
             onSelectDraftFood: (food) => actions.onSelectDraftFood(meal.id, food),
+            onStartManualDraft: () => actions.onStartManualDraft(meal.id),
+            onChangeManualDraft: (patch) => actions.onChangeManualDraft(meal.id, patch),
             onChangeDraftGrams: (grams) => actions.onChangeDraftGrams(meal.id, grams),
             onConfirmDraft: () => actions.onConfirmDraft(meal.id),
             onCancelDraft: () => actions.onCancelDraft(meal.id),

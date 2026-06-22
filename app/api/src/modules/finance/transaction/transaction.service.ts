@@ -9,10 +9,7 @@ import { syncUserFinanceState } from '../common/finance-balance.util';
 import { creditWallet, debitWalletAtomic } from '../common/ledger.util';
 import { FINANCE_TX_CATEGORY } from '../investment/dto/investment.dto';
 import { reverseGoalContributionByTransaction } from '../financial-goal/finance-goal-contribution.util';
-import type {
-  CreateTransactionDto,
-  UpdateTransactionDto,
-} from './dto/transaction.dto';
+import type { CreateTransactionDto } from './dto/transaction.dto';
 
 /**
  * Categorias gerenciadas exclusivamente pelos fluxos de domínio
@@ -110,13 +107,6 @@ export class TransactionService {
     const existing = assertResourceExists(transaction, 'Transaction');
     assertResourceOwner(existing.userId, userId, 'Transaction');
     return existing;
-  }
-
-  async update(id: string, userId: string, _data: UpdateTransactionDto) {
-    await this.findOne(id, userId);
-    throw new BadRequestException(
-      'Transactions are append-only. Create a reversal transaction instead of updating.',
-    );
   }
 
   async remove(id: string, userId: string) {

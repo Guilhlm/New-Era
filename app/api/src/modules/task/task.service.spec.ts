@@ -48,6 +48,12 @@ describe('TaskService', () => {
     dailyTask: MockTx['dailyTask'];
     taskCompletion: MockTx['taskCompletion'];
     user: MockTx['user'];
+    workoutDayPlan: {
+      findUnique: jest.Mock;
+    };
+    dietMeal: {
+      findMany: jest.Mock;
+    };
     $transaction: jest.Mock;
   };
 
@@ -69,6 +75,12 @@ describe('TaskService', () => {
       dailyTask: tx.dailyTask,
       taskCompletion: tx.taskCompletion,
       user: tx.user,
+      workoutDayPlan: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+      dietMeal: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       $transaction: jest
         .fn()
         .mockImplementation((callback: (txc: MockTx) => unknown) =>
@@ -157,6 +169,85 @@ describe('TaskService', () => {
         where: { id: 'task-1' },
         data: { sortOrder: 0 },
       });
+    });
+  });
+
+  describe('copyDay', () => {
+    it('returns the target day without mutating when source equals target', async () => {
+      prisma.dailyTask.findMany.mockResolvedValue([{ ...task, weekday: 2 }]);
+
+      const result = await service.copyDay('user-1', 2, 2);
+
+      expect(result).toHaveLength(1);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(prisma.dailyTask.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user-1', weekday: 2, isActive: true },
+        }),
+      );
+    });
+
+    it('copies only tasks missing from the target day inside a transaction', async () => {
+      const linkedTask = {
+        ...task,
+        id: 'linked-source',
+        title: 'Meal: Lunch',
+        sourceType: 'DIET_MEAL',
+        sourceId: 'meal-1',
+      };
+      const manualTask = { ...task, id: 'manual-source', title: 'Read', sourceId: null };
+      const existingLinked = { ...linkedTask, id: 'linked-target', weekday: 3 };
+      const copiedManual = { ...manualTask, id: 'manual-copy', weekday: 3, sortOrder: 5 };
+
+      tx.dailyTask.findMany
+        .mockResolvedValueOnce([linkedTask, manualTask])
+        .mockResolvedValueOnce([existingLinked])
+        .mockResolvedValueOnce([copiedManual])
+        .mockResolvedValueOnce([copiedManual]);
+      tx.dailyTask.create.mockResolvedValue(copiedManual);
+
+      const result = await service.copyDay('user-1', 1, 3);
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(tx.dailyTask.create).toHaveBeenCalledTimes(1);
+      expect(tx.dailyTask.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: 'user-1',
+          weekday: 3,
+          title: 'Read',
+          sourceType: 'MANUAL',
+          sourceId: null,
+        }),
+      });
+      expect(tx.dailyTask.update).toHaveBeenCalledWith({
+        where: { id: 'manual-copy' },
+        data: { sortOrder: 0 },
+      });
+      expect(result).toEqual([copiedManual]);
+    });
+  });
+
+  describe('findSuggestions', () => {
+    it('does not suggest a meal task when an active task with the same title already exists', async () => {
+      prisma.dailyTask.findMany.mockResolvedValue([
+        {
+          ...task,
+          title: 'Meal: Lunch',
+          sourceType: 'DIET_MEAL',
+          sourceId: 'source-day-meal',
+        },
+      ]);
+      prisma.dietMeal.findMany.mockResolvedValue([
+        {
+          id: 'target-day-meal',
+          name: 'Lunch',
+          mealTime: '12:00',
+        },
+      ]);
+
+      const suggestions = await service.findSuggestions('user-1', 3);
+
+      expect(suggestions).toEqual([]);
     });
   });
 });

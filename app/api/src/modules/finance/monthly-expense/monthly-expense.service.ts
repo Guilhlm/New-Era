@@ -1,15 +1,33 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CardType, type Prisma } from '@prisma/client';
+import {
+  CardType,
+  NotificationCategory,
+  NotificationKind,
+  NotificationPeriod,
+  NotificationPriority,
+  type Prisma,
+} from '@prisma/client';
 import {
   assertResourceExists,
   assertResourceOwner,
 } from '../../../common/auth/ownership.util';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { NotificationService } from '../../notification/notification.service';
+import { FINANCE_TX_CATEGORY } from '../investment/dto/investment.dto';
+import {
+  clampDueDay,
+  invoiceBalance,
+  isInvoiceCycleOpen,
+  monthKeyFromDate,
+  resolveCreditCardCycle,
+} from './credit-card-cycle.helpers';
 import type {
   CreateCardDto,
+  CreateCreditCardPurchaseDto,
   CreateMonthlyExpenseCategoryDto,
   CreateMonthlyExpenseDto,
   MonthlyExpensesSummaryQueryDto,
+  PayCreditCardInvoiceDto,
   UpdateCardDto,
   UpdateMonthlyExpenseCategoryDto,
   UpdateMonthlyExpenseDto,
@@ -23,7 +41,6 @@ const SYSTEM_CATEGORY_PRESETS = [
 
 const INVESTMENT_EXPENSE_TX_CATEGORIES = new Set([
   'INVESTMENT_BUY',
-  'POSITION_REGISTER',
 ]);
 
 const FINANCIAL_GOAL_EXPENSE_TX_CATEGORIES = new Set([
@@ -40,17 +57,17 @@ const WALLET_DEPOSIT_TX_CATEGORIES = new Set([
 
 const WALLET_MONTHLY_REVERSAL_TX_CATEGORIES = new Set(['WITHDRAW']);
 
+const CARD_INVOICE_PAYMENT_TX_CATEGORIES = new Set([
+  FINANCE_TX_CATEGORY.CARD_INVOICE_PAYMENT,
+]);
+
 const MONTHLY_EXPENSE_ADJUSTMENT_SOURCE = 'ADJUSTMENT';
 const MONTHLY_EXPENSE_CASH_SOURCE = 'CASH';
+const MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE = 'DEPOSIT_EXTRA_INCOME';
 const MONTHLY_EXPENSE_CARD_SOURCE_PREFIX = 'CARD:';
+const MONTHLY_EXPENSE_CARD_INVOICE_SOURCE = 'CARD_INVOICE';
 
 type SystemCategoryKey = (typeof SYSTEM_CATEGORY_PRESETS)[number]['key'];
-
-function monthKeyFromDate(value: Date) {
-  const year = value.getUTCFullYear();
-  const month = String(value.getUTCMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
 
 function dateRangeForMonth(monthKey: string) {
   const [yearText, monthText] = monthKey.split('-');
@@ -92,8 +109,33 @@ function expenseAmountForTotals(item: { amount: unknown; source?: string | null 
   return Math.abs(amount);
 }
 
+function monthlySpendingImpact(item: { amount: unknown; source?: string | null }) {
+  if (item.source === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE) {
+    return -Math.abs(Number(item.amount ?? 0));
+  }
+  return expenseAmountForTotals(item);
+}
+
 function clampMoney(value: number) {
   return Math.max(0, Number(value.toFixed(2)));
+}
+
+function roundMoney(value: number) {
+  return Number(value.toFixed(2));
+}
+
+function splitInstallments(total: number, installments: number) {
+  const cents = Math.round(total * 100);
+  const base = Math.floor(cents / installments);
+  const remainder = cents - base * installments;
+  return Array.from({ length: installments }, (_, index) =>
+    roundMoney((base + (index < remainder ? 1 : 0)) / 100),
+  );
+}
+
+function pctChange(current: number, previous: number) {
+  if (previous <= 0) return current > 0 ? 100 : 0;
+  return Number((((current - previous) / previous) * 100).toFixed(1));
 }
 
 function transactionAmountBrl(tx: {
@@ -112,7 +154,48 @@ function transactionAmountBrl(tx: {
 
 @Injectable()
 export class MonthlyExpenseService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
+
+  private async checkCategoryBudget(
+    userId: string,
+    category: { id: string; name: string; budget: unknown },
+    monthKey: string,
+  ) {
+    const budget = Number(category.budget ?? 0);
+    if (budget <= 0) return;
+    const { start, end } = dateRangeForMonth(monthKey);
+    const spent = await this.prisma.monthlyExpense.aggregate({
+      where: {
+        userId,
+        categoryId: category.id,
+        status: 'paid',
+        OR: [{ monthKey }, { monthKey: null, createdAt: { gte: start, lt: end } }],
+      },
+      _sum: { amount: true },
+    });
+    const total = Number(spent._sum.amount ?? 0);
+    if (total < budget * 0.8) return;
+
+    const ratio = Math.round((total / budget) * 100);
+    await this.notifications.emit(userId, {
+      dedupeKey: `budget-${monthKey}-${category.id}`,
+      period: NotificationPeriod.MONTHLY,
+      category: NotificationCategory.FINANCE,
+      kind: NotificationKind.ALERT,
+      priority: total >= budget ? NotificationPriority.URGENT : NotificationPriority.NORMAL,
+      title:
+        total >= budget
+          ? `"${category.name}" budget exceeded`
+          : `"${category.name}" budget near limit`,
+      body: `You used ${total.toFixed(2)} of ${budget.toFixed(2)} USDT (${ratio}%) in "${category.name}" this month.`,
+      href: '/monthly-expenses',
+      ctaLabel: 'View expenses',
+      metadata: { category: category.name, spent: total, budget, ratio },
+    });
+  }
 
   private async assertMonthlyIncomeConfigured(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -184,6 +267,66 @@ export class MonthlyExpenseService {
     return card;
   }
 
+  private async findInvoiceOrThrow(id: string, userId: string) {
+    const found = await this.prisma.creditCardInvoice.findUnique({
+      where: { id },
+      include: { card: true },
+    });
+    const invoice = assertResourceExists(found, 'Credit card invoice');
+    assertResourceOwner(invoice.userId, userId, 'Credit card invoice');
+    return invoice;
+  }
+
+  private async findCreditCardPurchaseOrThrow(id: string, userId: string) {
+    const found = await this.prisma.creditCardPurchase.findUnique({
+      where: { id },
+      include: {
+        installments: {
+          include: { invoice: true },
+        },
+        card: true,
+      },
+    });
+    const purchase = assertResourceExists(found, 'Credit card purchase');
+    assertResourceOwner(purchase.userId, userId, 'Credit card purchase');
+    return purchase;
+  }
+
+  private async closeExpiredInvoicesForCard(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    cardId: string,
+    asOf: Date,
+  ) {
+    const openInvoices = await tx.creditCardInvoice.findMany({
+      where: { userId, cardId, status: 'open' },
+      select: { id: true, closingDate: true },
+    });
+    const expiredIds = openInvoices
+      .filter((invoice) => !isInvoiceCycleOpen('open', invoice.closingDate, asOf))
+      .map((invoice) => invoice.id);
+    if (expiredIds.length === 0) return;
+    await tx.creditCardInvoice.updateMany({
+      where: { id: { in: expiredIds } },
+      data: { status: 'closed' },
+    });
+  }
+
+  private invoiceAcceptsPurchases(
+    invoice: { status: string; closingDate: Date },
+    asOf: Date,
+  ) {
+    return (
+      invoice.status === 'open' && isInvoiceCycleOpen(invoice.status, invoice.closingDate, asOf)
+    );
+  }
+
+  private mapInvoicePaymentStatus(
+    invoice: { amount: unknown; paidAmount: unknown },
+  ) {
+    return invoiceBalance(invoice.amount, invoice.paidAmount) <= 0 ? 'paid' : 'pending';
+  }
+
   private async assertExpenseSourceOwner(source: string, userId: string) {
     const cardId = cardIdFromExpenseSource(source);
     if (!cardId) return;
@@ -213,46 +356,6 @@ export class MonthlyExpenseService {
     });
   }
 
-  private async monthSpentFromTransactions(
-    userId: string,
-    monthKey: string,
-    tx?: Prisma.TransactionClient,
-  ) {
-    const client = tx ?? this.prisma;
-    const { start, end } = dateRangeForMonth(monthKey);
-    const rows = await client.transaction.findMany({
-      where: {
-        userId,
-        date: { gte: start, lt: end },
-        category: {
-          in: [
-            ...INVESTMENT_EXPENSE_TX_CATEGORIES,
-            ...FINANCIAL_GOAL_EXPENSE_TX_CATEGORIES,
-            'DEPOSIT_SALARY',
-            ...WALLET_MONTHLY_REVERSAL_TX_CATEGORIES,
-          ],
-        },
-      },
-    });
-    return rows.reduce((sum, item) => {
-      const amount = transactionAmountBrl(item);
-      return sum + (item.category === 'WITHDRAW' ? -Math.abs(amount) : Math.abs(amount));
-    }, 0);
-  }
-
-  private async monthSpentFromManualExpenses(userId: string, monthKey: string) {
-    const { start, end } = dateRangeForMonth(monthKey);
-    const rows = await this.prisma.monthlyExpense.findMany({
-      where: {
-        userId,
-        OR: [{ monthKey }, { monthKey: null, createdAt: { gte: start, lt: end } }],
-        status: 'paid',
-      },
-      select: { amount: true, source: true },
-    });
-    return rows.reduce((sum, item) => sum + expenseAmountForTotals(item), 0);
-  }
-
   private previousMonth(monthKey: string) {
     const [yearText, monthText] = monthKey.split('-');
     const base = new Date(Date.UTC(Number(yearText), Number(monthText) - 1, 1));
@@ -260,11 +363,42 @@ export class MonthlyExpenseService {
     return monthKeyFromDate(base);
   }
 
+  private async monthTransactionCount(userId: string, monthKey: string) {
+    const { start, end } = dateRangeForMonth(monthKey);
+    const [manualCount, txCount, invoiceCount] = await Promise.all([
+      this.prisma.monthlyExpense.count({
+        where: {
+          userId,
+          OR: [{ monthKey }, { monthKey: null, createdAt: { gte: start, lt: end } }],
+        },
+      }),
+      this.prisma.transaction.count({
+        where: {
+          userId,
+          date: { gte: start, lt: end },
+          category: {
+            in: [
+              ...INVESTMENT_EXPENSE_TX_CATEGORIES,
+              ...FINANCIAL_GOAL_EXPENSE_TX_CATEGORIES,
+              ...WALLET_DEPOSIT_TX_CATEGORIES,
+              ...WALLET_MONTHLY_REVERSAL_TX_CATEGORIES,
+            ],
+          },
+        },
+      }),
+      this.prisma.creditCardInvoice.count({
+        where: { userId, monthKey },
+      }),
+    ]);
+    return manualCount + txCount + invoiceCount;
+  }
+
   private formatExpenseAccount(
     source: string,
     cardsById: Map<string, { brand: string | null; lastFour: string | null }>,
   ) {
     if (source === MONTHLY_EXPENSE_CASH_SOURCE || source === 'MANUAL') return 'Cash';
+    if (source === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE) return 'Extra income';
     const cardId = cardIdFromExpenseSource(source);
     if (!cardId) return source;
     const card = cardsById.get(cardId);
@@ -275,9 +409,65 @@ export class MonthlyExpenseService {
 
   private depositAccountLabel(category: string) {
     if (category === 'DEPOSIT_SALARY') return 'Monthly salary';
-    if (category === 'DEPOSIT_EXTRA_INCOME') return 'Extra income';
+    if (category === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE) return 'Extra income';
     if (category === 'DEPOSIT_CARD') return 'Card';
     return 'Wallet';
+  }
+
+  async getSalaryRemaining(userId: string, monthKey?: string) {
+    const monthlyIncome = await this.assertMonthlyIncomeConfigured(userId);
+    const month = normalizeMonth(monthKey);
+    const { start, end } = dateRangeForMonth(month);
+
+    const [manualExpenses, transactionExpenses] = await Promise.all([
+      this.prisma.monthlyExpense.findMany({
+        where: {
+          userId,
+          OR: [{ monthKey: month }, { monthKey: null, createdAt: { gte: start, lt: end } }],
+        },
+        select: {
+          amount: true,
+          source: true,
+          status: true,
+        },
+      }),
+      this.prisma.transaction.findMany({
+        where: {
+          userId,
+          date: { gte: start, lt: end },
+          category: {
+            in: [
+              ...INVESTMENT_EXPENSE_TX_CATEGORIES,
+              ...FINANCIAL_GOAL_EXPENSE_TX_CATEGORIES,
+              ...WALLET_DEPOSIT_TX_CATEGORIES,
+              ...WALLET_MONTHLY_REVERSAL_TX_CATEGORIES,
+              ...CARD_INVOICE_PAYMENT_TX_CATEGORIES,
+            ],
+          },
+        },
+        select: {
+          amount: true,
+          displayAmount: true,
+          displayCurrency: true,
+          fxRate: true,
+          category: true,
+        },
+      }),
+    ]);
+
+    const manualSpent = manualExpenses
+      .filter((item) => isPaidStatus(item.status))
+      .reduce((sum, item) => sum + monthlySpendingImpact(item), 0);
+    const transactionSpent = transactionExpenses.reduce((sum, tx) => {
+      const category = tx.category ?? '';
+      const amountBrl = transactionAmountBrl(tx);
+      const amount = WALLET_MONTHLY_REVERSAL_TX_CATEGORIES.has(category)
+        ? -Math.abs(amountBrl)
+        : Math.abs(amountBrl);
+      return sum + monthlySpendingImpact({ amount, source: category });
+    }, 0);
+
+    return roundMoney(monthlyIncome - manualSpent - transactionSpent);
   }
 
   async getSummary(userId: string, query: MonthlyExpensesSummaryQueryDto) {
@@ -287,7 +477,26 @@ export class MonthlyExpenseService {
     const { start, end } = dateRangeForMonth(month);
     const limit = query.limit ?? 100;
 
-    const [categories, manualExpenses, transactionExpenses, cards] = await Promise.all([
+    const userCards = await this.prisma.card.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      for (const card of userCards) {
+        await this.closeExpiredInvoicesForCard(tx, userId, card.id, now);
+      }
+    });
+
+    const [
+      categories,
+      manualExpenses,
+      transactionExpenses,
+      cards,
+      creditCardInvoices,
+      openCreditCardInvoices,
+      creditCardPurchases,
+    ] = await Promise.all([
       this.prisma.monthlyExpenseCategory.findMany({
         where: { userId },
         orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
@@ -321,6 +530,43 @@ export class MonthlyExpenseService {
         where: { userId },
         orderBy: { createdAt: 'desc' },
       }),
+      this.prisma.creditCardInvoice.findMany({
+        where: { userId, monthKey: month },
+        include: {
+          card: true,
+          installments: {
+            include: { purchase: true },
+            orderBy: { installmentNumber: 'asc' },
+          },
+        },
+        orderBy: { dueDate: 'asc' },
+      }),
+      this.prisma.creditCardInvoice.findMany({
+        where: { userId, status: { in: ['open', 'closed'] } },
+        include: {
+          card: true,
+          installments: {
+            include: { purchase: true },
+            orderBy: { installmentNumber: 'asc' },
+          },
+        },
+        orderBy: { dueDate: 'asc' },
+      }),
+      this.prisma.creditCardPurchase.findMany({
+        where: {
+          userId,
+          purchaseDate: { gte: start, lt: end },
+        },
+        include: {
+          card: true,
+          installments: {
+            include: { invoice: true },
+            orderBy: { installmentNumber: 'asc' },
+          },
+        },
+        orderBy: { purchaseDate: 'desc' },
+        take: limit,
+      }),
     ]);
 
     const categoriesBySystem = new Map(
@@ -332,8 +578,11 @@ export class MonthlyExpenseService {
       id: item.id,
       date: item.createdAt.toISOString(),
       title: item.title,
-      categoryId: item.categoryId,
-      categoryName: item.categoryRef?.name ?? item.category ?? 'Uncategorized',
+      categoryId: item.source === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE ? null : item.categoryId,
+      categoryName:
+        item.source === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE
+          ? 'Extra income'
+          : (item.categoryRef?.name ?? item.category ?? 'Uncategorized'),
       amount: Number(item.amount),
       account: this.formatExpenseAccount(item.source, cardsById),
       status: item.status ?? 'paid',
@@ -388,17 +637,68 @@ export class MonthlyExpenseService {
         deletable: isGoalContribution,
       };
     });
+    const mappedInvoices = creditCardInvoices.map((invoice) => {
+      const brand = invoice.card.brand === 'mastercard' ? 'Mastercard' : 'Visa';
+      const installmentCount = invoice.installments.length;
+      const balance = invoiceBalance(invoice.amount, invoice.paidAmount);
+      const title =
+        installmentCount > 1
+          ? `Card invoice • ${installmentCount} installments`
+          : (invoice.installments[0]?.purchase.title ?? 'Card invoice');
+      return {
+        id: `invoice-${invoice.id}`,
+        date: invoice.dueDate.toISOString(),
+        title,
+        categoryId: null,
+        categoryName: 'Card invoice',
+        amount: balance,
+        account: `${brand} •••• ${invoice.card.lastFour ?? '0000'}`,
+        status: this.mapInvoicePaymentStatus(invoice),
+        fixed: false,
+        source: MONTHLY_EXPENSE_CARD_INVOICE_SOURCE,
+        linkedTransactionId: invoice.transactionId,
+        editable: false,
+        deletable: false,
+      };
+    });
+    const mappedCardPurchases = creditCardPurchases.map((purchase) => {
+      const brand = purchase.card.brand === 'mastercard' ? 'Mastercard' : 'Visa';
+      const hasPaidInstallment = purchase.installments.some(
+        (installment) =>
+          installment.status === 'paid' ||
+          Number(installment.invoice?.paidAmount ?? 0) > 0,
+      );
+      return {
+        id: `card-purchase-${purchase.id}`,
+        date: purchase.purchaseDate.toISOString(),
+        title:
+          purchase.installmentsCount > 1
+            ? `${purchase.title} (${purchase.installmentsCount}x)`
+            : purchase.title,
+        categoryId: purchase.categoryId,
+        categoryName: purchase.category ?? 'Card purchase',
+        amount: Number(purchase.amount),
+        account: `${brand} •••• ${purchase.card.lastFour ?? '0000'}`,
+        status: hasPaidInstallment ? 'paid' : 'pending',
+        fixed: false,
+        source: 'CARD_PURCHASE',
+        linkedTransactionId: null,
+        linkedCreditCardPurchaseId: purchase.id,
+        editable: false,
+        deletable: !hasPaidInstallment,
+      };
+    });
 
-    const expenseRows = [...mappedManual, ...mappedTxExpenses].sort((a, b) =>
-      b.date.localeCompare(a.date),
-    );
+    const expenseRows = [
+      ...mappedManual,
+      ...mappedTxExpenses,
+      ...mappedInvoices,
+      ...mappedCardPurchases,
+    ].sort((a, b) => b.date.localeCompare(a.date));
 
     const paidExpenseRows = expenseRows.filter((item) => isPaidStatus(item.status));
-    const spent = clampMoney(
-      paidExpenseRows.reduce((sum, item) => {
-        if (item.source === 'DEPOSIT_EXTRA_INCOME') return sum;
-        return sum + expenseAmountForTotals(item);
-      }, 0),
+    const spent = roundMoney(
+      paidExpenseRows.reduce((sum, item) => sum + monthlySpendingImpact(item), 0),
     );
     const income = monthlyIncome;
     const cardLimit = cards.reduce((sum, item) => sum + Number(item.limitTotal ?? 0), 0);
@@ -412,23 +712,59 @@ export class MonthlyExpenseService {
         ),
     );
     const previousMonth = this.previousMonth(month);
-    const previousSpentManual = await this.monthSpentFromManualExpenses(
-      userId,
-      previousMonth,
-    );
-    const previousSpentTx = await this.monthSpentFromTransactions(userId, previousMonth);
-    const previousSpent = previousSpentManual + previousSpentTx;
-    const vsLastMonth =
-      previousSpent <= 0 ? 0 : Number((((spent - previousSpent) / previousSpent) * 100).toFixed(1));
+    const [currentTransactionCount, previousTransactionCount] = await Promise.all([
+      this.monthTransactionCount(userId, month),
+      this.monthTransactionCount(userId, previousMonth),
+    ]);
+    const vsLastMonth = pctChange(currentTransactionCount, previousTransactionCount);
 
     const spentByCategory = new Map<string, number>();
     for (const row of paidExpenseRows) {
       const key = row.categoryId ?? row.categoryName;
-      if (row.source === 'DEPOSIT_EXTRA_INCOME') continue;
+      if (row.source === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE) continue;
       spentByCategory.set(
         key,
         (spentByCategory.get(key) ?? 0) + expenseAmountForTotals(row),
       );
+    }
+    const invoicesByCard = new Map(
+      creditCardInvoices.map((invoice) => [invoice.cardId, invoice]),
+    );
+    const openInvoicesByCard = new Map<string, typeof openCreditCardInvoices>();
+    for (const invoice of openCreditCardInvoices) {
+      const balance = invoiceBalance(invoice.amount, invoice.paidAmount);
+      if (invoice.status !== 'open' && balance <= 0) continue;
+      openInvoicesByCard.set(invoice.cardId, [
+        ...(openInvoicesByCard.get(invoice.cardId) ?? []),
+        invoice,
+      ]);
+    }
+    const mapCardInvoiceVm = (invoice: (typeof creditCardInvoices)[number]) => {
+      const balance = invoiceBalance(invoice.amount, invoice.paidAmount);
+      return {
+        id: invoice.id,
+        monthKey: invoice.monthKey,
+        dueDate: invoice.dueDate.toISOString(),
+        closingDate: invoice.closingDate.toISOString(),
+        amount: balance,
+        totalAmount: Number(invoice.amount),
+        paidAmount: Number(invoice.paidAmount),
+        cycleStatus: invoice.status as 'open' | 'closed',
+        status: balance <= 0 ? ('paid' as const) : ('open' as const),
+        paidAt: invoice.paidAt?.toISOString() ?? null,
+      };
+    };
+    const sortCardInvoices = (items: typeof openCreditCardInvoices) =>
+      [...items].sort((a, b) => {
+        if (a.status === 'open' && b.status !== 'open') return -1;
+        if (b.status === 'open' && a.status !== 'open') return 1;
+        return a.dueDate.getTime() - b.dueDate.getTime();
+      });
+    const currentCycleInvoiceByCard = new Map<string, (typeof openCreditCardInvoices)[number]>();
+    for (const [cardId, invoices] of openInvoicesByCard.entries()) {
+      const sorted = sortCardInvoices(invoices);
+      const current = sorted.find((invoice) => invoice.status === 'open') ?? sorted[0];
+      if (current) currentCycleInvoiceByCard.set(cardId, current);
     }
 
     return {
@@ -460,6 +796,13 @@ export class MonthlyExpenseService {
         limitTotal: Number(item.limitTotal ?? 0),
         limitUsage: Number(item.limitUsage ?? 0),
         type: item.type,
+        dueDay: item.dueDay,
+        invoice: invoicesByCard.get(item.id)
+          ? mapCardInvoiceVm(invoicesByCard.get(item.id)!)
+          : currentCycleInvoiceByCard.get(item.id)
+          ? mapCardInvoiceVm(currentCycleInvoiceByCard.get(item.id)!)
+          : null,
+        openInvoices: sortCardInvoices(openInvoicesByCard.get(item.id) ?? []).map(mapCardInvoiceVm),
       })),
       expenses: expenseRows,
     };
@@ -474,16 +817,17 @@ export class MonthlyExpenseService {
     const when = data.date ? new Date(data.date) : new Date();
     const month = monthKeyFromDate(when);
     const source = data.account?.trim() || MONTHLY_EXPENSE_CASH_SOURCE;
+    const isExtraIncome = source === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE;
     await this.assertExpenseSourceOwner(source, userId);
 
-    return this.prisma.$transaction(async (tx) => {
-      const expense = await tx.monthlyExpense.create({
+    const expense = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.monthlyExpense.create({
         data: {
           userId,
           title: data.title.trim(),
           amount: Math.abs(data.amount),
-          category: category?.name ?? null,
-          categoryId: category?.id,
+          category: isExtraIncome ? null : (category?.name ?? null),
+          categoryId: isExtraIncome ? null : category?.id,
           monthKey: month,
           source,
           status: data.status ?? 'paid',
@@ -491,15 +835,231 @@ export class MonthlyExpenseService {
           createdAt: when,
         },
       });
-      if (isPaidStatus(expense.status)) {
+      if (isPaidStatus(created.status)) {
         await this.adjustCardUsage(
           tx,
-          cardIdFromExpenseSource(expense.source),
-          Math.abs(Number(expense.amount)),
+          cardIdFromExpenseSource(created.source),
+          Math.abs(Number(created.amount)),
         );
       }
-      return expense;
+      return created;
     });
+
+    if (category && isPaidStatus(expense.status)) {
+      await this.checkCategoryBudget(userId, category, month);
+    }
+
+    return expense;
+  }
+
+  async createCreditCardPurchase(userId: string, data: CreateCreditCardPurchaseDto) {
+    await this.assertMonthlyIncomeConfigured(userId);
+    await this.ensureSystemCategories(userId);
+    const card = await this.findCardOrThrow(data.cardId, userId);
+    const category = data.categoryId
+      ? await this.findCategoryOrThrow(data.categoryId, userId)
+      : null;
+    const purchaseDate = data.date ? new Date(data.date) : new Date();
+    const totalAmount = roundMoney(Math.abs(data.amount));
+    const installmentsCount = Math.trunc(data.installments);
+    if (installmentsCount < 1) {
+      throw new BadRequestException('Installments must be at least 1.');
+    }
+    const limitTotal = Number(card.limitTotal ?? 0);
+    const limitUsage = Number(card.limitUsage ?? 0);
+    if (limitTotal > 0 && limitUsage + totalAmount > limitTotal) {
+      throw new BadRequestException('Insufficient card limit.');
+    }
+    const dueDay = clampDueDay(card.dueDay);
+    const installmentAmounts = splitInstallments(totalAmount, installmentsCount);
+
+    return this.prisma.$transaction(async (tx) => {
+      await this.closeExpiredInvoicesForCard(tx, userId, card.id, purchaseDate);
+
+      const purchase = await tx.creditCardPurchase.create({
+        data: {
+          userId,
+          cardId: card.id,
+          title: data.title.trim(),
+          amount: totalAmount,
+          installmentsCount,
+          category: category?.name ?? null,
+          categoryId: category?.id ?? null,
+          purchaseDate,
+        },
+      });
+
+      const createdInstallments = [];
+      for (let index = 0; index < installmentsCount; index += 1) {
+        let cycleOffset = index;
+        let cycle = resolveCreditCardCycle(purchaseDate, dueDay, cycleOffset);
+        let existingInvoice = await tx.creditCardInvoice.findUnique({
+          where: { cardId_monthKey: { cardId: card.id, monthKey: cycle.monthKey } },
+        });
+        while (
+          existingInvoice &&
+          !this.invoiceAcceptsPurchases(existingInvoice, purchaseDate)
+        ) {
+          cycleOffset += 1;
+          cycle = resolveCreditCardCycle(purchaseDate, dueDay, cycleOffset);
+          existingInvoice = await tx.creditCardInvoice.findUnique({
+            where: { cardId_monthKey: { cardId: card.id, monthKey: cycle.monthKey } },
+          });
+        }
+        const invoice = existingInvoice
+          ? await tx.creditCardInvoice.update({
+              where: { id: existingInvoice.id },
+              data: { amount: { increment: installmentAmounts[index] } },
+            })
+          : await tx.creditCardInvoice.create({
+              data: {
+                userId,
+                cardId: card.id,
+                monthKey: cycle.monthKey,
+                dueDate: cycle.dueDate,
+                closingDate: cycle.closingDate,
+                amount: installmentAmounts[index],
+                status: 'open',
+              },
+            });
+        const installment = await tx.creditCardInstallment.create({
+          data: {
+            userId,
+            cardId: card.id,
+            purchaseId: purchase.id,
+            invoiceId: invoice.id,
+            monthKey: cycle.monthKey,
+            dueDate: cycle.dueDate,
+            installmentNumber: index + 1,
+            installmentsTotal: installmentsCount,
+            amount: installmentAmounts[index],
+            status: 'open',
+          },
+        });
+        createdInstallments.push(installment);
+      }
+
+      await tx.card.update({
+        where: { id: card.id },
+        data: { limitUsage: limitUsage + totalAmount },
+      });
+
+      return { ...purchase, installments: createdInstallments };
+    });
+  }
+
+  async payCreditCardInvoice(id: string, userId: string, data: PayCreditCardInvoiceDto = {}) {
+    const invoice = await this.findInvoiceOrThrow(id, userId);
+
+    const now = new Date();
+    return this.prisma.$transaction(async (tx) => {
+      await this.closeExpiredInvoicesForCard(tx, userId, invoice.cardId, now);
+      const current = await tx.creditCardInvoice.findUniqueOrThrow({
+        where: { id: invoice.id },
+        include: { card: true },
+      });
+      const balance = invoiceBalance(current.amount, current.paidAmount);
+      if (balance <= 0) {
+        throw new BadRequestException('Invoice has no outstanding balance.');
+      }
+      const paymentAmount =
+        data.amount != null ? roundMoney(Math.abs(data.amount)) : balance;
+      if (paymentAmount <= 0) {
+        throw new BadRequestException('Payment amount must be greater than zero.');
+      }
+      if (paymentAmount > balance) {
+        throw new BadRequestException('Payment exceeds the invoice outstanding balance.');
+      }
+      const salaryRemaining = await this.getSalaryRemaining(userId, monthKeyFromDate(now));
+      if (paymentAmount > salaryRemaining) {
+        throw new BadRequestException('Payment exceeds the available monthly salary.');
+      }
+      const nextPaidAmount = roundMoney(Number(current.paidAmount) + paymentAmount);
+      const fullyPaid = nextPaidAmount >= Number(current.amount);
+
+      const transaction = await tx.transaction.create({
+        data: {
+          userId,
+          type: 'EXPENSE',
+          amount: paymentAmount,
+          displayAmount: paymentAmount,
+          displayCurrency: 'BRL',
+          description: `Card invoice payment • ${current.card.brand ?? 'Card'} ${current.card.lastFour ?? ''}`.trim(),
+          category: FINANCE_TX_CATEGORY.CARD_INVOICE_PAYMENT,
+          date: now,
+        },
+      });
+      const paidInvoice = await tx.creditCardInvoice.update({
+        where: { id: current.id },
+        data: {
+          paidAmount: { increment: paymentAmount },
+          ...(fullyPaid
+            ? { paidAt: current.paidAt ?? now, transactionId: current.transactionId ?? transaction.id }
+            : {}),
+        },
+      });
+      if (fullyPaid) {
+        await tx.creditCardInstallment.updateMany({
+          where: { invoiceId: current.id },
+          data: { status: 'paid' },
+        });
+      }
+      const currentUsage = Number(current.card.limitUsage ?? 0);
+      await tx.card.update({
+        where: { id: current.cardId },
+        data: { limitUsage: Math.max(0, roundMoney(currentUsage - paymentAmount)) },
+      });
+      return paidInvoice;
+    });
+  }
+
+  async cancelCreditCardPurchase(id: string, userId: string) {
+    const purchase = await this.findCreditCardPurchaseOrThrow(id, userId);
+    if (
+      purchase.installments.some(
+        (item) =>
+          item.status === 'paid' || Number(item.invoice?.paidAmount ?? 0) > 0,
+      )
+    ) {
+      throw new BadRequestException('Cannot cancel a purchase with paid invoice installments.');
+    }
+    const invoiceAdjustments = new Map<string, number>();
+    for (const installment of purchase.installments) {
+      if (!installment.invoiceId) continue;
+      invoiceAdjustments.set(
+        installment.invoiceId,
+        (invoiceAdjustments.get(installment.invoiceId) ?? 0) + Number(installment.amount),
+      );
+    }
+    const amount = Number(purchase.amount ?? 0);
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const [invoiceId, adjustment] of invoiceAdjustments.entries()) {
+        const invoice = await tx.creditCardInvoice.findUnique({
+          where: { id: invoiceId },
+          select: { amount: true },
+        });
+        if (!invoice) continue;
+        const nextAmount = roundMoney(Number(invoice.amount ?? 0) - adjustment);
+        if (nextAmount <= 0) {
+          await tx.creditCardInvoice.delete({ where: { id: invoiceId } });
+        } else {
+          await tx.creditCardInvoice.update({
+            where: { id: invoiceId },
+            data: { amount: nextAmount },
+          });
+        }
+      }
+      await tx.creditCardPurchase.delete({ where: { id: purchase.id } });
+      await tx.card.update({
+        where: { id: purchase.cardId },
+        data: {
+          limitUsage: Math.max(0, roundMoney(Number(purchase.card.limitUsage ?? 0) - amount)),
+        },
+      });
+    });
+
+    return { ok: true };
   }
 
   async updateExpense(id: string, userId: string, data: UpdateMonthlyExpenseDto) {
@@ -520,6 +1080,7 @@ export class MonthlyExpenseService {
       data.account !== undefined
         ? data.account.trim() || MONTHLY_EXPENSE_CASH_SOURCE
         : existing.source;
+    const isExtraIncome = nextSource === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE;
     await this.assertExpenseSourceOwner(nextSource, userId);
     const nextAmount = data.amount !== undefined ? Math.abs(data.amount) : Number(existing.amount);
     const nextStatus = data.status ?? existing.status;
@@ -538,10 +1099,11 @@ export class MonthlyExpenseService {
           ...(data.amount !== undefined ? { amount: nextAmount } : {}),
           ...(data.categoryId !== undefined
             ? {
-                categoryId: category?.id ?? null,
-                category: category?.name ?? null,
+                categoryId: isExtraIncome ? null : (category?.id ?? null),
+                category: isExtraIncome ? null : (category?.name ?? null),
               }
             : {}),
+          ...(isExtraIncome ? { categoryId: null, category: null } : {}),
           ...(data.account !== undefined ? { source: nextSource } : {}),
           ...(data.status !== undefined ? { status: data.status } : {}),
           ...(when ? { createdAt: when, monthKey: month } : {}),
@@ -579,9 +1141,75 @@ export class MonthlyExpenseService {
   async listCategories(userId: string, month?: string) {
     await this.assertMonthlyIncomeConfigured(userId);
     await this.ensureSystemCategories(userId);
-    const monthKey = normalizeMonth(month);
-    const summary = await this.getSummary(userId, { month: monthKey });
-    return summary.categories;
+    const month_ = normalizeMonth(month);
+    const { start, end } = dateRangeForMonth(month_);
+
+    // Dedicated lightweight path: only the data needed to compute per-category
+    // spend. Avoids the cards query, previous-month comparison and full expense
+    // row mapping/sorting performed by getSummary.
+    const [categories, manualExpenses, transactionExpenses] = await Promise.all([
+      this.prisma.monthlyExpenseCategory.findMany({
+        where: { userId, isSystem: false },
+        orderBy: [{ name: 'asc' }],
+      }),
+      this.prisma.monthlyExpense.findMany({
+        where: {
+          userId,
+          status: 'paid',
+          OR: [{ monthKey: month_ }, { monthKey: null, createdAt: { gte: start, lt: end } }],
+        },
+        select: {
+          amount: true,
+          source: true,
+          categoryId: true,
+          category: true,
+        },
+      }),
+      this.prisma.transaction.findMany({
+        where: {
+          userId,
+          date: { gte: start, lt: end },
+          category: { in: [...FINANCIAL_GOAL_EXPENSE_TX_CATEGORIES] },
+        },
+        select: {
+          amount: true,
+          displayAmount: true,
+          displayCurrency: true,
+          fxRate: true,
+          category: true,
+        },
+      }),
+    ]);
+
+    const financialGoalsCategory = await this.prisma.monthlyExpenseCategory.findFirst({
+      where: { userId, systemKey: 'FINANCIAL_GOALS' },
+      select: { id: true, name: true },
+    });
+
+    const spentByCategory = new Map<string, number>();
+    const addSpend = (key: string | null | undefined, value: number) => {
+      if (!key) return;
+      spentByCategory.set(key, (spentByCategory.get(key) ?? 0) + value);
+    };
+
+    for (const item of manualExpenses) {
+      if (item.source === MONTHLY_EXPENSE_EXTRA_INCOME_SOURCE) continue;
+      addSpend(item.categoryId ?? item.category, expenseAmountForTotals(item));
+    }
+    for (const tx of transactionExpenses) {
+      const amountBrl = Math.abs(transactionAmountBrl(tx));
+      addSpend(financialGoalsCategory?.id ?? financialGoalsCategory?.name, amountBrl);
+    }
+
+    return categories.map((item) => ({
+      id: item.id,
+      name: item.name,
+      budget: Number(item.budget),
+      spent: clampMoney(spentByCategory.get(item.id) ?? spentByCategory.get(item.name) ?? 0),
+      isSystem: false,
+      isLocked: false,
+      systemKey: null,
+    }));
   }
 
   async createCategory(userId: string, data: CreateMonthlyExpenseCategoryDto) {
@@ -721,6 +1349,9 @@ export class MonthlyExpenseService {
       limitTotal: Number(item.limitTotal ?? 0),
       limitUsage: Number(item.limitUsage ?? 0),
       type: item.type,
+      dueDay: item.dueDay,
+      invoice: null,
+      openInvoices: [],
     }));
   }
 
@@ -737,6 +1368,7 @@ export class MonthlyExpenseService {
         color: data.color ?? '#1e3a8a',
         limitTotal: data.limitTotal,
         limitUsage: data.limitUsage ?? 0,
+        dueDay: data.dueDay ?? 10,
       },
     });
   }
@@ -760,6 +1392,7 @@ export class MonthlyExpenseService {
         ...(data.limitTotal !== undefined ? { limitTotal: data.limitTotal } : {}),
         ...(data.limitUsage !== undefined ? { limitUsage: data.limitUsage } : {}),
         ...(data.type !== undefined ? { type: data.type } : {}),
+        ...(data.dueDay !== undefined ? { dueDay: data.dueDay } : {}),
       },
     });
   }

@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
 import { CreateEntityDialog } from '@/components/ui/create-entity-dialog';
+import { DialogFormActions } from '@/components/ui/dialog-form-actions';
+import { DialogFormField } from '@/components/ui/dialog-form-field';
+import { dialogFormInputClass } from '@/components/ui/dialog-form-layout';
 import { typeClass, typeToneClass } from '@/lib/typography';
-import { walletDialogFieldClass, walletDialogSelectClass } from '@/components/wallet/wallet-dialog-layout';
 
-const INPUT_CLASS = cn('w-full placeholder:text-text/40 disabled:opacity-60', walletDialogSelectClass);
+const INPUT_CLASS = cn('w-full placeholder:text-text/40 disabled:opacity-60', dialogFormInputClass);
 
 type GoalFormValues = {
   label: string;
@@ -85,8 +86,10 @@ function GoalForm({ mode, initial, saving = false, onSubmit, onClose }: GoalForm
         </p>
       </div>
 
-      <label className={walletDialogFieldClass}>
-        <span className={cn(typeClass.caption, typeToneClass.muted60)}>Name</span>
+      <DialogFormField
+        label="Name"
+        hint={nameLocked ? 'Fixed goal: the name cannot be changed.' : undefined}
+      >
         <input
           type="text"
           autoFocus
@@ -96,15 +99,9 @@ function GoalForm({ mode, initial, saving = false, onSubmit, onClose }: GoalForm
           className={INPUT_CLASS}
           onChange={(event) => setLabel(event.target.value)}
         />
-        {nameLocked ? (
-          <span className={cn(typeClass.micro, typeToneClass.muted60)}>
-            Fixed goal: the name cannot be changed.
-          </span>
-        ) : null}
-      </label>
+      </DialogFormField>
 
-      <label className={walletDialogFieldClass}>
-        <span className={cn(typeClass.caption, typeToneClass.muted60)}>Description</span>
+      <DialogFormField label="Description">
         <input
           type="text"
           disabled={saving}
@@ -113,11 +110,10 @@ function GoalForm({ mode, initial, saving = false, onSubmit, onClose }: GoalForm
           className={INPUT_CLASS}
           onChange={(event) => setDescription(event.target.value)}
         />
-      </label>
+      </DialogFormField>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className={walletDialogFieldClass}>
-          <span className={cn(typeClass.caption, typeToneClass.muted60)}>Target amount</span>
+        <DialogFormField label="Target amount">
           <input
             type="text"
             inputMode="decimal"
@@ -127,10 +123,9 @@ function GoalForm({ mode, initial, saving = false, onSubmit, onClose }: GoalForm
             className={cn(INPUT_CLASS, 'tabular-nums')}
             onChange={(event) => setTarget(event.target.value.replace(/[^\d.,]/g, ''))}
           />
-        </label>
+        </DialogFormField>
 
-        <label className={walletDialogFieldClass}>
-          <span className={cn(typeClass.caption, typeToneClass.muted60)}>Already saved</span>
+        <DialogFormField label="Already saved">
           <input
             type="text"
             inputMode="decimal"
@@ -140,11 +135,10 @@ function GoalForm({ mode, initial, saving = false, onSubmit, onClose }: GoalForm
             className={cn(INPUT_CLASS, 'tabular-nums')}
             onChange={(event) => setCurrent(event.target.value.replace(/[^\d.,]/g, ''))}
           />
-        </label>
+        </DialogFormField>
       </div>
 
-      <label className={walletDialogFieldClass}>
-        <span className={cn(typeClass.caption, typeToneClass.muted60)}>Deadline</span>
+      <DialogFormField label="Deadline">
         <input
           type="text"
           disabled={saving}
@@ -153,27 +147,18 @@ function GoalForm({ mode, initial, saving = false, onSubmit, onClose }: GoalForm
           className={INPUT_CLASS}
           onChange={(event) => setDeadline(event.target.value)}
         />
-      </label>
+      </DialogFormField>
 
       {targetNumber != null && currentNumber > targetNumber ? (
         <p className={cn(typeClass.micro, 'text-red')}>The saved amount cannot exceed the goal.</p>
       ) : null}
 
-      <div className="flex items-center gap-2">
-        <Button type="submit" variant="primary" size="sm" disabled={saving || !canSubmit} className="flex-1">
-          {saving ? 'Saving…' : mode === 'create' ? 'Create goal' : 'Save changes'}
-        </Button>
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={saving}
-          className={cn('bg-layer2 text-text hover:bg-layer2-half')}
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-      </div>
+      <DialogFormActions
+        submitLabel={saving ? 'Saving…' : mode === 'create' ? 'Create goal' : 'Save changes'}
+        saving={saving}
+        disabled={!canSubmit}
+        onCancel={onClose}
+      />
     </form>
   );
 }

@@ -2,16 +2,18 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-import { getNotifications } from '@/services/finance';
+import { getNotificationsUnreadCount } from '@/services/notifications';
 
-export function useNotificationsUnreadCount() {
+export function useNotificationsUnreadCount(enabled = true) {
   return useQuery({
     queryKey: queryKeys.notificationsUnreadCount,
     queryFn: async () => {
-      const response = await getNotifications({ limit: 1 });
+      const response = await getNotificationsUnreadCount();
       return response.unreadCount;
     },
-    staleTime: 10_000,
-    refetchInterval: 30_000,
+    enabled,
+    staleTime: 60_000,
+    refetchInterval: enabled ? 60_000 : false,
+    refetchIntervalInBackground: false,
   });
 }

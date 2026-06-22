@@ -1,18 +1,20 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   NotificationFilter,
   NotificationVm,
 } from '@/components/notifications/notifications-types';
 import { queryKeys } from '@/lib/query-keys';
 import {
+  archiveNotification,
   generateNotifications,
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
-} from '@/services/finance';
+  snoozeNotification,
+} from '@/services/notifications';
 import { HttpError } from '@/services/http';
 
 /** Aceita apenas caminhos internos ("/algo"), bloqueando URLs absolutas e protocol-relative. */
@@ -41,8 +43,9 @@ export function useNotificationsDashboardState() {
   const query = useQuery({
     queryKey: queryKeys.notifications(filter),
     queryFn: () => getNotifications({ unreadOnly: filter === 'unread', limit: 200 }),
-    staleTime: 10_000,
-    refetchInterval: 30_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const generateMutation = useMutation({ mutationFn: () => generateNotifications() });
@@ -51,6 +54,11 @@ export function useNotificationsDashboardState() {
       markNotificationRead(id, read),
   });
   const markAllMutation = useMutation({ mutationFn: () => markAllNotificationsRead() });
+  const archiveMutation = useMutation({ mutationFn: (id: string) => archiveNotification(id) });
+  const snoozeMutation = useMutation({
+    mutationFn: ({ id, minutes }: { id: string; minutes: number }) =>
+      snoozeNotification(id, minutes),
+  });
   const [saving, setSaving] = useState(false);
 
   async function invalidateNotificationCaches() {
@@ -71,6 +79,16 @@ export function useNotificationsDashboardState() {
     }
   }
 
+  // Notifications are no longer generated as a side-effect of the GET request.
+  // Generate once when the dashboard mounts, then refresh the cached lists.
+  const didGenerateRef = useRef(false);
+  useEffect(() => {
+    if (didGenerateRef.current) return;
+    didGenerateRef.current = true;
+    void generateMutation.mutateAsync().then(() => invalidateNotificationCaches());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const items = useMemo<NotificationVm[]>(
     () =>
       (query.data?.items ?? []).map((item) => ({
@@ -78,12 +96,15 @@ export function useNotificationsDashboardState() {
         category: item.category,
         kind: item.kind,
         priority: item.priority,
+        period: item.period,
         title: item.title,
         body: item.body,
         timeLabel: toRelativeTimeLabel(item.createdAt),
+        createdAt: item.createdAt,
         read: item.read,
         href: toSafeInternalHref(item.href),
         ctaLabel: item.ctaLabel ?? undefined,
+        metadata: item.metadata ?? null,
       })),
     [query.data?.items],
   );
@@ -99,6 +120,9 @@ export function useNotificationsDashboardState() {
       toggleRead: (id: string, read: boolean) =>
         runMutation(() => markReadMutation.mutateAsync({ id, read })),
       markAllRead: () => runMutation(() => markAllMutation.mutateAsync()),
+      archive: (id: string) => runMutation(() => archiveMutation.mutateAsync(id)),
+      snooze: (id: string, minutes = 60) =>
+        runMutation(() => snoozeMutation.mutateAsync({ id, minutes })),
       refreshGenerated: () => runMutation(() => generateMutation.mutateAsync()),
     },
     ui: {

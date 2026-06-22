@@ -1,4 +1,4 @@
-import { HomeTasksContainer } from '@/components/home/home-tasks-container';
+import { HomeTasksContainer } from '@/components/dashboards-lazy';
 
 export default function Home() {
   return <HomeTasksContainer />;

@@ -1,19 +1,13 @@
 'use client';
 
+import { createEntityOptionsLabels } from '@/components/ui/entity-options-labels';
 import { EntityOptionsMenu } from '@/components/ui/entity-options-menu';
 
-const GOAL_OPTIONS_LABELS = {
+const GOAL_OPTIONS_LABELS = createEntityOptionsLabels({
+  noun: 'goal',
   triggerAriaLabel: 'Goal options',
-  rename: 'Rename',
-  delete: 'Delete goal',
-  renameTitle: 'Rename goal',
-  deleteTitle: 'Delete goal',
-  deleteDescription: (entityName: string) =>
-    `Are you sure you want to delete ${entityName}? The saved amount will be lost in this view.`,
-  save: 'Save',
-  cancel: 'Cancel',
-  confirmDelete: 'Delete',
-} as const;
+  deleteHint: 'The saved amount will be lost in this view.',
+});
 
 type FinanceGoalOptionsMenuProps = {
   goalName: string;

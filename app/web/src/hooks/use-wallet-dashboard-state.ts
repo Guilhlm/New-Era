@@ -1,13 +1,10 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import type { WalletCashMode } from '@/components/wallet/wallet-cash-dialog';
 import { useIsClientMounted } from '@/hooks/use-is-client-mounted';
 import {
-  fetchWalletMarketBoard,
-  MARKET_PAGE_SIZE,
-  marketBoardPageSize,
   useWalletMarketQuery,
   useWalletFxQuery,
 } from '@/hooks/use-wallet-market-query';
@@ -30,7 +27,7 @@ import {
 } from '@/utils/finance-mapper';
 import { mapMarketRowToVm } from '@/utils/market-mapper';
 import { clampFinanceUsdt, convertUsdtToDisplay } from '@/utils/wallet';
-import { getMarketAssetRow, getMonthlyExpenseCards } from '@/services/finance';
+import { getMarketAssetRow, getMonthlyExpenseCards, getMonthlyExpenses } from '@/services/finance';
 import { HttpError } from '@/services/http';
 
 const INVESTMENT_TABS: { id: WalletInvestmentTab; label: string }[] = [
@@ -41,6 +38,13 @@ const INVESTMENT_TABS: { id: WalletInvestmentTab; label: string }[] = [
 ];
 
 const PERFORMANCE_PERIODS: WalletPerformancePeriod[] = ['1D', '1W', '1M', '5M', '1Y'];
+
+function currentMonthKey() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
 
 export function useWalletDashboardState() {
   const { currency, investmentTab, setCurrency, setInvestmentTab } = useWalletPreferences();
@@ -56,11 +60,16 @@ export function useWalletDashboardState() {
   const [saving, setSaving] = useState(false);
   const [pinnedMarketRow, setPinnedMarketRow] = useState<WalletInvestmentRowVm | null>(null);
   const [highlightedTicker, setHighlightedTicker] = useState<string | null>(null);
+  const monthlyExpenseMonth = useMemo(() => currentMonthKey(), []);
 
-  const queryClient = useQueryClient();
   const summaryQuery = useWalletSummaryQuery(performancePeriod);
   const marketQuery = useWalletMarketQuery(investmentTab, currency as QuoteCurrency);
   const fxQuery = useWalletFxQuery();
+  const monthlyExpensesQuery = useQuery({
+    queryKey: queryKeys.monthlyExpenses(monthlyExpenseMonth),
+    queryFn: () => getMonthlyExpenses(monthlyExpenseMonth),
+    staleTime: 20_000,
+  });
   const cardsQuery = useQuery({
     queryKey: queryKeys.monthlyExpenseCards,
     queryFn: getMonthlyExpenseCards,
@@ -73,21 +82,6 @@ export function useWalletDashboardState() {
     setPinnedMarketRow(null);
     setHighlightedTicker(null);
   }, [investmentTab, currency]);
-
-  useEffect(() => {
-    const pageSize = marketBoardPageSize(investmentTab);
-    void queryClient.prefetchInfiniteQuery({
-      queryKey: [...queryKeys.walletMarket(investmentTab, currency as QuoteCurrency), pageSize],
-      queryFn: ({ pageParam }) =>
-        fetchWalletMarketBoard(
-          investmentTab,
-          currency as QuoteCurrency,
-          pageParam,
-          pageSize,
-        ),
-      initialPageParam: 0,
-    });
-  }, [queryClient, investmentTab, currency]);
 
   const summary = summaryQuery.data;
   const firstMarketPage = marketQuery.data?.pages.find((page) => page.currency === currency);
@@ -133,7 +127,10 @@ export function useWalletDashboardState() {
   const hasMoreMarketRows = Boolean(marketQuery.hasNextPage);
   const isLoadingMoreMarketRows = marketQuery.isFetchingNextPage;
 
-  const displayOptions = { currency: currency as WalletCurrency, fxRate };
+  const displayOptions = useMemo(
+    () => ({ currency: currency as WalletCurrency, fxRate }),
+    [currency, fxRate],
+  );
 
   const data = useMemo(
     () => ({
@@ -176,6 +173,7 @@ export function useWalletDashboardState() {
       performancePeriods: PERFORMANCE_PERIODS,
       primaryWalletId: summary?.primaryWalletId ?? null,
       walletCashAvailable: summary?.walletCashAvailable ?? 0,
+      monthlySalaryRemaining: monthlyExpensesQuery.data?.summary.remaining ?? null,
       cards: (cardsQuery.data ?? []).map((card) => ({
         id: card.id,
         label: `${card.brand === 'mastercard' ? 'Mastercard' : 'Visa'} •••• ${card.lastFour}`,
@@ -187,7 +185,7 @@ export function useWalletDashboardState() {
       fxRate,
       brlFxRate,
     }),
-    [summary, firstMarketPage, marketRows, marketTotal, currency, fxRate, brlFxRate, fxQuery.data?.rate, cardsQuery.data],
+    [summary, firstMarketPage, marketRows, marketTotal, currency, fxRate, displayOptions, brlFxRate, monthlyExpensesQuery.data, cardsQuery.data],
   );
 
   return {
@@ -229,15 +227,6 @@ export function useWalletDashboardState() {
         setEditInvestment(row);
       },
       closeEditPosition: () => setEditInvestment(null),
-      saveEditPosition: async (id: string, input: Parameters<typeof mutations.updateInvestment>[1]) => {
-        setSaving(true);
-        try {
-          await mutations.updateInvestment(id, input);
-          setEditInvestment(null);
-        } finally {
-          setSaving(false);
-        }
-      },
       deletePosition: async (id: string) => {
         setSaving(true);
         try {
@@ -295,20 +284,21 @@ export function useWalletDashboardState() {
         amount: number;
         currency: QuoteCurrency;
         mode: WalletCashMode;
-        source?: 'MONTHLY_SALARY' | 'EXTRA_INCOME';
       }) => {
         setSaving(true);
         try {
-          const payload = {
+          const basePayload = {
             amount: input.amount,
-            currency: input.currency,
+            currency: 'BRL' as const,
             walletId: summary?.primaryWalletId ?? undefined,
-            source: input.mode === 'deposit' ? input.source : undefined,
           };
           if (input.mode === 'withdraw') {
-            await mutations.withdrawFunds(payload);
+            await mutations.withdrawFunds(basePayload);
           } else {
-            await mutations.depositFunds(payload);
+            await mutations.depositFunds({
+              ...basePayload,
+              source: 'MONTHLY_SALARY',
+            });
           }
           setCashDialogOpen(false);
         } finally {

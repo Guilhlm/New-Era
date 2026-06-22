@@ -42,6 +42,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  output: "standalone",
+  experimental: {
+    optimizePackageImports: ["react-icons"],
+  },
   async headers() {
     return [
       {

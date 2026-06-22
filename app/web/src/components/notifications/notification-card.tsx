@@ -1,19 +1,44 @@
 'use client';
 
 import Link from 'next/link';
+import { TbArchive } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/cn';
-import { NOTIFICATION_CATEGORY_CONFIG, type NotificationVm } from '@/components/notifications/notifications-types';
+import {
+  NOTIFICATION_CATEGORY_CONFIG,
+  NOTIFICATION_PRIORITY_CONFIG,
+  type NotificationVm,
+} from '@/components/notifications/notifications-types';
 import { typeClass, typeToneClass } from '@/lib/typography';
 
 type NotificationCardProps = {
   item: NotificationVm;
   onToggleRead: (id: string) => void;
+  onArchive?: (id: string) => void;
 };
 
-export function NotificationCard({ item, onToggleRead }: NotificationCardProps) {
+function formatMetadataValue(value: unknown) {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  }
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'string') return value;
+  return null;
+}
+
+function metadataChips(metadata: NotificationVm['metadata']) {
+  if (!metadata || typeof metadata !== 'object') return [];
+  return Object.entries(metadata)
+    .map(([key, value]) => ({ key, label: formatMetadataValue(value) }))
+    .filter((entry): entry is { key: string; label: string } => entry.label !== null)
+    .slice(0, 4);
+}
+
+export function NotificationCard({ item, onToggleRead, onArchive }: NotificationCardProps) {
   const category = NOTIFICATION_CATEGORY_CONFIG[item.category];
   const Icon = category.Icon;
+  const chips = metadataChips(item.metadata);
+  const showPriority = item.priority === 'urgent';
 
   return (
     <article
@@ -37,15 +62,51 @@ export function NotificationCard({ item, onToggleRead }: NotificationCardProps) 
         </div>
 
         <div className="min-w-0 flex-1">
-          <p
-            className={cn(
-              typeClass.bodyStrong,
-              item.read ? typeToneClass.muted60 : typeToneClass.default,
-            )}
-          >
-            {item.title}
-          </p>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <p
+              className={cn(
+                'min-w-0',
+                typeClass.bodyStrong,
+                item.read ? typeToneClass.muted60 : typeToneClass.default,
+              )}
+            >
+              {item.title}
+            </p>
+            <span
+              className={cn(
+                'shrink-0 rounded-full px-2 py-0.5',
+                typeClass.micro,
+                'bg-layer2 text-text/50',
+              )}
+            >
+              {category.label}
+            </span>
+            {showPriority ? (
+              <span
+                className={cn(
+                  'shrink-0 rounded-full px-2 py-0.5',
+                  typeClass.micro,
+                  NOTIFICATION_PRIORITY_CONFIG[item.priority].className,
+                )}
+              >
+                {NOTIFICATION_PRIORITY_CONFIG[item.priority].label}
+              </span>
+            ) : null}
+          </div>
           <p className={cn('mt-1 line-clamp-2', typeClass.caption, typeToneClass.muted60)}>{item.body}</p>
+
+          {chips.length > 0 ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {chips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className={cn('rounded-md bg-layer2 px-2 py-0.5 tabular-nums', typeClass.micro, typeToneClass.muted60)}
+                >
+                  {chip.key}: {chip.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -81,6 +142,20 @@ export function NotificationCard({ item, onToggleRead }: NotificationCardProps) 
               Mark as read
             </Button>
           )}
+
+          {onArchive ? (
+            <Button
+              type="button"
+              variant="ghostIcon"
+              size="icon"
+              radius="md"
+              className="h-9 w-9 shrink-0"
+              aria-label="Archive notification"
+              onClick={() => onArchive(item.id)}
+            >
+              <TbArchive className="h-4 w-4" aria-hidden />
+            </Button>
+          ) : null}
         </div>
       </div>
     </article>

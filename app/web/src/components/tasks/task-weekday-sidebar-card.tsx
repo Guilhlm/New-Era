@@ -1,13 +1,8 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
-import {
-  sidebarDayListClass,
-  sidebarDayListFooterReserveClass,
-  sidebarDayRowClass,
-} from '@/components/ui/sidebar-day-row';
+import { sidebarDayRowClass } from '@/components/ui/sidebar-day-row';
+import { WeekdayPlanSidebarCard } from '@/components/ui/weekday-plan-sidebar-card';
 import { typeClass, typeToneClass } from '@/lib/typography';
 
 type SidebarDay = {
@@ -36,57 +31,47 @@ export function TaskWeekdaySidebarCard({
   ui,
   className,
 }: TaskWeekdaySidebarCardProps) {
+  const busy = Boolean(ui?.loading || ui?.saving);
+
   return (
-    <Card className={cn('flex h-full min-h-0 flex-col overflow-hidden p-5 lg:p-6', className)}>
-      <p className={cn('shrink-0 text-center', typeClass.title, typeToneClass.default)}>{data.title}</p>
-
-      <div className={sidebarDayListClass}>
-        {data.days.map((day) => {
-          const active = day.weekday === data.selectedWeekday;
-          return (
-            <button
-              key={day.weekday}
-              type="button"
-              disabled={ui?.loading || ui?.saving}
-              className={sidebarDayRowClass(
-                active,
-                'min-w-0 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60',
-              )}
-              onClick={() => actions.onSelectDay(day.weekday)}
-            >
-              <span
-                className={cn(
-                  'min-w-0 truncate',
-                  typeClass.body,
-                  active ? typeToneClass.default : typeToneClass.muted60,
-                )}
-              >
-                {day.label}
-              </span>
-              <span
-                className={cn(
-                  'shrink-0 rounded-md px-2 py-0.5',
-                  typeClass.micro,
-                  active ? 'bg-red/20 text-red' : 'bg-layer2/60 text-text/60',
-                )}
-              >
-                {day.taskCount} {day.taskCount === 1 ? 'task' : 'tasks'}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <Button
-        type="button"
-        variant="primary"
-        size="md"
-        disabled={ui?.loading || ui?.saving}
-        className={sidebarDayListFooterReserveClass}
-        onClick={actions.onEditPlan}
-      >
-        Edit Plan
-      </Button>
-    </Card>
+    <WeekdayPlanSidebarCard
+      title={data.title}
+      days={data.days}
+      selectedWeekday={data.selectedWeekday}
+      editDisabled={busy}
+      onEditPlan={actions.onEditPlan}
+      className={className}
+      renderDay={(day, active) => (
+        <button
+          key={day.weekday}
+          type="button"
+          disabled={busy}
+          className={sidebarDayRowClass(
+            active,
+            'min-w-0 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60',
+          )}
+          onClick={() => actions.onSelectDay(day.weekday)}
+        >
+          <span
+            className={cn(
+              'min-w-0 truncate',
+              typeClass.body,
+              active ? typeToneClass.default : typeToneClass.muted60,
+            )}
+          >
+            {day.label}
+          </span>
+          <span
+            className={cn(
+              'shrink-0 rounded-md px-2 py-0.5',
+              typeClass.micro,
+              active ? 'bg-red/20 text-red' : 'bg-layer2/60 text-text/60',
+            )}
+          >
+            {day.taskCount} {day.taskCount === 1 ? 'task' : 'tasks'}
+          </span>
+        </button>
+      )}
+    />
   );
 }

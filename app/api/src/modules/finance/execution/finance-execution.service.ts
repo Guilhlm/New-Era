@@ -36,6 +36,7 @@ import {
 import { findMarketAsset } from '../market/market.constants';
 import type { MarketTradeDto } from '../market/dto/market.dto';
 import { MarketProviders } from '../market/market.providers';
+import { MonthlyExpenseService } from '../monthly-expense/monthly-expense.service';
 
 export type TradePreviewResult = {
   ticker: string;
@@ -51,6 +52,7 @@ export class FinanceExecutionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly marketProviders: MarketProviders,
+    private readonly monthlyExpenses: MonthlyExpenseService,
   ) {}
 
   private roundShares(value: number): number {
@@ -173,8 +175,17 @@ export class FinanceExecutionService {
 
   async deposit(userId: string, data: DepositFundsDto) {
     await this.assertMonthlyIncomeConfigured(userId);
-    const currency = data.currency ?? 'USDT';
-    const source = data.source ?? 'EXTRA_INCOME';
+    const source = data.source ?? 'MONTHLY_SALARY';
+    const currency = data.currency ?? (source === 'MONTHLY_SALARY' ? 'BRL' : 'USDT');
+    if (source === 'MONTHLY_SALARY' && currency !== 'BRL') {
+      throw new BadRequestException('Wallet salary deposits must be in BRL.');
+    }
+    if (source === 'MONTHLY_SALARY') {
+      const salaryRemaining = await this.monthlyExpenses.getSalaryRemaining(userId);
+      if (data.amount > salaryRemaining) {
+        throw new BadRequestException('Deposit exceeds the available monthly salary.');
+      }
+    }
     const fxRate =
       currency === 'BRL' ? await this.marketProviders.getUsdtToBrlRate() : undefined;
     const amountUsdt = await this.toUsdtAmount(data.amount, currency);
@@ -232,7 +243,10 @@ export class FinanceExecutionService {
 
   async withdraw(userId: string, data: WithdrawFundsDto) {
     await this.assertMonthlyIncomeConfigured(userId);
-    const currency = data.currency ?? 'USDT';
+    const currency = data.currency ?? 'BRL';
+    if (currency !== 'BRL') {
+      throw new BadRequestException('Wallet withdrawals must be in BRL.');
+    }
     const wallet = await this.resolveCashWallet(userId, data.walletId);
     const balance = toNumber(wallet.balance);
     const fxRate =

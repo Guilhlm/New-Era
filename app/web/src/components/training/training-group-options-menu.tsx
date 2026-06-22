@@ -1,19 +1,13 @@
 'use client';
 
+import { createEntityOptionsLabels } from '@/components/ui/entity-options-labels';
 import { EntityOptionsMenu } from '@/components/ui/entity-options-menu';
 
-const GROUP_OPTIONS_LABELS = {
+const GROUP_OPTIONS_LABELS = createEntityOptionsLabels({
+  noun: 'group',
   triggerAriaLabel: 'Group options',
-  rename: 'Rename',
-  delete: 'Delete group',
-  renameTitle: 'Rename group',
-  deleteTitle: 'Delete group',
-  deleteDescription: (entityName: string) =>
-    `Are you sure you want to delete ${entityName}? Exercises in this group will also be removed.`,
-  save: 'Save',
-  cancel: 'Cancel',
-  confirmDelete: 'Delete',
-} as const;
+  deleteHint: 'Exercises in this group will also be removed.',
+});
 
 type TrainingGroupOptionsMenuProps = {
   groupName: string;

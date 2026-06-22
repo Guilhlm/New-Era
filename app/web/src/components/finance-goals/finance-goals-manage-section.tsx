@@ -16,7 +16,7 @@ import {
   type FinanceGoalVm,
 } from '@/components/finance-goals/finance-goals-types';
 import { typeClass, typeToneClass } from '@/lib/typography';
-import { formatWalletAmount } from '@/utils/wallet';
+import { formatBrlAmount } from '@/utils/wallet';
 import { walletDialogFieldClass, walletDialogSelectClass } from '@/components/wallet/wallet-dialog-layout';
 import type { UpdateFinancialGoalProgressInput } from '@/types/finance';
 
@@ -171,13 +171,13 @@ export function FinanceGoalsManageSection({
             <div className="min-w-0">
               <p className={cn(typeClass.micro, typeToneClass.muted60)}>Saved</p>
               <p className={cn('mt-0.5 truncate tabular-nums', typeClass.caption, typeToneClass.default)}>
-                {formatWalletAmount(selectedGoal.current)}
+                {formatBrlAmount(selectedGoal.current)}
               </p>
             </div>
             <div className="shrink-0 text-right">
               <p className={cn(typeClass.micro, typeToneClass.muted60)}>Remaining</p>
               <p className={cn('mt-0.5 tabular-nums', typeClass.caption, typeToneClass.default)}>
-                {formatWalletAmount(remaining)}
+                {formatBrlAmount(remaining)}
               </p>
             </div>
           </div>
@@ -186,13 +186,13 @@ export function FinanceGoalsManageSection({
             <div className="min-w-0">
               <p className={cn(typeClass.micro, typeToneClass.muted60)}>Target</p>
               <p className={cn('mt-0.5 truncate tabular-nums', typeClass.caption, typeToneClass.default)}>
-                {formatWalletAmount(selectedGoal.target)}
+                {formatBrlAmount(selectedGoal.target)}
               </p>
             </div>
             <div className="shrink-0 text-right">
               <p className={cn(typeClass.micro, typeToneClass.muted60)}>Per month</p>
               <p className={cn('mt-0.5 tabular-nums', typeClass.caption, typeToneClass.default)}>
-                {formatWalletAmount(monthlyNeeded)}
+                {formatBrlAmount(monthlyNeeded)}
               </p>
             </div>
           </div>

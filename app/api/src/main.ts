@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter, type NestExpressApplication } from '@nestjs/platform-express';
+import compression from 'compression';
 import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 
@@ -31,6 +32,7 @@ async function bootstrap() {
   );
 
   app.use(helmet());
+  app.use(compression());
   app.use(json({ limit: '2mb' }));
   app.use(urlencoded({ extended: true, limit: '2mb' }));
   app.enableCors({

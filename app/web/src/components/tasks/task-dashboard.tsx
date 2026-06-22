@@ -1,5 +1,6 @@
 'use client';
 
+import { TaskCopyDayDialog } from '@/components/tasks/task-copy-day-dialog';
 import { TaskEditPlanDialog } from '@/components/tasks/task-edit-plan-dialog';
 import { TaskEditSheet } from '@/components/tasks/task-edit-sheet';
 import { TaskPlanHeaderCard } from '@/components/tasks/task-plan-header-card';
@@ -24,8 +25,9 @@ export function TaskDashboard() {
           actions={{
             onPrevDay: state.actions.prevDay,
             onNextDay: state.actions.nextDay,
+            onCopyDay: state.actions.openCopyDay,
           }}
-          ui={{ loading: state.ui.loading }}
+          ui={{ loading: state.ui.loading, saving: state.ui.saving }}
           className="h-full min-h-0"
           style={dashboardGridArea('main', 'header')}
         />
@@ -92,6 +94,15 @@ export function TaskDashboard() {
         onDelete={() => {
           if (state.data.editTask) void state.actions.removeTask(state.data.editTask.id);
         }}
+      />
+
+      <TaskCopyDayDialog
+        open={state.ui.copyDayOpen}
+        sourceWeekday={state.data.selectedWeekday}
+        sourceWeekdayLabel={state.data.header.weekdayLabel}
+        saving={state.ui.saving}
+        onClose={state.actions.closeCopyDay}
+        onCopy={state.actions.copyDay}
       />
     </>
   );
