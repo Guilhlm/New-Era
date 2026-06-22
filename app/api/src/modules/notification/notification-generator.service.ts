@@ -75,8 +75,14 @@ export class NotificationGeneratorService {
 
   async generateForAllUsers(options?: GenerateNotificationsDto) {
     const users = await this.prisma.user.findMany({ select: { id: true } });
-    for (const user of users) {
-      await this.run(`user-${user.id}`, () => this.generate(user.id, options).then(() => undefined));
+    const batchSize = 5;
+    for (let index = 0; index < users.length; index += batchSize) {
+      const batch = users.slice(index, index + batchSize);
+      await Promise.all(
+        batch.map((user) =>
+          this.run(`user-${user.id}`, () => this.generate(user.id, options).then(() => undefined)),
+        ),
+      );
     }
     return { ok: true, users: users.length };
   }

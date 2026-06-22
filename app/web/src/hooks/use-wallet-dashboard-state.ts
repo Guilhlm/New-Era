@@ -29,6 +29,7 @@ import { mapMarketRowToVm } from '@/utils/market-mapper';
 import { clampFinanceUsdt, convertUsdtToDisplay } from '@/utils/wallet';
 import { getMarketAssetRow, getMonthlyExpenseCards, getMonthlyExpenses } from '@/services/finance';
 import { HttpError } from '@/services/http';
+import { currentMonthKey } from '@/utils/month-key';
 
 const INVESTMENT_TABS: { id: WalletInvestmentTab; label: string }[] = [
   { id: 'stocks', label: 'Stocks' },
@@ -38,13 +39,6 @@ const INVESTMENT_TABS: { id: WalletInvestmentTab; label: string }[] = [
 ];
 
 const PERFORMANCE_PERIODS: WalletPerformancePeriod[] = ['1D', '1W', '1M', '5M', '1Y'];
-
-function currentMonthKey() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
 
 export function useWalletDashboardState() {
   const { currency, investmentTab, setCurrency, setInvestmentTab } = useWalletPreferences();
@@ -60,7 +54,7 @@ export function useWalletDashboardState() {
   const [saving, setSaving] = useState(false);
   const [pinnedMarketRow, setPinnedMarketRow] = useState<WalletInvestmentRowVm | null>(null);
   const [highlightedTicker, setHighlightedTicker] = useState<string | null>(null);
-  const monthlyExpenseMonth = useMemo(() => currentMonthKey(), []);
+  const monthlyExpenseMonth = currentMonthKey();
 
   const summaryQuery = useWalletSummaryQuery(performancePeriod);
   const marketQuery = useWalletMarketQuery(investmentTab, currency as QuoteCurrency);

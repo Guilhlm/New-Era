@@ -22,6 +22,7 @@ import type {
 } from '@/types/finance';
 import type { WalletInvestmentTab, WalletPerformancePeriod } from '@/types/wallet';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
+import { currentMonthKey } from '@/utils/month-key';
 
 function formatWalletMutationError(message: string): string {
   switch (message) {
@@ -51,13 +52,6 @@ function formatWalletMutationError(message: string): string {
       }
       return message;
   }
-}
-
-function currentMonthKey() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
 }
 
 function patchWalletSummaryCash(

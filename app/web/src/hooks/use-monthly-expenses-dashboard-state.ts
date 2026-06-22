@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { toastAuthError, toastUpdated } from '@/lib/app-toast';
+import { MONTHLY_EXPENSES_COPY as copy } from '@/components/monthly-expenses/monthly-expenses-copy';
+import { useDashboardMutation } from '@/hooks/use-dashboard-mutation';
 import { queryKeys } from '@/lib/query-keys';
 import {
   createMonthlyExpense,
@@ -26,39 +27,31 @@ import type {
   CreateMonthlyExpenseCategoryInput,
   CreateMonthlyExpenseInput,
   CreateCreditCardPurchaseInput,
+  ExpensePaymentSource,
   UpdateMonthlyExpenseCardInput,
   UpdateMonthlyExpenseCategoryInput,
   UpdateMonthlyExpenseInput,
 } from '@/types/finance';
-
-function monthKeyFromDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
-
-function formatMonthLabel(date: Date) {
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function formatMonthShort(date: Date) {
-  return date.toLocaleDateString('en-US', { month: 'short' }).replace('.', '');
-}
-
-function formatExpenseDate(dateIso: string) {
-  const date = new Date(dateIso);
-  if (Number.isNaN(date.getTime())) return dateIso;
-  return date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' });
-}
+import { formatMonthLabel, formatMonthShort, formatShortDate, monthKeyFromDate } from '@/utils/month-key';
 
 function displayExpenseAmount(item: { amount: number; source: string }) {
   if (item.source === 'DEPOSIT_EXTRA_INCOME') return Math.abs(item.amount);
   if (item.source === 'WITHDRAW') return Math.abs(item.amount);
   if (item.source === 'ADJUSTMENT' && item.amount < 0) return Math.abs(item.amount);
   return -Math.abs(item.amount);
+}
+
+function resolveCardId(input: CreateMonthlyExpenseInput) {
+  if (input.paymentSource === 'CARD' && input.cardId) return input.cardId;
+  if (input.account?.startsWith('CARD:')) return input.account.slice('CARD:'.length);
+  return null;
+}
+
+function resolveExpenseAccount(input: CreateMonthlyExpenseInput) {
+  if (input.paymentSource === 'DEPOSIT_EXTRA_INCOME') return 'DEPOSIT_EXTRA_INCOME';
+  if (input.paymentSource === 'CASH') return 'CASH';
+  if (input.paymentSource === 'CARD' && input.cardId) return `CARD:${input.cardId}`;
+  return input.account;
 }
 
 export function useMonthlyExpensesDashboardState() {
@@ -74,8 +67,6 @@ export function useMonthlyExpensesDashboardState() {
     staleTime: 20_000,
   });
 
-  const [saving, setSaving] = useState(false);
-
   async function invalidateMonthlyCaches() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.monthlyExpenses(monthKey) }),
@@ -87,6 +78,10 @@ export function useMonthlyExpensesDashboardState() {
       queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnreadCount }),
     ]);
   }
+
+  const { run, isPending, saving } = useDashboardMutation({
+    onSuccess: invalidateMonthlyCaches,
+  });
 
   const createExpenseMutation = useMutation({
     mutationFn: (input: CreateMonthlyExpenseInput) => createMonthlyExpense(input),
@@ -133,30 +128,13 @@ export function useMonthlyExpensesDashboardState() {
     mutationFn: (id: string) => deleteMonthlyExpenseCard(id),
   });
 
-  async function runMutation<T>(
-    action: () => Promise<T>,
-    successMessage: string,
-  ): Promise<T | { error: string }> {
-    setSaving(true);
-    try {
-      const result = await action();
-      await invalidateMonthlyCaches();
-      toastUpdated(successMessage);
-      return result;
-    } catch (error) {
-      const message = error instanceof HttpError ? error.message : 'Request failed.';
-      toastAuthError(message);
-      return { error: message };
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const record = summaryQuery.data;
   const totals = record?.summary ?? {
     spent: 0,
     budget: 0,
     remaining: 0,
+    salaryRemaining: 0,
+    currentSalaryRemaining: 0,
     vsLastMonth: 0,
     income: 0,
     cardLimit: 0,
@@ -167,7 +145,7 @@ export function useMonthlyExpensesDashboardState() {
     () =>
       (record?.expenses ?? []).map((item) => ({
         id: item.id,
-        date: formatExpenseDate(item.date),
+        date: formatShortDate(item.date),
         categoryId: item.categoryId ?? undefined,
         category: item.categoryName,
         description: item.title,
@@ -219,6 +197,7 @@ export function useMonthlyExpensesDashboardState() {
       monthLabel: formatMonthLabel(monthCursor),
       monthShortLabel: formatMonthShort(monthCursor),
       totals,
+      salaryRemainingForPayment: totals.currentSalaryRemaining ?? totals.salaryRemaining ?? 0,
       expenses,
       categories,
       cards,
@@ -228,10 +207,11 @@ export function useMonthlyExpensesDashboardState() {
         setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)),
       nextMonth: () =>
         setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)),
-      createExpense: (input: CreateMonthlyExpenseInput & { installments?: number }) => {
-        const cardId = input.account?.startsWith('CARD:') ? input.account.slice('CARD:'.length) : null;
+      createExpense: (input: CreateMonthlyExpenseInput) => {
+        const cardId = resolveCardId(input);
         if (cardId) {
-          return runMutation(
+          return run(
+            'expense',
             () =>
               createCardPurchaseMutation.mutateAsync({
                 title: input.title,
@@ -241,15 +221,25 @@ export function useMonthlyExpensesDashboardState() {
                 date: input.date,
                 installments: input.installments ?? 1,
               }),
-            'Card purchase created.',
+            copy.toast.cardPurchaseCreated,
           );
         }
-        return runMutation(() => createExpenseMutation.mutateAsync(input), 'Expense created.');
+        const account = resolveExpenseAccount(input);
+        return run(
+          'expense',
+          () =>
+            createExpenseMutation.mutateAsync({
+              ...input,
+              account,
+            }),
+          copy.toast.expenseCreated,
+        );
       },
       updateExpense: (id: string, input: UpdateMonthlyExpenseInput) =>
-        runMutation(
+        run(
+          'expense',
           () => updateExpenseMutation.mutateAsync({ id, input }),
-          'Expense updated.',
+          copy.toast.expenseUpdated,
         ),
       deleteExpense: (
         id: string,
@@ -257,55 +247,56 @@ export function useMonthlyExpensesDashboardState() {
         linkedCreditCardPurchaseId?: string | null,
       ) => {
         if (linkedCreditCardPurchaseId) {
-          return runMutation(
+          return run(
+            'expense',
             () => deleteCardPurchaseMutation.mutateAsync(linkedCreditCardPurchaseId),
-            'Card purchase cancelled.',
+            copy.toast.cardPurchaseCancelled,
           );
         }
         if (linkedTransactionId) {
-          return runMutation(
+          return run(
+            'expense',
             () => deleteTransactionMutation.mutateAsync(linkedTransactionId),
-            'Transaction removed.',
+            copy.toast.transactionRemoved,
           );
         }
-        return runMutation(() => deleteExpenseMutation.mutateAsync(id), 'Expense removed.');
+        return run(
+          'expense',
+          () => deleteExpenseMutation.mutateAsync(id),
+          copy.toast.expenseRemoved,
+        );
       },
       createCategory: (input: CreateMonthlyExpenseCategoryInput) =>
-        runMutation(
-          () => createCategoryMutation.mutateAsync(input),
-          'Category created.',
-        ),
+        run('category', () => createCategoryMutation.mutateAsync(input), copy.toast.categoryCreated),
       updateCategory: (id: string, input: UpdateMonthlyExpenseCategoryInput) =>
-        runMutation(
+        run(
+          'category',
           () => updateCategoryMutation.mutateAsync({ id, input }),
-          'Category updated.',
+          copy.toast.categoryUpdated,
         ),
       deleteCategory: (id: string) =>
-        runMutation(
-          () => deleteCategoryMutation.mutateAsync(id),
-          'Category removed.',
-        ),
+        run('category', () => deleteCategoryMutation.mutateAsync(id), copy.toast.categoryRemoved),
       createCard: (input: CreateMonthlyExpenseCardInput) =>
-        runMutation(() => createCardMutation.mutateAsync(input), 'Card created.'),
+        run('card', () => createCardMutation.mutateAsync(input), copy.toast.cardCreated),
       updateCard: (id: string, input: UpdateMonthlyExpenseCardInput) =>
-        runMutation(() => updateCardMutation.mutateAsync({ id, input }), 'Card updated.'),
+        run('card', () => updateCardMutation.mutateAsync({ id, input }), copy.toast.cardUpdated),
       deleteCard: (id: string) =>
-        runMutation(() => deleteCardMutation.mutateAsync(id), 'Card removed.'),
+        run('card', () => deleteCardMutation.mutateAsync(id), copy.toast.cardRemoved),
       payCardInvoice: (id: string) =>
-        runMutation(
-          () => payCardInvoiceMutation.mutateAsync({ id }),
-          'Invoice paid.',
-        ),
+        run('invoice', () => payCardInvoiceMutation.mutateAsync({ id }), copy.toast.invoicePaid),
     },
     ui: {
       loading: summaryQuery.isPending,
       saving,
+      isPending,
       error:
         summaryQuery.error instanceof HttpError
           ? summaryQuery.error.message
           : summaryQuery.error
-            ? 'Failed to load expenses.'
+            ? copy.loadError
             : null,
     },
   };
 }
+
+export type ExpensePaymentSourceOption = ExpensePaymentSource;

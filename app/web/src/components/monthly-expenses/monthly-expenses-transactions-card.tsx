@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TbCheck, TbDotsVertical, TbPlus } from 'react-icons/tb';
+import { MONTHLY_EXPENSES_COPY as copy } from '@/components/monthly-expenses/monthly-expenses-copy';
+import { isMutationError } from '@/hooks/use-dashboard-mutation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
@@ -13,6 +15,7 @@ import { ScrollSelect } from '@/components/ui/scroll-select';
 import { useAnchoredMenu } from '@/hooks/use-anchored-menu';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import { formatBrlAmount } from '@/utils/wallet';
+import type { ExpensePaymentSource } from '@/types/finance';
 
 export type ExpenseRowVm = {
   id: string;
@@ -41,7 +44,8 @@ type MonthlyExpensesTransactionsCardProps = {
     title: string;
     amount: number;
     categoryId?: string;
-    account?: string;
+    paymentSource?: ExpensePaymentSource;
+    cardId?: string;
     status: 'paid' | 'pending';
     installments?: number;
   }) => Promise<unknown | { error: string }>;
@@ -92,7 +96,7 @@ function StatusBadge({ status }: { status: ExpenseRowVm['status'] }) {
         paid ? 'bg-green/20 text-green' : 'bg-red/20 text-red',
       )}
     >
-      {paid ? 'Paid' : 'Pending'}
+      {paid ? copy.paid : copy.pending}
     </span>
   );
 }
@@ -237,7 +241,8 @@ export function MonthlyExpensesTransactionsCard({
   const [formTitle, setFormTitle] = useState('');
   const [formAmount, setFormAmount] = useState('');
   const [formCategoryId, setFormCategoryId] = useState('');
-  const [formAccount, setFormAccount] = useState('CASH');
+  const [formPaymentSource, setFormPaymentSource] = useState<ExpensePaymentSource>('CASH');
+  const [formCardId, setFormCardId] = useState('');
   const [formStatus, setFormStatus] = useState<'paid' | 'pending'>('paid');
   const [formInstallments, setFormInstallments] = useState(1);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -285,15 +290,17 @@ export function MonthlyExpensesTransactionsCard({
     formTitle.trim().length > 0 &&
     Number.isFinite(Number(formAmount.replace(',', '.'))) &&
     Number(formAmount.replace(',', '.')) > 0 &&
-    formInstallments >= 1;
-  const isExtraIncome = formAccount === 'DEPOSIT_EXTRA_INCOME';
-  const isCardPurchase = formAccount.startsWith('CARD:');
+    formInstallments >= 1 &&
+    (formPaymentSource !== 'CARD' || formCardId.length > 0);
+  const isExtraIncome = formPaymentSource === 'DEPOSIT_EXTRA_INCOME';
+  const isCardPurchase = formPaymentSource === 'CARD';
 
   const resetCreateForm = () => {
     setFormTitle('');
     setFormAmount('');
     setFormCategoryId('');
-    setFormAccount('CASH');
+    setFormPaymentSource('CASH');
+    setFormCardId('');
     setFormStatus('paid');
     setFormInstallments(1);
     setCreateError(null);
@@ -311,7 +318,7 @@ export function MonthlyExpensesTransactionsCard({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <p className={cn('min-w-0 truncate', typeClass.title, typeToneClass.default)}>
-            Transactions
+            {copy.transactions}
           </p>
           <span className={cn('shrink-0 tabular-nums', typeClass.caption, vsLastMonthTone)}>
             {vsLastMonthLabel}
@@ -337,7 +344,7 @@ export function MonthlyExpensesTransactionsCard({
             onClick={() => setCreateOpen(true)}
           >
             <TbPlus className="h-4 w-4 shrink-0" aria-hidden />
-            New transaction
+            {copy.newTransaction}
           </Button>
         </div>
       </div>
@@ -351,7 +358,7 @@ export function MonthlyExpensesTransactionsCard({
                 typeToneClass.muted60,
               )}
             >
-              {searchQuery.trim() ? 'No transactions found.' : 'No transactions this month.'}
+              {searchQuery.trim() ? copy.noTransactionsFound : copy.noTransactions}
             </div>
           ) : (
             <table
@@ -453,19 +460,20 @@ export function MonthlyExpensesTransactionsCard({
               title: formTitle.trim(),
               amount: Number(formAmount.replace(',', '.')),
               categoryId: isExtraIncome ? undefined : formCategoryId || undefined,
-              account: formAccount,
+              paymentSource: formPaymentSource,
+              cardId: isCardPurchase ? formCardId : undefined,
               status: formStatus,
               installments: isCardPurchase ? formInstallments : undefined,
             });
-            if (result && typeof result === 'object' && 'error' in result) {
-              setCreateError(result.error as string);
+            if (isMutationError(result)) {
+              setCreateError(result.error);
               return;
             }
             setCreateOpen(false);
             resetCreateForm();
           }}
         >
-          <p className={cn(typeClass.title, typeToneClass.default)}>New transaction</p>
+          <p className={cn(typeClass.title, typeToneClass.default)}>{copy.newTransaction}</p>
           {createError ? (
             <p className={cn(typeClass.caption, typeToneClass.negative)} role="alert">
               {createError}
@@ -528,25 +536,42 @@ export function MonthlyExpensesTransactionsCard({
           </label>
 
           <label className={cn('flex flex-col gap-1.5', typeClass.caption)}>
-            <span className={typeToneClass.muted60}>Account/Source</span>
+            <span className={typeToneClass.muted60}>Conta / origem</span>
             <select
-              value={formAccount}
+              value={formPaymentSource}
               onChange={(event) => {
-                const nextAccount = event.target.value;
-                setFormAccount(nextAccount);
-                if (nextAccount === 'DEPOSIT_EXTRA_INCOME') setFormCategoryId('');
+                const nextSource = event.target.value as ExpensePaymentSource;
+                setFormPaymentSource(nextSource);
+                if (nextSource === 'DEPOSIT_EXTRA_INCOME') setFormCategoryId('');
+                if (nextSource !== 'CARD') setFormCardId('');
+                if (nextSource === 'CARD' && cards[0] && !formCardId) {
+                  setFormCardId(cards[0].id);
+                }
               }}
               className="h-9 rounded-md bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50"
             >
-              <option value="CASH">Cash</option>
-              <option value="DEPOSIT_EXTRA_INCOME">Extra income</option>
-              {cards.map((card) => (
-                <option key={card.id} value={`CARD:${card.id}`}>
-                  {card.label}
-                </option>
-              ))}
+              <option value="CASH">Dinheiro</option>
+              <option value="DEPOSIT_EXTRA_INCOME">Renda extra</option>
+              <option value="CARD">Cartão de crédito</option>
             </select>
           </label>
+
+          {isCardPurchase ? (
+            <label className={cn('flex flex-col gap-1.5', typeClass.caption)}>
+              <span className={typeToneClass.muted60}>Cartão</span>
+              <select
+                value={formCardId}
+                onChange={(event) => setFormCardId(event.target.value)}
+                className="h-9 rounded-md bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50"
+              >
+                {cards.map((card) => (
+                  <option key={card.id} value={card.id}>
+                    {card.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           <label className={cn('flex flex-col gap-1.5', typeClass.caption)}>
             <span className={typeToneClass.muted60}>Status</span>
@@ -562,7 +587,7 @@ export function MonthlyExpensesTransactionsCard({
 
           <div className="flex gap-2">
             <Button type="submit" variant="primary" size="sm" disabled={saving || !canCreateExpense} className="flex-1">
-              {saving ? 'Saving…' : 'Save transaction'}
+              {saving ? copy.saving : copy.saveTransaction}
             </Button>
             <Button
               type="button"
@@ -574,7 +599,7 @@ export function MonthlyExpensesTransactionsCard({
                 resetCreateForm();
               }}
             >
-              Cancel
+              {copy.cancel}
             </Button>
           </div>
         </form>

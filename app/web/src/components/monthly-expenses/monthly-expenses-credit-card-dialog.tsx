@@ -80,7 +80,7 @@ type CreditCardFormProps = {
   mode: 'create' | 'edit';
   initialCard?: CreditCardVm | null;
   saving?: boolean;
-  onSubmit: (values: CreditCardCreateInput) => void;
+  onSubmit: (values: CreditCardCreateInput) => void | Promise<void>;
   onClose: () => void;
 };
 
@@ -111,9 +111,9 @@ function CreditCardForm({ mode, initialCard, saving = false, onSubmit, onClose }
     dueDayNumber >= 1 &&
     dueDayNumber <= 28;
 
-  function submitCard() {
+  async function submitCard() {
     if (!canContinueStep1 || saving) return;
-    onSubmit({
+    await onSubmit({
       holder: holder.trim().toUpperCase(),
       lastFour,
       limit: limitNumber,
@@ -128,14 +128,14 @@ function CreditCardForm({ mode, initialCard, saving = false, onSubmit, onClose }
     <form
       method="dialog"
       className="flex flex-col gap-4 p-5"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
         if (step === 1) {
           if (!canContinueStep1) return;
           setStep(2);
           return;
         }
-        submitCard();
+        await submitCard();
       }}
     >
       <div>
@@ -320,7 +320,7 @@ type MonthlyExpensesCreditCardDialogProps = {
   initialCard?: CreditCardVm | null;
   saving?: boolean;
   onClose: () => void;
-  onSubmit: (values: CreditCardCreateInput) => void;
+  onSubmit: (values: CreditCardCreateInput) => void | Promise<void>;
 };
 
 export function MonthlyExpensesCreditCardDialog({

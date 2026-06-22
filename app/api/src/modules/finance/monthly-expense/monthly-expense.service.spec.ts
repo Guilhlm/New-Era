@@ -98,7 +98,7 @@ describe('MonthlyExpenseService', () => {
   });
 
   it('counts extra income as a positive monthly spending impact', async () => {
-    prisma.monthlyExpense.findMany.mockResolvedValueOnce([
+    prisma.monthlyExpense.findMany.mockResolvedValue([
       {
         id: 'expense-1',
         userId: 'user-1',
@@ -133,6 +133,8 @@ describe('MonthlyExpenseService', () => {
 
     expect(result.summary.spent).toBe(800);
     expect(result.summary.remaining).toBe(4200);
+    expect(result.summary.salaryRemaining).toBe(4200);
+    expect(result.summary.currentSalaryRemaining).toBeGreaterThanOrEqual(0);
     expect(result.expenses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

@@ -214,12 +214,18 @@ export type CreditCardInvoiceRecord = {
   paidAt: string | null;
 };
 
+export type ExpensePaymentSource = 'CASH' | 'DEPOSIT_EXTRA_INCOME' | 'CARD';
+
 export type MonthlyExpensesSummaryRecord = {
   month: string;
   summary: {
     spent: number;
     budget: number;
     remaining: number;
+    /** Salário disponível no mês consultado (mesma regra do pagamento de fatura). */
+    salaryRemaining: number;
+    /** Salário disponível no mês corrente — usado ao pagar faturas. */
+    currentSalaryRemaining: number;
     vsLastMonth: number;
     income: number;
     cardLimit: number;
@@ -234,9 +240,13 @@ export type CreateMonthlyExpenseInput = {
   title: string;
   amount: number;
   categoryId?: string;
+  /** @deprecated Prefer `paymentSource` + `cardId`. */
   account?: string;
+  paymentSource?: ExpensePaymentSource;
+  cardId?: string;
   date?: string;
   status?: 'paid' | 'pending';
+  installments?: number;
 };
 
 export type CreateCreditCardPurchaseInput = {

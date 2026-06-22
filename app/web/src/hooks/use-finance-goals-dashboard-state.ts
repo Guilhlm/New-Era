@@ -8,11 +8,11 @@ import {
   MdLaptopMac,
   MdSavings,
 } from 'react-icons/md';
-import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import {
   FINANCE_GOAL_ACCENT_PRESETS,
   type FinanceGoalVm,
 } from '@/components/finance-goals/finance-goals-types';
+import { useDashboardMutation } from '@/hooks/use-dashboard-mutation';
 import { queryKeys } from '@/lib/query-keys';
 import {
   completeFinancialGoal,
@@ -63,7 +63,6 @@ export function useFinanceGoalsDashboardState() {
     staleTime: 20_000,
   });
 
-  const [saving, setSaving] = useState(false);
   const createGoalMutation = useMutation({
     mutationFn: (input: CreateFinancialGoalInput) => createFinancialGoal(input),
   });
@@ -88,30 +87,19 @@ export function useFinanceGoalsDashboardState() {
 
   async function invalidateGoalCaches() {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['finance-goals'] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.financeGoals() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.walletSummary() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.wallets }),
-      queryClient.invalidateQueries({ queryKey: ['monthly-expenses'] }),
-      queryClient.invalidateQueries({ queryKey: ['monthly-expense-categories'] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.monthlyExpensesAll }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.monthlyExpenseCategories() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnreadCount }),
     ]);
   }
 
-  async function runMutation<T>(action: () => Promise<T>, successMessage: string) {
-    setSaving(true);
-    try {
-      const result = await action();
-      await invalidateGoalCaches();
-      toastUpdated(successMessage);
-      return result;
-    } catch (error) {
-      toastAuthError(error instanceof HttpError ? error.message : 'Request failed.');
-      throw error;
-    } finally {
-      setSaving(false);
-    }
-  }
+  const { run, isPending, saving } = useDashboardMutation({
+    onSuccess: invalidateGoalCaches,
+  });
 
   const goals = useMemo<FinanceGoalVm[]>(
     () =>
@@ -153,27 +141,26 @@ export function useFinanceGoalsDashboardState() {
     actions: {
       setSortKey,
       createGoal: (input: CreateFinancialGoalInput) =>
-        runMutation(() => createGoalMutation.mutateAsync(input), 'Goal created.'),
+        run('goal', () => createGoalMutation.mutateAsync(input), 'Meta criada.'),
       updateGoal: (id: string, input: UpdateFinancialGoalInput) =>
-        runMutation(() => updateGoalMutation.mutateAsync({ id, input }), 'Goal updated.'),
+        run('goal', () => updateGoalMutation.mutateAsync({ id, input }), 'Meta atualizada.'),
       deleteGoal: (id: string) =>
-        runMutation(() => deleteGoalMutation.mutateAsync(id), 'Goal removed.'),
+        run('goal', () => deleteGoalMutation.mutateAsync(id), 'Meta removida.'),
       updateProgress: (id: string, input: UpdateFinancialGoalProgressInput) =>
-        runMutation(
-          () => updateProgressMutation.mutateAsync({ id, input }),
-          'Progress updated.',
-        ),
+        run('goal', () => updateProgressMutation.mutateAsync({ id, input }), 'Progresso atualizado.'),
       completeGoal: (id: string) =>
-        runMutation(() => completeGoalMutation.mutateAsync(id), 'Goal completed.'),
+        run('goal', () => completeGoalMutation.mutateAsync(id), 'Meta concluída.'),
       deleteActivity: (goalId: string, activityId: string) =>
-        runMutation(
+        run(
+          'goal',
           () => deleteActivityMutation.mutateAsync({ goalId, activityId }),
-          'Contribution removed.',
+          'Contribuição removida.',
         ),
     },
     ui: {
       loading: goalsQuery.isPending,
       saving,
+      isPending,
       error:
         goalsQuery.error instanceof HttpError
           ? goalsQuery.error.message

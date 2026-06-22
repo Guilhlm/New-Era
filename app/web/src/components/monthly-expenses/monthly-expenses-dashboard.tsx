@@ -7,10 +7,11 @@ import {
 } from '@/components/ui/dashboard-two-column-layout';
 import { MonthlyExpensesCategoriesCard } from '@/components/monthly-expenses/monthly-expenses-categories-card';
 import { MonthlyExpensesCreditCards } from '@/components/monthly-expenses/monthly-expenses-credit-cards';
+import { MONTHLY_EXPENSES_COPY as copy } from '@/components/monthly-expenses/monthly-expenses-copy';
 import { MonthlyExpensesTransactionsCard } from '@/components/monthly-expenses/monthly-expenses-transactions-card';
 import { PlanHeaderCard } from '@/components/ui/plan-header-card';
+import { PeriodNavigator } from '@/components/ui/period-navigator';
 import { StatProgressCard } from '@/components/ui/stat-progress-card';
-import { WeekdayNavigator } from '@/components/ui/weekday-navigator';
 import { useMonthlyExpensesDashboardState } from '@/hooks/use-monthly-expenses-dashboard-state';
 import { formatBrlAmount } from '@/utils/wallet';
 
@@ -27,19 +28,25 @@ export function MonthlyExpensesDashboard() {
       : 0;
   const remainingPercent =
     totals.income > 0 ? Math.round((Math.max(0, totals.remaining) / totals.income) * 100) : 0;
+  const cardsSaving = state.ui.isPending('card') || state.ui.isPending('invoice');
+  const transactionsSaving = state.ui.isPending('expense');
+  const categoriesSaving = state.ui.isPending('category');
 
   return (
     <DashboardTwoColumnLayout>
       <PlanHeaderCard
-        title="Monthly Expenses"
+        title={copy.pageTitle}
         className="h-full min-h-0"
         style={dashboardGridArea('main', 'header')}
         rightSlot={
-          <WeekdayNavigator
-            weekdayLabel={state.data.monthLabel}
-            weekdayShortLabel={state.data.monthShortLabel}
-            onPrevDay={state.actions.prevMonth}
-            onNextDay={state.actions.nextMonth}
+          <PeriodNavigator
+            periodLabel={state.data.monthLabel}
+            periodShortLabel={state.data.monthShortLabel}
+            onPrev={state.actions.prevMonth}
+            onNext={state.actions.nextMonth}
+            ariaLabel="Selecionar mês"
+            prevAriaLabel="Mês anterior"
+            nextAriaLabel="Próximo mês"
           />
         }
         statsSlot={
@@ -47,33 +54,37 @@ export function MonthlyExpensesDashboard() {
             <StatProgressCard
               className="min-w-0"
               data={{
-                label: 'Monthly spending',
+                label: copy.monthlySpending,
                 valueLabel: formatBrlAmount(monthlySpending, { signed: true }),
                 percent: spentPercent,
                 barClassName: monthlySpending >= 0 ? 'bg-green' : 'bg-red',
                 valueClassName: monthlySpending >= 0 ? 'text-green' : 'text-red',
-                footerRight: `Goals + fixed: ${formatBrlAmount(totals.fixedCommitments)}`,
+                footerRight: `${copy.goalsAndFixed}: ${formatBrlAmount(totals.fixedCommitments)}`,
               }}
             />
             <StatProgressCard
               className="min-w-0"
               data={{
-                label: 'Budget',
+                label: copy.budget,
                 valueLabel: formatBrlAmount(totals.budget),
                 percent: budgetRemainingPercent,
                 barClassName: budgetRemainingPercent > 25 ? 'bg-green' : 'bg-red',
-                footerRight: `Salary ${formatBrlAmount(totals.income)} + cards ${formatBrlAmount(totals.cardLimit)}`,
+                footerRight: copy.salaryAndCards(
+                  formatBrlAmount(totals.income),
+                  formatBrlAmount(totals.cardLimit),
+                ),
               }}
             />
             <StatProgressCard
               className="min-w-0"
               data={{
-                label: 'Remaining balance',
+                label: copy.remainingBalance,
                 valueLabel: formatBrlAmount(totals.remaining),
                 percent: remainingPercent,
                 barClassName: totals.remaining >= 0 ? 'bg-green' : 'bg-red',
                 valueClassName: totals.remaining >= 0 ? 'text-green' : 'text-red',
-                footerRight: totals.remaining >= 0 ? 'Available from salary' : 'Above salary',
+                footerRight:
+                  totals.remaining >= 0 ? copy.availableFromSalary : copy.aboveSalary,
               }}
             />
           </>
@@ -86,7 +97,7 @@ export function MonthlyExpensesDashboard() {
       >
         <MonthlyExpensesCreditCards
           cards={state.data.cards}
-          saving={state.ui.saving}
+          saving={cardsSaving}
           onCreateCard={(values) =>
             state.actions.createCard({
               holderName: values.holder,
@@ -113,7 +124,7 @@ export function MonthlyExpensesDashboard() {
           }
           onDeleteCard={state.actions.deleteCard}
           onPayInvoice={state.actions.payCardInvoice}
-          salaryRemaining={totals.remaining}
+          salaryRemaining={state.data.salaryRemainingForPayment}
         />
         <MonthlyExpensesTransactionsCard
           expenses={state.data.expenses}
@@ -125,7 +136,7 @@ export function MonthlyExpensesDashboard() {
           onCreateExpense={state.actions.createExpense}
           onUpdateExpense={state.actions.updateExpense}
           onDeleteExpense={state.actions.deleteExpense}
-          saving={state.ui.saving}
+          saving={transactionsSaving}
           vsLastMonth={totals.vsLastMonth}
           className="h-full min-h-0"
         />
@@ -143,7 +154,7 @@ export function MonthlyExpensesDashboard() {
             })
           }
           onDelete={state.actions.deleteCategory}
-          saving={state.ui.saving}
+          saving={categoriesSaving}
           className="h-full min-h-0"
         />
       </DashboardSidebarColumn>

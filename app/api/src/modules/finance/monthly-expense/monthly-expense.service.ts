@@ -767,12 +767,19 @@ export class MonthlyExpenseService {
       if (current) currentCycleInvoiceByCard.set(cardId, current);
     }
 
+    const [salaryRemaining, currentSalaryRemaining] = await Promise.all([
+      this.getSalaryRemaining(userId, month),
+      this.getSalaryRemaining(userId, monthKeyFromDate(now)),
+    ]);
+
     return {
       month,
       summary: {
         spent,
         budget,
         remaining: income - spent,
+        salaryRemaining,
+        currentSalaryRemaining,
         vsLastMonth,
         income,
         cardLimit,
