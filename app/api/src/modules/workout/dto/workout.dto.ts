@@ -1,4 +1,6 @@
 import {
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsInt,
   IsNumber,
@@ -146,4 +148,23 @@ export class UpdateWorkoutExerciseDto {
   @IsOptional()
   @IsBoolean()
   isCompleted?: boolean;
+}
+
+export class ReorderWorkoutExercisesDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  exerciseIds!: string[];
+}
+
+export class CopyWorkoutDayDto {
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  sourceWeekday!: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  targetWeekday!: number;
 }

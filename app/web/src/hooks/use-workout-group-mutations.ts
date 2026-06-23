@@ -58,10 +58,10 @@ export function useWorkoutGroupMutations({
     }
   }
 
-  async function renameGroup(groupId: string, name: string) {
+  async function editGroup(groupId: string, name: string, timeMinutes: number | null) {
     setSaving(true);
     try {
-      const { group } = await updateWorkoutGroup(groupId, { name });
+      const { group } = await updateWorkoutGroup(groupId, { name, timeMinutes });
       setPlan((prev) => ({
         ...prev,
         groups: prev.groups.map((entry) =>
@@ -70,7 +70,7 @@ export function useWorkoutGroupMutations({
       }));
       toastUpdated(CRUD_TOAST.workoutGroupUpdated);
     } catch (error) {
-      toastAuthError(error instanceof HttpError ? error.message : 'Could not rename group.');
+      toastAuthError(error instanceof HttpError ? error.message : 'Could not update group.');
     } finally {
       setSaving(false);
     }
@@ -97,18 +97,32 @@ export function useWorkoutGroupMutations({
       const target = prev.groups.find((group) => group.id === groupId);
       if (!target) return prev;
 
-      if (target.expanded) {
-        return {
-          ...prev,
-          groups: prev.groups.map((group) =>
-            group.id === groupId ? { ...group, expanded: false } : group,
-          ),
-        };
-      }
-
       return {
         ...prev,
-        groups: collapseOtherGroups(prev.groups, groupId),
+        groups: prev.groups.map((group) =>
+          group.id === groupId ? { ...group, expanded: !group.expanded } : group,
+        ),
+      };
+    });
+  }
+
+  function syncExpandedGroups(expandedIds: string[]) {
+    setPlan((prev) => {
+      const current = prev.groups.filter((group) => group.expanded).map((group) => group.id);
+      if (
+        current.length === expandedIds.length &&
+        current.every((id, index) => id === expandedIds[index])
+      ) {
+        return prev;
+      }
+
+      const expandedSet = new Set(expandedIds);
+      return {
+        ...prev,
+        groups: prev.groups.map((group) => ({
+          ...group,
+          expanded: expandedSet.has(group.id),
+        })),
       };
     });
   }
@@ -118,9 +132,10 @@ export function useWorkoutGroupMutations({
       openCreateGroup,
       closeCreateGroup,
       createGroup,
-      renameGroup,
+      editGroup,
       removeGroup,
       toggleGroupExpanded,
+      syncExpandedGroups,
     },
     ui: {
       createGroupOpen,

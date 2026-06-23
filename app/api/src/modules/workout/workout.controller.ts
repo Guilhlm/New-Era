@@ -16,6 +16,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   CreateWorkoutExerciseDto,
   CreateWorkoutMuscleGroupDto,
+  CopyWorkoutDayDto,
+  ReorderWorkoutExercisesDto,
   UpdateWorkoutDayPlanDto,
   UpdateWorkoutExerciseDto,
   UpdateWorkoutMuscleGroupDto,
@@ -38,6 +40,15 @@ export class WorkoutController {
     @Query('weekday', ParseWeekdayPipe) weekday: number,
   ) {
     return this.workoutService.findByWeekday(req.user.userId, weekday);
+  }
+
+  @Post('copy-day')
+  copyDay(@Req() req: AuthenticatedRequest, @Body() body: CopyWorkoutDayDto) {
+    return this.workoutService.copyDay(
+      req.user.userId,
+      body.sourceWeekday,
+      body.targetWeekday,
+    );
   }
 
   @Patch('day/:weekday')
@@ -78,6 +89,19 @@ export class WorkoutController {
     @Body() body: CreateWorkoutExerciseDto,
   ) {
     return this.workoutService.createExercise(req.user.userId, groupId, body);
+  }
+
+  @Patch('groups/:groupId/exercises/reorder')
+  reorderExercises(
+    @Req() req: AuthenticatedRequest,
+    @Param('groupId') groupId: string,
+    @Body() body: ReorderWorkoutExercisesDto,
+  ) {
+    return this.workoutService.reorderExercises(
+      req.user.userId,
+      groupId,
+      body.exerciseIds,
+    );
   }
 
   @Patch('groups/:groupId/exercises/:id')

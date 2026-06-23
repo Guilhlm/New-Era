@@ -16,7 +16,7 @@ type TrainingGroupsGridProps = {
     onCreateGroup: () => void;
     onConfirmCreateGroup: (name: string, timeMinutes: number | null) => void;
     onCloseCreateGroup: () => void;
-    onRenameGroup: (groupId: string, name: string) => void;
+    onEditGroup: (groupId: string, name: string, timeMinutes: number | null) => void;
     onDeleteGroup: (groupId: string) => void;
     onToggleGroupExpanded: (groupId: string) => void;
     onStartExerciseDraft: (groupId: string) => void;
@@ -28,6 +28,8 @@ type TrainingGroupsGridProps = {
     onConfirmDraft: (groupId: string) => void;
     onCancelDraft: (groupId: string) => void;
     onEditExercise: (groupId: string, exerciseId: string) => void;
+    onReorderExercises: (groupId: string, exerciseIds: string[]) => void;
+    onSyncExpandedGroups: (expandedIds: string[]) => void;
   };
   ui?: {
     loading?: boolean;
@@ -55,6 +57,8 @@ export function TrainingGroupsGrid({
   return (
     <AccordionEntityGrid
       items={data.groups}
+      multiExpandWhenFits
+      onFitExpandedChange={actions.onSyncExpandedGroups}
       loading={ui?.loading}
       loadingLabel="Loading workout…"
       hiddenHintLabel={(count) =>
@@ -96,13 +100,16 @@ export function TrainingGroupsGrid({
           actions={{
             onToggleExpanded: () => actions.onToggleGroupExpanded(group.id),
             onAddExercise: () => actions.onStartExerciseDraft(group.id),
-            onRenameGroup: (name) => actions.onRenameGroup(group.id, name),
+            onEditGroup: (name, timeMinutes) =>
+              actions.onEditGroup(group.id, name, timeMinutes),
             onDeleteGroup: () => actions.onDeleteGroup(group.id),
             onChangeDraftField: (field, value) =>
               actions.onChangeDraftField(group.id, field, value),
             onConfirmDraft: () => actions.onConfirmDraft(group.id),
             onCancelDraft: () => actions.onCancelDraft(group.id),
             onEditExercise: (exerciseId) => actions.onEditExercise(group.id, exerciseId),
+            onReorderExercises: (exerciseIds) =>
+              actions.onReorderExercises(group.id, exerciseIds),
           }}
         />
       )}

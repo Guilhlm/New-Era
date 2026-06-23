@@ -1,5 +1,6 @@
 import type { TrainingDayPlanVm, TrainingExerciseVm, TrainingMuscleGroupVm, TrainingPlanSummaryVm } from '@/types/training';
 import type {
+  CopyTrainingDayInput,
   CreateTrainingExerciseInput,
   CreateTrainingGroupInput,
   UpdateTrainingDayInput,
@@ -77,4 +78,20 @@ export function deleteWorkoutExercise(groupId: string, exerciseId: string) {
     cache: 'no-store',
     credentials: 'include',
   });
+}
+
+export function reorderWorkoutExercises(groupId: string, exerciseIds: string[]) {
+  return patchJson<{ exercises: TrainingExerciseVm[] }, { exerciseIds: string[] }>(
+    `/api/workout/groups/${groupId}/exercises/reorder`,
+    { exerciseIds },
+    { cache: 'no-store', credentials: 'include' },
+  );
+}
+
+export function copyWorkoutDay(input: CopyTrainingDayInput) {
+  return postJson<{ plan: TrainingDayPlanVm }, CopyTrainingDayInput>(
+    '/api/workout/day/copy',
+    input,
+    { cache: 'no-store', credentials: 'include' },
+  );
 }

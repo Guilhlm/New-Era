@@ -79,6 +79,11 @@ export type UpdateTrainingDayInput = {
   isActive?: boolean;
 };
 
+export type CopyTrainingDayInput = {
+  sourceWeekday: number;
+  targetWeekday: number;
+};
+
 export type TrainingDaySummaryStatVm = {
   key: 'exercises' | 'duration' | 'volume';
   label: string;

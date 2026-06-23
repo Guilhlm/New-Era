@@ -39,8 +39,8 @@ type DietMealCardProps = {
     expandedScrolls?: boolean;
     ingredientsMaxHeight?: number;
   };
-  bindHeaderRef?: React.RefObject<HTMLDivElement | null>;
-  bindIngredientsRef?: React.RefObject<HTMLDivElement | null>;
+  bindHeaderRef?: React.Ref<HTMLDivElement | null>;
+  bindIngredientsRef?: React.Ref<HTMLDivElement | null>;
   className?: string;
 };
 

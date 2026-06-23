@@ -7,7 +7,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { getWorkoutDay } from '@/services/workout';
 import { HttpError } from '@/services/http';
 import type { TrainingDayPlanVm } from '@/types/training';
-import { TRAINING_WEEKDAYS } from '@/utils/training-constants';
+import { TRAINING_WEEKDAYS, withFirstGroupExpanded } from '@/utils/training-constants';
 
 function emptyPlan(weekday: number): TrainingDayPlanVm {
   return {
@@ -24,9 +24,7 @@ function emptyPlan(weekday: number): TrainingDayPlanVm {
 function toPlanVm(plan: TrainingDayPlanVm): TrainingDayPlanVm {
   return {
     ...plan,
-    groups: Array.isArray(plan.groups)
-      ? plan.groups.map((group) => ({ ...group, expanded: false, draft: null }))
-      : [],
+    groups: Array.isArray(plan.groups) ? withFirstGroupExpanded(plan.groups) : [],
   };
 }
 
@@ -71,6 +69,16 @@ export function useWorkoutDayQuery({ selectedWeekday }: UseWorkoutDayQueryParams
     [queryClient, selectedWeekday],
   );
 
+  const setPlanForDay = useCallback(
+    (weekday: number, plan: TrainingDayPlanVm) => {
+      queryClient.setQueryData<TrainingDayPlanVm>(
+        queryKeys.workoutDay(weekday),
+        toPlanVm(plan),
+      );
+    },
+    [queryClient],
+  );
+
   const loadDay = useCallback(
     async (weekdayIndex: number) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.workoutDay(weekdayIndex) });
@@ -105,6 +113,7 @@ export function useWorkoutDayQuery({ selectedWeekday }: UseWorkoutDayQueryParams
     },
     actions: {
       setPlan,
+      setPlanForDay,
       loadDay,
       setNotesDraft,
       applySavedNotes,

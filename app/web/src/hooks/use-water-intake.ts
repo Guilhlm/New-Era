@@ -8,6 +8,7 @@ import { HttpError } from '@/services/http';
 import { getWaterLogDay, upsertWaterLogDay, type WaterLogVm } from '@/services/water-log';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 import {
+  allWeekdayDateStrings,
   clampWaterTotal,
   computeWaterGlassState,
   computeWaterProgressPercent,
@@ -30,6 +31,7 @@ export function useWaterIntake(selectedWeekday: number) {
   const [editing, setEditing] = useState(false);
   const [savedDraft, setSavedDraft] = useState('3');
   const [draft, setDraft] = useState('3');
+  const [allDaysDraft, setAllDaysDraft] = useState('3');
 
   const query = useQuery({
     queryKey: queryKeys.waterLogDay(date),
@@ -132,11 +134,13 @@ export function useWaterIntake(selectedWeekday: number) {
   function cancelEdit() {
     if (query.isPending || saving) return;
     setDraft(savedDraft);
+    setAllDaysDraft(savedDraft);
     setEditing(false);
   }
 
   function startEdit() {
     if (query.isPending || saving || editing) return;
+    setAllDaysDraft(savedDraft);
     setEditing(true);
   }
 
@@ -167,6 +171,50 @@ export function useWaterIntake(selectedWeekday: number) {
     setDraft(cleaned);
   }
 
+  function changeAllDaysDraft(value: string) {
+    const cleaned = value.replace(/[^\d.,]/g, '');
+    const parsed = Number(cleaned.replace(',', '.'));
+    if (Number.isFinite(parsed) && parsed > WATER_MAX_TOTAL_L) {
+      setAllDaysDraft(String(WATER_MAX_TOTAL_L));
+      return;
+    }
+    setAllDaysDraft(cleaned);
+  }
+
+  async function applyGoalToAllDays() {
+    if (query.isPending || saving || !editing) return;
+
+    const waterTotalValue = clampWaterTotal(Number(normalizeWaterTotalDraft(allDaysDraft)));
+    if (!waterTotalValue) return;
+
+    setSaving(true);
+    try {
+      const dates = allWeekdayDateStrings();
+      await Promise.all(
+        dates.map(async (targetDate) => {
+          const existing = queryClient.getQueryData<WaterLogVm>(queryKeys.waterLogDay(targetDate));
+          const currentIntake = existing?.waterIntake ?? 0;
+          const next = await upsertWaterLogDay({
+            date: targetDate,
+            waterTotal: waterTotalValue,
+            waterIntake: Math.min(currentIntake, waterTotalValue),
+          });
+          queryClient.setQueryData(queryKeys.waterLogDay(targetDate), next);
+        }),
+      );
+
+      const nextDraft = String(waterTotalValue);
+      setSavedDraft(nextDraft);
+      setDraft(nextDraft);
+      setAllDaysDraft(nextDraft);
+      toastUpdated(CRUD_TOAST.waterGoalAppliedToAllDays);
+    } catch (error) {
+      toastAuthError(error instanceof HttpError ? error.message : 'Could not apply water goal.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return {
     data: {
       consumedLabel: formatLiters(activeLog.waterIntake),
@@ -180,6 +228,7 @@ export function useWaterIntake(selectedWeekday: number) {
       editing,
       dirty,
       draft,
+      allDaysDraft,
     },
     ui: {
       loading: query.isPending,
@@ -192,6 +241,8 @@ export function useWaterIntake(selectedWeekday: number) {
       saveEdit,
       cancelEdit,
       changeWaterTotal,
+      changeAllDaysDraft,
+      applyGoalToAllDays,
     },
   };
 }

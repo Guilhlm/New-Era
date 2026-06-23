@@ -81,6 +81,8 @@ export function DietDashboard() {
               onSaveEdit: water.actions.saveEdit,
               onCancelEdit: water.actions.cancelEdit,
               onWaterTotalChange: water.actions.changeWaterTotal,
+              onAllDaysDraftChange: water.actions.changeAllDaysDraft,
+              onApplyGoalToAllDays: water.actions.applyGoalToAllDays,
             }}
             ui={water.ui}
             className="min-h-0 flex-[2]"

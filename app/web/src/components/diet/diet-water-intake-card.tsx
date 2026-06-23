@@ -23,6 +23,7 @@ type DietWaterIntakeCardProps = {
     editing: boolean;
     dirty: boolean;
     draft: string;
+    allDaysDraft: string;
   };
   actions: {
     onGlassClick: (index: number) => void;
@@ -30,6 +31,8 @@ type DietWaterIntakeCardProps = {
     onSaveEdit: () => void;
     onCancelEdit: () => void;
     onWaterTotalChange: (value: string) => void;
+    onAllDaysDraftChange: (value: string) => void;
+    onApplyGoalToAllDays: () => void;
   };
   ui?: {
     loading?: boolean;
@@ -97,6 +100,7 @@ export function DietWaterIntakeCard({ data, actions, ui, className }: DietWaterI
       <DietWaterGoalDialog
         open={data.editing}
         draft={data.draft}
+        allDaysDraft={data.allDaysDraft}
         glassCount={data.draftGlassCount}
         dirty={data.dirty}
         saving={ui?.saving}
@@ -104,6 +108,8 @@ export function DietWaterIntakeCard({ data, actions, ui, className }: DietWaterI
         onClose={actions.onCancelEdit}
         onSave={actions.onSaveEdit}
         onDraftChange={actions.onWaterTotalChange}
+        onAllDaysDraftChange={actions.onAllDaysDraftChange}
+        onApplyToAllDays={actions.onApplyGoalToAllDays}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   assertResourceExists,
   assertResourceOwner,
@@ -156,6 +156,111 @@ export class WorkoutService {
   async removeExercise(userId: string, groupId: string, exerciseId: string) {
     await this.assertExerciseOwner(userId, groupId, exerciseId);
     return this.prisma.workoutExercise.delete({ where: { id: exerciseId } });
+  }
+
+  async reorderExercises(
+    userId: string,
+    groupId: string,
+    exerciseIds: string[],
+  ) {
+    await this.assertGroupOwner(userId, groupId);
+
+    const exercises = await this.prisma.workoutExercise.findMany({
+      where: { groupId },
+      select: { id: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    const existingIds = new Set(exercises.map((exercise) => exercise.id));
+    const uniqueIds = new Set(exerciseIds);
+
+    if (
+      exerciseIds.length !== exercises.length ||
+      uniqueIds.size !== exerciseIds.length ||
+      !exerciseIds.every((id) => existingIds.has(id))
+    ) {
+      throw new BadRequestException('Invalid exercise order');
+    }
+
+    await this.prisma.$transaction(
+      exerciseIds.map((id, index) =>
+        this.prisma.workoutExercise.update({
+          where: { id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+
+    return this.prisma.workoutExercise.findMany({
+      where: { groupId },
+      orderBy: { sortOrder: 'asc' },
+    });
+  }
+
+  async copyDay(userId: string, sourceWeekday: number, targetWeekday: number) {
+    if (sourceWeekday === targetWeekday) {
+      return this.findByWeekday(userId, targetWeekday);
+    }
+
+    const source = await this.prisma.workoutDayPlan.findUnique({
+      where: { userId_weekday: { userId, weekday: sourceWeekday } },
+      include: dayPlanInclude,
+    });
+
+    const sourceGroups = source?.groups ?? [];
+
+    await this.prisma.$transaction(async (tx) => {
+      const targetPlan = await tx.workoutDayPlan.upsert({
+        where: { userId_weekday: { userId, weekday: targetWeekday } },
+        create: {
+          userId,
+          weekday: targetWeekday,
+          title: source?.title ?? 'Rest Day',
+          notes: source?.notes ?? null,
+          isActive: source?.isActive ?? true,
+        },
+        update: {
+          title: source?.title ?? 'Rest Day',
+          notes: source?.notes ?? null,
+          isActive: source?.isActive ?? true,
+        },
+      });
+
+      await tx.workoutMuscleGroup.deleteMany({
+        where: { dayPlanId: targetPlan.id },
+      });
+
+      for (const group of sourceGroups) {
+        const createdGroup = await tx.workoutMuscleGroup.create({
+          data: {
+            dayPlanId: targetPlan.id,
+            name: group.name,
+            timeMinutes: group.timeMinutes,
+            sortOrder: group.sortOrder,
+            isActive: group.isActive,
+          },
+        });
+
+        for (const exercise of group.exercises) {
+          await tx.workoutExercise.create({
+            data: {
+              groupId: createdGroup.id,
+              name: exercise.name,
+              equipment: exercise.equipment,
+              weightKg: exercise.weightKg,
+              series: exercise.series,
+              repsMin: exercise.repsMin,
+              repsMax: exercise.repsMax,
+              imageUrl: exercise.imageUrl,
+              isCompleted: false,
+              sortOrder: exercise.sortOrder,
+            },
+          });
+        }
+      }
+    });
+
+    return this.findByWeekday(userId, targetWeekday);
   }
 
   private async ensureDayPlan(userId: string, weekday: number) {

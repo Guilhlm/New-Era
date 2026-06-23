@@ -12,6 +12,16 @@ export function collapseOtherGroups(
   return collapseOtherExpanded(groups, activeGroupId, clearDrafts);
 }
 
+export function withFirstGroupExpanded(groups: TrainingMuscleGroupVm[]): TrainingMuscleGroupVm[] {
+  if (groups.length === 0) return groups;
+
+  return groups.map((group, index) => ({
+    ...group,
+    expanded: index === 0,
+    draft: null,
+  }));
+}
+
 export function defaultPlanTitleForWeekday(weekday: number) {
   return weekdayLabelForIndex(weekday);
 }

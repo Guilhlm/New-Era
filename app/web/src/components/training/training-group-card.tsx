@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/components/ui/cn';
 import { typeClass, typeToneClass } from '@/lib/typography';
 import { TrainingExerciseDraftRow } from '@/components/training/training-exercise-draft-row';
-import { TrainingExerciseRow } from '@/components/training/training-exercise-row';
+import { TrainingExerciseSortableList } from '@/components/training/training-exercise-sortable-list';
 import { TrainingGroupCollapsedExercisesLine } from '@/components/training/training-group-collapsed-summary';
 import { TrainingGroupOptionsMenu } from '@/components/training/training-group-options-menu';
 import type { TrainingExerciseDraftVm, TrainingMuscleGroupVm } from '@/types/training';
@@ -17,7 +17,7 @@ type TrainingGroupCardProps = {
   actions: {
     onToggleExpanded: () => void;
     onAddExercise: () => void;
-    onRenameGroup: (name: string) => void;
+    onEditGroup: (name: string, timeMinutes: number | null) => void;
     onDeleteGroup: () => void;
     onChangeDraftField: (
       field: keyof TrainingExerciseDraftVm,
@@ -26,6 +26,7 @@ type TrainingGroupCardProps = {
     onConfirmDraft: () => void;
     onCancelDraft: () => void;
     onEditExercise: (exerciseId: string) => void;
+    onReorderExercises: (exerciseIds: string[]) => void;
   };
   ui?: {
     disabled?: boolean;
@@ -33,8 +34,8 @@ type TrainingGroupCardProps = {
     expandedScrolls?: boolean;
     bodyMaxHeight?: number;
   };
-  bindHeaderRef?: React.RefObject<HTMLDivElement | null>;
-  bindBodyRef?: React.RefObject<HTMLDivElement | null>;
+  bindHeaderRef?: React.Ref<HTMLDivElement | null>;
+  bindBodyRef?: React.Ref<HTMLDivElement | null>;
   className?: string;
 };
 
@@ -42,15 +43,17 @@ function GroupCardActions({
   blocked,
   hasDraft,
   groupName,
+  timeMinutes,
   onAddExercise,
-  onRenameGroup,
+  onEditGroup,
   onDeleteGroup,
 }: {
   blocked?: boolean;
   hasDraft: boolean;
   groupName: string;
+  timeMinutes: number | null;
   onAddExercise: () => void;
-  onRenameGroup: (name: string) => void;
+  onEditGroup: (name: string, timeMinutes: number | null) => void;
   onDeleteGroup: () => void;
 }) {
   return (
@@ -68,8 +71,9 @@ function GroupCardActions({
 
       <TrainingGroupOptionsMenu
         groupName={groupName}
+        timeMinutes={timeMinutes}
         disabled={blocked}
-        onRename={onRenameGroup}
+        onEdit={onEditGroup}
         onDelete={onDeleteGroup}
       />
     </>
@@ -127,8 +131,9 @@ export function TrainingGroupCard({
                 blocked={blocked}
                 hasDraft={Boolean(data.draft)}
                 groupName={data.name}
+                timeMinutes={data.timeMinutes}
                 onAddExercise={actions.onAddExercise}
-                onRenameGroup={actions.onRenameGroup}
+                onEditGroup={actions.onEditGroup}
                 onDeleteGroup={actions.onDeleteGroup}
               />
             </div>
@@ -165,18 +170,13 @@ export function TrainingGroupCard({
               ) : null}
 
               {savedExercises.length > 0 ? (
-                <div className="flex shrink-0 flex-col gap-2.5 pr-1">
-                  {savedExercises.map((exercise) => (
-                    <TrainingExerciseRow
-                      key={exercise.id}
-                      data={exercise}
-                      ui={{ disabled: blocked }}
-                      actions={{
-                        onSettings: () => actions.onEditExercise(exercise.id),
-                      }}
-                    />
-                  ))}
-                </div>
+                <TrainingExerciseSortableList
+                  groupId={data.id}
+                  exercises={savedExercises}
+                  disabled={blocked || Boolean(data.draft)}
+                  onEditExercise={actions.onEditExercise}
+                  onReorder={(_, exerciseIds) => actions.onReorderExercises(exerciseIds)}
+                />
               ) : !data.draft ? (
                 <p className={cn('shrink-0', typeClass.body, 'text-text/50')}>
                   No exercises yet. Use + New Exercicie to add one.
@@ -209,8 +209,9 @@ export function TrainingGroupCard({
                 blocked={blocked}
                 hasDraft={Boolean(data.draft)}
                 groupName={data.name}
+                timeMinutes={data.timeMinutes}
                 onAddExercise={actions.onAddExercise}
-                onRenameGroup={actions.onRenameGroup}
+                onEditGroup={actions.onEditGroup}
                 onDeleteGroup={actions.onDeleteGroup}
               />
             </div>

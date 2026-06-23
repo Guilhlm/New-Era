@@ -5,6 +5,7 @@ import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import {
   createWorkoutExercise,
   deleteWorkoutExercise,
+  reorderWorkoutExercises,
   updateWorkoutExercise,
 } from '@/services/workout';
 import { HttpError } from '@/services/http';
@@ -189,6 +190,38 @@ export function useWorkoutExerciseDraft({ plan, setPlan, setSaving }: UseWorkout
     }
   }
 
+  async function reorderExercises(groupId: string, exerciseIds: string[]) {
+    const group = plan.groups.find((entry) => entry.id === groupId);
+    if (!group) return;
+
+    const savedExercises = group.exercises.filter((entry) => entry.status === 'saved');
+    const byId = new Map(savedExercises.map((entry) => [entry.id, entry]));
+    const reordered = exerciseIds
+      .map((id) => byId.get(id))
+      .filter((entry): entry is TrainingExerciseVm => Boolean(entry));
+
+    if (reordered.length !== savedExercises.length) return;
+
+    const previousGroups = plan.groups;
+
+    setPlan((prev) => ({
+      ...prev,
+      groups: prev.groups.map((entry) =>
+        entry.id === groupId ? { ...entry, exercises: reordered } : entry,
+      ),
+    }));
+
+    try {
+      await reorderWorkoutExercises(groupId, exerciseIds);
+    } catch (error) {
+      setPlan((prev) => ({
+        ...prev,
+        groups: previousGroups,
+      }));
+      toastAuthError(error instanceof HttpError ? error.message : 'Could not reorder exercises.');
+    }
+  }
+
   async function toggleExerciseCompleted(groupId: string, exerciseId: string) {
     const group = plan.groups.find((entry) => entry.id === groupId);
     const exercise = group?.exercises.find((entry) => entry.id === exerciseId);
@@ -235,6 +268,7 @@ export function useWorkoutExerciseDraft({ plan, setPlan, setSaving }: UseWorkout
       deleteEditExercise,
       closeEditExercise: () => setEditExercise(null),
       toggleExerciseCompleted,
+      reorderExercises,
     },
   };
 }

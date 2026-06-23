@@ -15,6 +15,7 @@ import {
 type DietWaterGoalDialogProps = {
   open: boolean;
   draft: string;
+  allDaysDraft: string;
   glassCount: number;
   dirty: boolean;
   saving?: boolean;
@@ -22,10 +23,13 @@ type DietWaterGoalDialogProps = {
   onClose: () => void;
   onSave: () => void;
   onDraftChange: (value: string) => void;
+  onAllDaysDraftChange: (value: string) => void;
+  onApplyToAllDays: () => void;
 };
 
 function WaterGoalForm({
   draft,
+  allDaysDraft,
   glassCount,
   dirty,
   saving = false,
@@ -33,10 +37,16 @@ function WaterGoalForm({
   onClose,
   onSave,
   onDraftChange,
+  onAllDaysDraftChange,
+  onApplyToAllDays,
 }: Omit<DietWaterGoalDialogProps, 'open'>) {
   const blocked = disabled || saving;
   const validDraft = (() => {
     const parsed = Number(normalizeWaterTotalDraft(draft));
+    return parsed > 0 && parsed <= WATER_MAX_TOTAL_L;
+  })();
+  const validAllDaysDraft = (() => {
+    const parsed = Number(normalizeWaterTotalDraft(allDaysDraft));
     return parsed > 0 && parsed <= WATER_MAX_TOTAL_L;
   })();
   const draftTotal = Number(normalizeWaterTotalDraft(draft)) || 0;
@@ -73,6 +83,31 @@ function WaterGoalForm({
         />
       </label>
 
+      <label className={cn('flex flex-col gap-2', typeClass.body)}>
+        <span className="text-text/60">Apply to all days (L)</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            inputMode="decimal"
+            disabled={blocked}
+            value={allDaysDraft}
+            placeholder="3,0"
+            className="min-w-0 flex-1 rounded-md bg-layer2 px-3 py-2 text-text outline-none placeholder:text-text/40 focus-visible:ring-2 focus-visible:ring-red/60"
+            onChange={(event) => onAllDaysDraftChange(event.target.value)}
+          />
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={blocked || !validAllDaysDraft}
+            className="shrink-0 bg-layer2 text-text hover:bg-layer2-half"
+            onClick={onApplyToAllDays}
+          >
+            Apply
+          </Button>
+        </div>
+      </label>
+
       <p className={cn(typeClass.caption, typeToneClass.muted60)}>
         Equivalent to {glassCount} glasses of {glassVolumeLabel}.
       </p>
@@ -105,6 +140,7 @@ function WaterGoalForm({
 export function DietWaterGoalDialog({
   open,
   draft,
+  allDaysDraft,
   glassCount,
   dirty,
   saving,
@@ -112,11 +148,14 @@ export function DietWaterGoalDialog({
   onClose,
   onSave,
   onDraftChange,
+  onAllDaysDraftChange,
+  onApplyToAllDays,
 }: DietWaterGoalDialogProps) {
   return (
     <CreateEntityDialog open={open} onClose={onClose} formKey={`water-goal-${draft}`}>
       <WaterGoalForm
         draft={draft}
+        allDaysDraft={allDaysDraft}
         glassCount={glassCount}
         dirty={dirty}
         saving={saving}
@@ -124,6 +163,8 @@ export function DietWaterGoalDialog({
         onClose={onClose}
         onSave={onSave}
         onDraftChange={onDraftChange}
+        onAllDaysDraftChange={onAllDaysDraftChange}
+        onApplyToAllDays={onApplyToAllDays}
       />
     </CreateEntityDialog>
   );

@@ -12,6 +12,10 @@ export function weekdayToDateString(weekday: number) {
   return date.toISOString().slice(0, 10);
 }
 
+export function allWeekdayDateStrings() {
+  return Array.from({ length: 7 }, (_, weekday) => weekdayToDateString(weekday));
+}
+
 export function clampWaterTotal(value: number) {
   if (!Number.isFinite(value) || value <= 0) return 0;
   return Math.min(WATER_MAX_TOTAL_L, Math.round(value * 10) / 10);
