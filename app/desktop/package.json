@@ -1,7 +1,7 @@
 {
   "name": "desktop",
   "productName": "New-Era",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "description": "New-Era desktop runtime (Electron orchestrator)",
   "author": "New-Era",
