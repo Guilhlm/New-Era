@@ -48,6 +48,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          name: Implementação de número de versão app + testes
           files: |
             app/desktop/dist/New-Era Setup.exe
             app/desktop/dist/latest.yml

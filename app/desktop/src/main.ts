@@ -50,6 +50,8 @@ if (process.platform === 'win32') {
 
 registerDesktopProtocol();
 
+ipcMain.handle('desktop:getVersion', () => app.getVersion());
+
 let mainWindow: BrowserWindow | null = null;
 let pendingProtocolHref: string | null = null;
 let nestProcess: ManagedProcess | null = null;

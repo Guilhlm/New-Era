@@ -26,6 +26,7 @@ export type DesktopUpdatesBridge = {
 
 export type DesktopBridge = {
   navigate: (href: string) => void;
+  getVersion: () => Promise<string>;
   updates: DesktopUpdatesBridge;
 };
 
