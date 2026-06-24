@@ -7,7 +7,9 @@ const prismaDir = join(__dirname, '..', 'prisma');
 const sourcePath = join(prismaDir, 'schema.prisma');
 const targetPath = join(prismaDir, 'desktop', 'schema.prisma');
 
-const source = readFileSync(sourcePath, 'utf8').replace(/\r\n/g, '\n');
+const source = readFileSync(sourcePath, 'utf8')
+  .replace(/\r\n/g, '\n')
+  .replace(/\r/g, '\n');
 
 const desktopHeader = `// Auto-generated from schema.prisma — run: node scripts/sync-desktop-schema.mjs
 // Do not edit manually; regenerate after schema changes.

@@ -296,13 +296,13 @@ app/desktop/dist/latest.yml
 
 Depois:
 
-1. Atualize a versão em `app/desktop/package.json` e `package.json` (raiz) — ex.: `1.1.3`.
+1. Atualize a versão em `app/desktop/package.json` e `package.json` (raiz) — ex.: `1.1.4`.
 2. Commit, crie a tag alinhada e faça push:
 
    ```bash
    git push origin main
-   git tag desktop-v1.1.3
-   git push origin desktop-v1.1.3
+   git tag desktop-v1.1.4
+   git push origin desktop-v1.1.4
    ```
 
 3. Acompanhe **Actions → Desktop Build** (~15–20 min). O workflow publica a **GitHub Release** com `New-Era Setup.exe` + `latest.yml`.
