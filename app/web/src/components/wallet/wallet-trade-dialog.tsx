@@ -331,7 +331,7 @@ export function WalletTradeDialog({
           ) : null}
           {insufficientBalance ? (
             <span className={cn(typeClass.micro, typeToneClass.negative)}>
-              Saldo insuficiente. Deposite fundos para continuar.
+              Insufficient balance. Deposit funds to continue.
             </span>
           ) : null}
         </label>

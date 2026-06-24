@@ -1,0 +1,612 @@
+// Auto-generated from schema.prisma — run: node scripts/sync-desktop-schema.mjs
+// Do not edit manually; regenerate after schema changes.
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../../node_modules/@prisma/client-desktop"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum WalletType {
+  CASH
+  BANK
+  CRYPTO
+}
+
+enum CardType {
+  CREDIT
+  DEBIT
+}
+
+enum InvestmentType {
+  STOCK
+  REIT
+  CRYPTO
+  FIXED_INCOME
+  ETF
+  OTHER
+}
+
+enum InvestmentLastAction {
+  BUY
+  SELL
+}
+
+enum PortfolioSnapshotKind {
+  OPENING
+  CLOSING
+}
+
+enum TaskSourceType {
+  MANUAL
+  WORKOUT
+  DIET_MEAL
+}
+
+enum NotificationPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum NotificationKind {
+  ALERT
+  REMINDER
+  INSIGHT
+  UPDATE
+}
+
+enum NotificationPriority {
+  URGENT
+  NORMAL
+  LOW
+}
+
+enum NotificationCategory {
+  TASKS
+  FINANCE
+  GOALS
+  WALLET
+  DIET
+  TRAINING
+  BODY
+  SYSTEM
+}
+
+model User {
+  id                String             @id @default(cuid())
+  photoUser         String?
+  name              String
+  email             String             @unique
+  birthDate         DateTime?
+  phone             String?
+  cpf               String?            @unique
+  monthlyIncome     Decimal?          
+  disciplineLevel   Int?
+  isAdmin           Boolean            @default(false)
+  totalBalance      Decimal            @default(0)
+  passwordHash      String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  bodyMeasures      BodyMeasure[]
+  bodyVitals        BodyVital[]
+  fitnessMacroGoals FitnessMacroGoal[]
+  dietMeals         DietMeal[]
+  waterLogs         WaterLog[]
+  workoutDayPlans   WorkoutDayPlan[]
+  wallets           Wallet[]
+  cards             Card[]
+  creditCardPurchases CreditCardPurchase[]
+  creditCardInstallments CreditCardInstallment[]
+  creditCardInvoices CreditCardInvoice[]
+  financialGoals    FinancialGoal[]
+  financialGoalActivities FinancialGoalActivity[]
+  monthlyExpenses   MonthlyExpense[]
+  monthlyExpenseCategories MonthlyExpenseCategory[]
+  notifications     Notification[]
+  transactions        Transaction[]
+  investments         Investment[]
+  portfolioSnapshots  PortfolioSnapshot[]
+  dailyTasks          DailyTask[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model BodyMeasure {
+  id                    String   @id @default(cuid())
+  userId                String
+  height                Decimal?
+  weight                Decimal?
+  calfRight             Decimal?
+  calfLeft              Decimal?
+  quadRight             Decimal?
+  quadLeft              Decimal?
+  waist                 Decimal?
+  abdomen               Decimal?
+  back                  Decimal?
+  chest                 Decimal?
+  shoulderCircumference Decimal?
+  neckCircumference     Decimal?
+  bicepsRight           Decimal?
+  bicepsLeft            Decimal?
+  forearmRight          Decimal?
+  forearmLeft           Decimal?
+  recordedAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}
+
+model BodyVital {
+  id                    String   @id @default(cuid())
+  userId                String
+  bodyFat               Decimal?
+  bodyWater             Decimal?
+  leanMass              Decimal?
+  boneMass              Decimal?
+  restingHeartRate      Int?
+  maxHeartRate          Int?
+  basalMetabolicRate    Int?
+  hydrationLevel        Decimal?
+  sleepHours            Decimal?
+  recordedAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}
+
+model FitnessMacroGoal {
+  id         String   @id @default(cuid())
+  userId     String
+  fats       Decimal?
+  carbodrate Decimal?
+  protein    Decimal?
+  weightGoal Decimal?
+  calories   Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+model DietMeal {
+  id        String         @id @default(cuid())
+  userId    String
+  weekday   Int?
+  mealDate  DateTime?
+  name      String
+  mealTime  String?
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     DietFoodItem[]
+
+  @@index([userId, mealDate])
+  @@index([userId, weekday, isActive])
+}
+
+model DietFoodItem {
+  id              String   @id @default(cuid())
+  mealId          String
+  name            String
+  totalGrams      Decimal?
+  externalSource  String?
+  externalFoodId  String?
+  caloriesPer100g Int?
+  proteinPer100g  Decimal?
+  carbsPer100g    Decimal?
+  fatsPer100g     Decimal?
+  calories        Int?
+  fats            Decimal?
+  protein         Decimal?
+  carbodrate      Decimal?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  meal            DietMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@index([mealId])
+}
+
+model WaterLog {
+  id          String   @id @default(cuid())
+  userId      String
+  logDate     DateTime
+  waterTotal  Decimal?
+  waterIntake Decimal?
+  glassCount  Int      @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, logDate])
+}
+
+model WorkoutDayPlan {
+  id        String               @id @default(cuid())
+  userId    String
+  weekday   Int
+  title     String
+  notes     String?
+  isActive  Boolean              @default(true)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups    WorkoutMuscleGroup[]
+
+  @@unique([userId, weekday])
+}
+
+model WorkoutMuscleGroup {
+  id          String            @id @default(cuid())
+  dayPlanId   String
+  name        String
+  timeMinutes Int?
+  sortOrder   Int               @default(0)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  dayPlan     WorkoutDayPlan    @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
+  exercises   WorkoutExercise[]
+
+  @@index([dayPlanId, sortOrder])
+}
+
+model WorkoutExercise {
+  id          String             @id @default(cuid())
+  groupId     String
+  name        String
+  equipment   String?
+  weightKg    Decimal?          
+  series      Int?
+  repsMin     Int?
+  repsMax     Int?
+  imageUrl    String?
+  isCompleted Boolean            @default(false)
+  sortOrder   Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  group       WorkoutMuscleGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, sortOrder])
+}
+
+model Wallet {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  balance      Decimal       @default(0)
+  type         WalletType
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromTxns     Transaction[] @relation("FromWallet")
+  toTxns       Transaction[] @relation("ToWallet")
+
+  @@index([userId])
+  @@index([userId, type])
+}
+
+model Card {
+  id         String   @id @default(cuid())
+  userId     String
+  nameCard   String
+  limitTotal Decimal?
+  limitUsage Decimal?
+  dueDay     Int      @default(10)
+  type       CardType
+  holderName String?
+  lastFour   String?
+  brand      String?
+  color      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCardPurchases CreditCardPurchase[]
+  creditCardInstallments CreditCardInstallment[]
+  creditCardInvoices CreditCardInvoice[]
+
+  @@index([userId])
+}
+
+model CreditCardPurchase {
+  id                String                  @id @default(cuid())
+  userId            String
+  cardId            String
+  title             String
+  amount            Decimal                
+  installmentsCount Int
+  category          String?
+  categoryId        String?
+  purchaseDate      DateTime
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card              Card                    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  installments      CreditCardInstallment[]
+
+  @@index([userId, purchaseDate(sort: Desc)])
+  @@index([cardId, purchaseDate(sort: Desc)])
+}
+
+model CreditCardInstallment {
+  id                 String              @id @default(cuid())
+  userId             String
+  cardId             String
+  purchaseId         String
+  invoiceId          String?
+  monthKey           String
+  dueDate            DateTime
+  installmentNumber  Int
+  installmentsTotal  Int
+  amount             Decimal            
+  status             String              @default("open")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card               Card                @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  purchase           CreditCardPurchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  invoice            CreditCardInvoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, monthKey])
+  @@index([cardId, monthKey])
+  @@index([invoiceId])
+  @@index([purchaseId])
+}
+
+model CreditCardInvoice {
+  id            String                  @id @default(cuid())
+  userId        String
+  cardId        String
+  monthKey      String
+  dueDate       DateTime
+  closingDate   DateTime
+  amount        Decimal                 @default(0)
+  paidAmount    Decimal                 @default(0)
+  status        String                  @default("open")
+  paidAt        DateTime?
+  transactionId String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card          Card                    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  installments  CreditCardInstallment[]
+  transaction   Transaction?            @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@unique([cardId, monthKey])
+  @@index([userId, monthKey])
+  @@index([transactionId])
+}
+
+model FinancialGoal {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  description  String?
+  targetAmount Decimal 
+  currentAmount Decimal @default(0)
+  deadline     DateTime?
+  isSystem     Boolean  @default(false)
+  isLocked     Boolean  @default(false)
+  systemKey    String?
+  activities   FinancialGoalActivity[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deadline])
+  @@index([userId, isSystem])
+  @@index([userId, systemKey])
+}
+
+model MonthlyExpense {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  amount    Decimal 
+  category  String?
+  categoryId String?
+  transactionId String?
+  monthKey  String?
+  source    String   @default("MANUAL")
+  status    String   @default("paid")
+  fixed     Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryRef MonthlyExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, monthKey])
+  @@index([userId, categoryId])
+  @@index([userId, status])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([transactionId])
+}
+
+model MonthlyExpenseCategory {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  budget    Decimal  @default(0)
+  isSystem  Boolean  @default(false)
+  isLocked  Boolean  @default(false)
+  systemKey String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses  MonthlyExpense[]
+
+  @@unique([userId, name])
+  @@index([userId, isSystem])
+  @@index([userId, systemKey])
+}
+
+model Transaction {
+  id              String          @id @default(cuid())
+  userId          String
+  type            TransactionType
+  amount          Decimal        
+  displayAmount   Decimal?       
+  displayCurrency String?
+  fxRate          Decimal?       
+  description     String?
+  category        String?
+  fromWalletId    String?
+  toWalletId      String?
+  date            DateTime
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromWallet      Wallet?         @relation("FromWallet", fields: [fromWalletId], references: [id], onDelete: SetNull)
+  toWallet        Wallet?         @relation("ToWallet", fields: [toWalletId], references: [id], onDelete: SetNull)
+  monthlyExpenses MonthlyExpense[]
+  creditCardInvoices CreditCardInvoice[]
+
+  @@index([userId, date])
+  @@index([userId, category, date(sort: Desc)])
+  @@index([fromWalletId])
+  @@index([toWalletId])
+}
+
+model Investment {
+  id           String               @id @default(cuid())
+  userId       String
+  ticker       String               @default("")
+  name         String
+  type         InvestmentType
+  shares       Decimal              @default(0)
+  avgPrice     Decimal              @default(0)
+  currentPrice Decimal              @default(0)
+  currentValue Decimal             
+  costValue    Decimal?            
+  lastAction   InvestmentLastAction @default(BUY)
+  notes        String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([userId, ticker])
+}
+
+model PortfolioSnapshot {
+  id            String                @id @default(cuid())
+  userId        String
+  date          DateTime             
+  kind          PortfolioSnapshotKind @default(CLOSING)
+  totalValue    Decimal              
+  investedValue Decimal              
+  createdAt     DateTime              @default(now())
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, kind])
+  @@index([userId, date])
+}
+
+model DailyTask {
+  id          String           @id @default(cuid())
+  userId      String
+  weekday     Int
+  title       String
+  scheduledAt String
+  sortOrder   Int              @default(0)
+  isActive    Boolean          @default(true)
+  sourceType  TaskSourceType   @default(MANUAL)
+  sourceId    String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions TaskCompletion[]
+
+  @@unique([userId, weekday, sourceType, sourceId])
+  @@index([userId, weekday, sortOrder])
+  @@index([userId, isActive])
+}
+
+model TaskCompletion {
+  id        String    @id @default(cuid())
+  taskId    String
+  logDate   DateTime 
+  createdAt DateTime  @default(now())
+  task      DailyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, logDate])
+  @@index([taskId, logDate])
+}
+
+model FinancialGoalActivity {
+  id            String        @id @default(cuid())
+  goalId        String
+  userId        String
+  label         String
+  amount        Decimal       @default(0)
+  source        String?
+  transactionId String?
+  createdAt     DateTime      @default(now())
+  goal          FinancialGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([transactionId])
+}
+
+model Notification {
+  id           String               @id @default(cuid())
+  userId       String
+  category     NotificationCategory
+  kind         NotificationKind
+  priority     NotificationPriority @default(NORMAL)
+  period       NotificationPeriod
+  title        String
+  body         String
+  read         Boolean              @default(false)
+  href         String?
+  ctaLabel     String?
+  dedupeKey    String?
+  metadata     Json?
+  readAt       DateTime?
+  archivedAt   DateTime?
+  snoozedUntil DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, read, createdAt(sort: Desc)])
+  @@index([userId, archivedAt])
+}

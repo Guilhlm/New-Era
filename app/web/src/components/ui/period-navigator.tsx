@@ -23,9 +23,9 @@ export function PeriodNavigator({
   onNext,
   disabled = false,
   className,
-  ariaLabel = 'Selecionar período',
-  prevAriaLabel = 'Período anterior',
-  nextAriaLabel = 'Próximo período',
+  ariaLabel = 'Select period',
+  prevAriaLabel = 'Previous period',
+  nextAriaLabel = 'Next period',
 }: PeriodNavigatorProps) {
   return (
     <div

@@ -11,17 +11,24 @@ export function upstreamErrorResponse(
   fallback: string,
 ) {
   let message = fallback;
+  let code: string | undefined;
   try {
     const parsed = JSON.parse(text) as {
-      message?: string | string[];
+      message?: string | string[] | { message?: string; code?: string };
       error?: string;
+      code?: string;
     };
-    if (parsed.message) {
+    if (parsed.message && typeof parsed.message === 'object' && !Array.isArray(parsed.message)) {
+      message = parsed.message.message ?? fallback;
+      code = parsed.message.code ?? parsed.code;
+    } else if (parsed.message) {
       message = Array.isArray(parsed.message)
         ? parsed.message.join(', ')
-        : parsed.message;
+        : String(parsed.message);
+      code = parsed.code;
     } else if (typeof parsed.error === 'string' && parsed.error) {
       message = parsed.error;
+      code = parsed.code;
     }
   } catch {
     if (text) {
@@ -30,6 +37,9 @@ export function upstreamErrorResponse(
   }
 
   const safeStatus = status >= 400 && status <= 599 ? status : 502;
+  if (code) {
+    return NextResponse.json({ error: message, code }, { status: safeStatus });
+  }
   return NextResponse.json({ error: message }, { status: safeStatus });
 }
 

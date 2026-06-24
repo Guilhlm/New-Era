@@ -33,7 +33,7 @@ function CardColorPreview({
 }) {
   const tone = creditCardTextTone(color);
   const light = isLightCardColor(color);
-  const displayHolder = holder.trim() || 'SEU NOME';
+  const displayHolder = holder.trim() || 'YOUR NAME';
   const displayDigits = /^\d{4}$/.test(lastFour) ? lastFour : '••••';
 
   return (

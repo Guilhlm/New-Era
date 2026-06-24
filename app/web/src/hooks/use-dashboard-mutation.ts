@@ -31,7 +31,7 @@ export function useDashboardMutation({ onSuccess }: UseDashboardMutationOptions 
         toastUpdated(successMessage);
         return result;
       } catch (error) {
-        const message = error instanceof HttpError ? error.message : 'Falha na requisição.';
+        const message = error instanceof HttpError ? error.message : 'Request failed.';
         toastAuthError(message);
         return { error: message };
       } finally {

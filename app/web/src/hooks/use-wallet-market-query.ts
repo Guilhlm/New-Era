@@ -25,6 +25,7 @@ export type WalletMarketBoardPage = {
   fxRate: number;
   currency: QuoteCurrency;
   quotedAt: string;
+  stale?: boolean;
 };
 
 export async function fetchWalletMarketBoard(
@@ -43,6 +44,7 @@ export async function fetchWalletMarketBoard(
     fxRate: board.fxRate,
     currency: board.currency,
     quotedAt: board.quotedAt,
+    stale: board.stale,
   };
 }
 

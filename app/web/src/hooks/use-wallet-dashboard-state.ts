@@ -175,6 +175,7 @@ export function useWalletDashboardState() {
         used: card.limitUsage,
       })),
       marketQuotedAt: firstMarketPage?.quotedAt ?? null,
+      marketStale: firstMarketPage?.stale ?? false,
       marketTotal,
       fxRate,
       brlFxRate,

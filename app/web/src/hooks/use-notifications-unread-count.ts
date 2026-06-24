@@ -14,6 +14,6 @@ export function useNotificationsUnreadCount(enabled = true) {
     enabled,
     staleTime: 60_000,
     refetchInterval: enabled ? 60_000 : false,
-    refetchIntervalInBackground: false,
+    refetchIntervalInBackground: true,
   });
 }

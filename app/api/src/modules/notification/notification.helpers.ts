@@ -64,6 +64,37 @@ export function round(value: number, decimals = 2) {
   return Math.round(value * factor) / factor;
 }
 
+/** Weekday 0=Sun … 6=Sat — matches DailyTask.weekday in the task module. */
+export function localWeekday(now = new Date()) {
+  return now.getDay();
+}
+
+export function formatLocalHHmm(now = new Date()) {
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+export function addMinutesLocal(now: Date, minutes: number) {
+  return new Date(now.getTime() + minutes * 60_000);
+}
+
+export function localDayKey(now = new Date()) {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function startOfTodayLocal(now = new Date()) {
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+
+export function endOfTodayLocal(now = new Date()) {
+  const start = startOfTodayLocal(now);
+  return new Date(start.getTime() + 24 * 60 * 60 * 1000);
+}
+
 /** Largest "round" milestone (1k, 5k, 10k, 50k...) crossed by a value. */
 export function patrimonyMilestone(value: number) {
   if (value <= 0) return 0;

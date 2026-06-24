@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -30,6 +31,17 @@ export class AuthService {
   ) {}
 
   async register(payload: RegisterDto) {
+    if (process.env.APP_MODE === 'desktop') {
+      const count = await this.prisma.user.count();
+      if (count >= 2) {
+        throw new ConflictException({
+          code: 'DESKTOP_USER_LIMIT',
+          message:
+            'Local account limit of 2 reached. Delete an account in Profile before registering another.',
+        });
+      }
+    }
+
     const user = await this.userService.create(payload);
 
     return this.signToken(user.id, user.email);
@@ -77,7 +89,7 @@ export class AuthService {
     });
 
     this.logger.warn(
-      `[PASSWORD RESET] token para ${emailNorm} (expira ${expiresAt.toISOString()}): ${rawToken}`,
+      `[PASSWORD RESET] token for ${emailNorm} (expires ${expiresAt.toISOString()}): ${rawToken}`,
     );
 
     return { ok: true as const };

@@ -170,9 +170,9 @@ export function computeDietDisciplineAfterToggle(
 export function sourceTypeLabel(sourceType: TaskSourceType) {
   switch (sourceType) {
     case 'WORKOUT':
-      return 'Treino';
+      return 'Workout';
     case 'DIET_MEAL':
-      return 'Dieta';
+      return 'Diet';
     default:
       return 'Manual';
   }

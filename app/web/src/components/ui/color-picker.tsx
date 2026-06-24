@@ -71,11 +71,11 @@ export function ColorPicker({
       <div
         role="slider"
         tabIndex={disabled ? -1 : 0}
-        aria-label="Saturação e brilho"
+        aria-label="Saturation and brightness"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={draftHsv.v}
-        aria-valuetext={`Saturação ${draftHsv.s}%, brilho ${draftHsv.v}%`}
+        aria-valuetext={`Saturation ${draftHsv.s}%, brightness ${draftHsv.v}%`}
         className={cn(
           'relative h-36 w-full touch-none overflow-hidden rounded-xl border border-[#1E1E25]',
           FOCUS_CLASS,

@@ -5,6 +5,7 @@ import { toastAuthError, toastUpdated } from '@/lib/app-toast';
 import { formatCpfInput } from '@/components/auth/auth-form-shared';
 import { usePasswordToggle } from '@/hooks/use-password-toggle';
 import { register } from '@/services/auth';
+import { HttpError } from '@/services/http';
 import { CRUD_TOAST } from '@/utils/crud-toast-messages';
 
 type UseRegisterFormParams = {
@@ -46,7 +47,12 @@ export function useRegisterForm({ onSuccess }: UseRegisterFormParams) {
       toastUpdated(CRUD_TOAST.accountCreated);
       onSuccess();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not create account.';
+      const message =
+        error instanceof HttpError && error.code === 'DESKTOP_USER_LIMIT'
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'Could not create account.';
       toastAuthError(message);
       setLoading(false);
     }

@@ -796,7 +796,7 @@ export class MonthlyExpenseService {
       })),
       cards: cards.map((item) => ({
         id: item.id,
-        holderName: item.holderName ?? 'Sem titular',
+        holderName: item.holderName ?? 'No cardholder',
         lastFour: item.lastFour ?? '0000',
         brand: item.brand?.toLowerCase() ?? 'visa',
         color: item.color ?? '#1e3a8a',
@@ -1349,7 +1349,7 @@ export class MonthlyExpenseService {
     });
     return cards.map((item) => ({
       id: item.id,
-      holderName: item.holderName ?? 'Sem titular',
+      holderName: item.holderName ?? 'No cardholder',
       lastFour: item.lastFour ?? '0000',
       brand: item.brand?.toLowerCase() ?? 'visa',
       color: item.color ?? '#1e3a8a',

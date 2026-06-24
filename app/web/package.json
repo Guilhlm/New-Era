@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "concurrently \"next dev -p 6002\" \"node ./scripts/dev-proxy.mjs\"",
     "build": "next build",
+    "build:desktop": "node scripts/build-desktop.mjs",
     "start": "concurrently \"next start -p 6002\" \"node ./scripts/dev-proxy.mjs\"",
     "lint": "eslint .",
     "format": "prettier --check .",

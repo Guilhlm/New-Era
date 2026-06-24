@@ -1,0 +1,45 @@
+appId: com.newera.desktop
+productName: New-Era
+electronVersion: 35.7.5
+afterPack: scripts/after-pack.mjs
+asar: true
+protocols:
+  - name: New-Era
+    schemes:
+      - newera
+asarUnpack:
+  - "**/*.node"
+  - "**/query_engine-*"
+  - "**/libquery_engine-*"
+directories:
+  output: dist
+  buildResources: build
+files:
+  - dist/**/*
+  - "!dist/win-unpacked/**"
+  - package.json
+extraResources:
+  - from: resources/api
+    to: api
+  - from: resources/web
+    to: web
+  - from: resources/prisma
+    to: prisma
+  - from: build/icon.ico
+    to: brand/icon.ico
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: icon.ico
+  signAndEditExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: New-Era Setup.${ext}
+  createDesktopShortcut: always
+  shortcutName: New-Era
+  uninstallDisplayName: New-Era
+  installerIcon: icon.ico
+  uninstallerIcon: icon.ico

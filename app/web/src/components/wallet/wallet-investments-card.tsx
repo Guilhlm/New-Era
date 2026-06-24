@@ -43,6 +43,7 @@ type WalletInvestmentsCardProps = {
     loadingMore?: boolean;
     hasMore?: boolean;
     highlightedTicker?: string | null;
+    stale?: boolean;
   };
   actions?: {
     onTabChange?: (tab: WalletInvestmentTab) => void;
@@ -233,6 +234,12 @@ export function WalletInvestmentsCard({
           </Button>
         </div>
       </div>
+
+      {ui?.stale ? (
+        <p className={cn('-mt-8 shrink-0', typeClass.micro, 'text-amber-600')}>
+          Quotes offline — showing last known value.
+        </p>
+      ) : null}
 
       {ui?.total != null && data.rows.length > 0 ? (
         <p className={cn('-mt-8 shrink-0', typeClass.micro, typeToneClass.muted60)}>

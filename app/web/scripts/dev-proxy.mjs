@@ -20,7 +20,7 @@ server.on('upgrade', (req, socket, head) => {
 proxy.on('error', (_err, _req, res) => {
   if (res && 'writeHead' in res) {
     res.writeHead(502, { 'Content-Type': 'text/plain' });
-    res.end('Proxy não conseguiu conectar no Next.js (porta 6002).');
+    res.end('Proxy could not connect to Next.js (port 6002).');
   }
 });
 

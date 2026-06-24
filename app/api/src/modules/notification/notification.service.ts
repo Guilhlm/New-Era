@@ -1,14 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { NotificationPriority, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { NotificationQueryDto, NotificationVm } from './dto/notification.dto';
 import type { NotificationDraft } from './notification.helpers';
+import { DesktopNotificationBridgeService } from './desktop-notification-bridge.service';
 
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional()
+    private readonly desktopBridge?: DesktopNotificationBridgeService,
+  ) {}
 
   /**
    * Creates or refreshes a notification identified by `(userId, dedupeKey)`.
@@ -16,7 +21,13 @@ export class NotificationService {
    * is preserved on updates so the user never loses what they already saw.
    */
   async upsert(userId: string, draft: NotificationDraft) {
-    return this.prisma.notification.upsert({
+    const existing = draft.dedupeKey
+      ? await this.prisma.notification.findUnique({
+          where: { userId_dedupeKey: { userId, dedupeKey: draft.dedupeKey } },
+        })
+      : null;
+
+    const result = await this.prisma.notification.upsert({
       where: { userId_dedupeKey: { userId, dedupeKey: draft.dedupeKey } },
       create: {
         userId,
@@ -46,6 +57,43 @@ export class NotificationService {
         archivedAt: null,
       },
     });
+
+    if (this.shouldNotifyDesktop(existing, result)) {
+      void this.desktopBridge?.notifyCreated({
+        notificationId: result.id,
+        title: result.title,
+        body: result.body,
+        href: result.href,
+        priority: result.priority,
+      });
+    }
+
+    return result;
+  }
+
+  private shouldNotifyDesktop(
+    existing: Awaited<ReturnType<typeof this.prisma.notification.findUnique>> | null,
+    result: {
+      id: string;
+      title: string;
+      body: string;
+      href: string | null;
+      priority: NotificationPriority;
+      read: boolean;
+      archivedAt: Date | null;
+    },
+  ) {
+    if (result.archivedAt || result.read) {
+      return false;
+    }
+    if (!existing) {
+      return true;
+    }
+    return (
+      existing.title !== result.title ||
+      existing.body !== result.body ||
+      existing.priority !== result.priority
+    );
   }
 
   /**

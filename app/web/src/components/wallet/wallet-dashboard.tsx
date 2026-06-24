@@ -97,6 +97,7 @@ export function WalletDashboard() {
             loadingMore: state.ui.marketLoadingMore,
             hasMore: state.ui.marketHasMore,
             highlightedTicker: state.ui.highlightedTicker,
+            stale: state.data.marketStale,
           }}
           actions={{
             onTabChange: state.actions.setInvestmentTab,

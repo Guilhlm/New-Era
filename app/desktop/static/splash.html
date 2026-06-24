@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New-Era</title>
+    <link rel="stylesheet" href="splash.css" />
+  </head>
+  <body>
+    <main class="splash" id="splash">
+      <h1 class="splash__brand">New-Era</h1>
+
+      <div class="splash__spinner-wrap" id="spinnerWrap">
+        <div class="splash__spinner" aria-hidden="true"></div>
+      </div>
+
+      <div class="splash__progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+        <div class="splash__progress-fill" id="progressFill"></div>
+      </div>
+
+      <p class="splash__step" id="stepLabel">Starting...</p>
+
+      <p class="splash__hint" id="hint">
+        The first launch may take a few minutes.
+      </p>
+
+      <div class="splash__error" id="errorPanel">
+        <p class="splash__error-title">Failed to start</p>
+        <p class="splash__error-message" id="errorMessage"></p>
+        <p class="splash__error-hint" id="errorHint"></p>
+      </div>
+    </main>
+
+    <script>
+      const splash = document.getElementById('splash');
+      const progressFill = document.getElementById('progressFill');
+      const progressBar = document.getElementById('progressBar');
+      const stepLabel = document.getElementById('stepLabel');
+      const errorPanel = document.getElementById('errorPanel');
+      const errorMessage = document.getElementById('errorMessage');
+      const errorHint = document.getElementById('errorHint');
+
+      function applyStep(step) {
+        if (!step) return;
+        progressFill.style.width = `${step.progress}%`;
+        progressBar.setAttribute('aria-valuenow', String(step.progress));
+        stepLabel.textContent = step.label;
+      }
+
+      function applyError(message, hint) {
+        splash.classList.add('is-error');
+        errorPanel.classList.add('is-visible');
+        errorMessage.textContent = message;
+        errorHint.textContent = hint || '';
+      }
+
+      if (window.splashBridge) {
+        window.splashBridge.onStep(applyStep);
+        window.splashBridge.onError((payload) => {
+          applyError(payload.message, payload.hint);
+        });
+      }
+    </script>
+  </body>
+</html>

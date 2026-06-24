@@ -1,10 +1,14 @@
 export class HttpError extends Error {
+  code?: string;
+
   constructor(
     message: string,
     public readonly status: number,
+    code?: string,
   ) {
     super(message);
     this.name = 'HttpError';
+    this.code = code;
   }
 }
 
@@ -22,8 +26,13 @@ async function parsePayload(response: Response) {
 
 function toHttpError(response: Response, payload: unknown) {
   if (payload && typeof payload === 'object' && 'error' in payload) {
-    const message = String((payload as { error: unknown }).error);
-    return new HttpError(message || 'Request failed', response.status);
+    const record = payload as { error: unknown; code?: unknown };
+    const message = String(record.error);
+    return new HttpError(
+      message || 'Request failed',
+      response.status,
+      typeof record.code === 'string' ? record.code : undefined,
+    );
   }
   if (typeof payload === 'string' && payload.trim()) {
     const trimmed = payload.trim();

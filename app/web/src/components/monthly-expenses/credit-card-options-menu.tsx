@@ -68,7 +68,7 @@ export function CreditCardOptionsMenu({
         type="button"
         variant="secondary"
         size="sm"
-        aria-label={`Opções do cartão ${card.lastFour}`}
+        aria-label={`Card options for ${card.lastFour}`}
         disabled={disabled}
         className="h-8 shrink-0 justify-center gap-1 px-3"
         onClick={() => setOpen((value) => !value)}

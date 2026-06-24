@@ -2,27 +2,44 @@
 
 Aplicação fullstack pessoal para controle de academia e finanças, organizada em monorepo com foco em simplicidade e produtividade.
 
+**App desktop (Electron)** disponível para Windows — notificações nativas, SQLite local, sem Docker.
+
+> **Guia completo:** [GETTING_STARTED.md](./GETTING_STARTED.md) — web dev, desktop dev, build e download do instalador.
+
 ## Stack
 
 - Frontend: Next.js (React + TypeScript + Tailwind CSS)
 - Backend: NestJS (Node.js + TypeScript)
-- Banco: PostgreSQL (Docker)
+- Banco web: PostgreSQL (Docker)
+- Banco desktop: SQLite (local, `%APPDATA%\New-Era`)
 - ORM: Prisma
+- Desktop: Electron 35 + electron-builder (Windows NSIS)
 
 ## Estrutura
 
 ```txt
 app/
-  web/      # frontend (http://localhost:6000)
-  api/      # backend (http://localhost:6001)
+  web/      # frontend (http://localhost:6000 em dev)
+  api/      # backend (http://localhost:6001 em dev)
+  desktop/  # app Electron (API :6011, UI :6012)
   docker/   # docker compose do postgres
 ```
+
+## Início rápido
+
+| Objetivo | Comando |
+|----------|---------|
+| Web no navegador | `npm run db:up` → `npm run dev` → [localhost:6000](http://localhost:6000) |
+| Desktop em dev | `npm run dev:desktop` |
+| Gerar instalador | `npm run build:desktop` → `app/desktop/dist/New-Era Setup.exe` |
+
+Detalhes, troubleshooting e download via GitHub Actions: **[GETTING_STARTED.md](./GETTING_STARTED.md)**.
 
 ## Pré-requisitos
 
 - Node.js 20+
 - npm 10+
-- Docker Desktop (rodando)
+- Docker Desktop (apenas para modo **web**)
 
 ## Como subir o banco (PostgreSQL)
 

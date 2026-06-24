@@ -13,6 +13,7 @@ const DEFAULT_CORS_ORIGINS = [
   'http://localhost:6002',
   'http://127.0.0.1:6000',
   'http://127.0.0.1:6002',
+  'http://127.0.0.1:6012',
 ];
 
 function parseCorsOrigins() {

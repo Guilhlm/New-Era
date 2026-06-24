@@ -1,3 +1,10 @@
+import {
+  isDesktopMarketCacheEnabled,
+  readMarketCacheEntry,
+  readMarketCacheEntryFresh,
+  writeMarketCacheEntry,
+} from './market-disk-cache';
+
 type YahooSearchQuote = {
   symbol?: string;
   shortname?: string;
@@ -491,6 +498,39 @@ export async function enrichZeroCryptoBoardRows(
 }
 
 export async function buildExternalMarketBoardPage(
+  tab: string,
+  currency: string,
+  offset: number,
+  limit: number,
+) {
+  const boardCacheKey = `board:${tab}:${currency}:${offset}:${limit}`;
+  if (isDesktopMarketCacheEnabled()) {
+    const fresh = readMarketCacheEntryFresh<
+      Awaited<ReturnType<typeof buildExternalMarketBoardPageLive>>
+    >(boardCacheKey);
+    if (fresh) {
+      return { ...fresh, stale: false };
+    }
+  }
+
+  try {
+    const page = await buildExternalMarketBoardPageLive(tab, currency, offset, limit);
+    if (isDesktopMarketCacheEnabled()) {
+      writeMarketCacheEntry(boardCacheKey, page, 60 * 60_000);
+    }
+    return { ...page, stale: false };
+  } catch (error) {
+    if (isDesktopMarketCacheEnabled()) {
+      const stale = readMarketCacheEntry<Awaited<ReturnType<typeof buildExternalMarketBoardPageLive>>>(boardCacheKey);
+      if (stale) {
+        return { ...stale, stale: true };
+      }
+    }
+    throw error;
+  }
+}
+
+async function buildExternalMarketBoardPageLive(
   tab: string,
   currency: string,
   offset: number,

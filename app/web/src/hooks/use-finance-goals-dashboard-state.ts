@@ -141,20 +141,20 @@ export function useFinanceGoalsDashboardState() {
     actions: {
       setSortKey,
       createGoal: (input: CreateFinancialGoalInput) =>
-        run('goal', () => createGoalMutation.mutateAsync(input), 'Meta criada.'),
+        run('goal', () => createGoalMutation.mutateAsync(input), 'Goal created.'),
       updateGoal: (id: string, input: UpdateFinancialGoalInput) =>
-        run('goal', () => updateGoalMutation.mutateAsync({ id, input }), 'Meta atualizada.'),
+        run('goal', () => updateGoalMutation.mutateAsync({ id, input }), 'Goal updated.'),
       deleteGoal: (id: string) =>
-        run('goal', () => deleteGoalMutation.mutateAsync(id), 'Meta removida.'),
+        run('goal', () => deleteGoalMutation.mutateAsync(id), 'Goal removed.'),
       updateProgress: (id: string, input: UpdateFinancialGoalProgressInput) =>
-        run('goal', () => updateProgressMutation.mutateAsync({ id, input }), 'Progresso atualizado.'),
+        run('goal', () => updateProgressMutation.mutateAsync({ id, input }), 'Progress updated.'),
       completeGoal: (id: string) =>
-        run('goal', () => completeGoalMutation.mutateAsync(id), 'Meta concluída.'),
+        run('goal', () => completeGoalMutation.mutateAsync(id), 'Goal completed.'),
       deleteActivity: (goalId: string, activityId: string) =>
         run(
           'goal',
           () => deleteActivityMutation.mutateAsync({ goalId, activityId }),
-          'Contribuição removida.',
+          'Contribution removed.',
         ),
     },
     ui: {

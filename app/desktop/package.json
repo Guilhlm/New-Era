@@ -1,0 +1,29 @@
+{
+  "name": "desktop",
+  "productName": "New-Era",
+  "version": "1.0.0",
+  "private": true,
+  "description": "New-Era desktop runtime (Electron orchestrator)",
+  "author": "New-Era",
+  "main": "dist/main.js",
+  "scripts": {
+    "postinstall": "node scripts/fix-electron-install.mjs",
+    "build": "node scripts/sync-brand-assets.mjs && tsc -p tsconfig.json && node scripts/copy-splash.mjs",
+    "start": "node scripts/prepare-api-desktop.mjs && node scripts/sync-web-standalone.mjs && npm run build && electron .",
+    "dev": "node scripts/prepare-api-desktop.mjs && node scripts/sync-web-standalone.mjs && npm run build && electron .",
+    "pack": "electron-builder --win --config electron-builder.yml && node scripts/embed-win-icon.mjs",
+    "prepare-resources": "node scripts/prepare-resources.mjs",
+    "rebuild-native": "node scripts/rebuild-native.mjs"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.3"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
+    "@types/node": "^24.0.0",
+    "electron": "35.7.5",
+    "electron-builder": "^25.1.8",
+    "rcedit": "^5.0.2",
+    "typescript": "^5.7.3"
+  }
+}

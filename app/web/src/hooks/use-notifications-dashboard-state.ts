@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   NotificationFilter,
   NotificationVm,
@@ -48,6 +48,7 @@ export function useNotificationsDashboardState() {
     refetchIntervalInBackground: false,
   });
 
+  // Generation runs globally via NotificationsBackgroundSync in the main layout.
   const generateMutation = useMutation({ mutationFn: () => generateNotifications() });
   const markReadMutation = useMutation({
     mutationFn: ({ id, read }: { id: string; read: boolean }) =>
@@ -78,16 +79,6 @@ export function useNotificationsDashboardState() {
       setSaving(false);
     }
   }
-
-  // Notifications are no longer generated as a side-effect of the GET request.
-  // Generate once when the dashboard mounts, then refresh the cached lists.
-  const didGenerateRef = useRef(false);
-  useEffect(() => {
-    if (didGenerateRef.current) return;
-    didGenerateRef.current = true;
-    void generateMutation.mutateAsync().then(() => invalidateNotificationCaches());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const items = useMemo<NotificationVm[]>(
     () =>

@@ -125,6 +125,7 @@ export type MarketBoardRecord = {
   fxRate: number;
   currency: QuoteCurrency;
   quotedAt: string;
+  stale?: boolean;
 };
 
 export type MarketSearchResultRecord = {

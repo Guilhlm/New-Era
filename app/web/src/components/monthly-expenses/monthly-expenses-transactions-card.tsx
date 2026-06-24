@@ -550,15 +550,15 @@ export function MonthlyExpensesTransactionsCard({
               }}
               className="h-9 rounded-md bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50"
             >
-              <option value="CASH">Dinheiro</option>
+              <option value="CASH">Cash</option>
               <option value="DEPOSIT_EXTRA_INCOME">Renda extra</option>
-              <option value="CARD">Cartão de crédito</option>
+              <option value="CARD">Credit card</option>
             </select>
           </label>
 
           {isCardPurchase ? (
             <label className={cn('flex flex-col gap-1.5', typeClass.caption)}>
-              <span className={typeToneClass.muted60}>Cartão</span>
+              <span className={typeToneClass.muted60}>Card</span>
               <select
                 value={formCardId}
                 onChange={(event) => setFormCardId(event.target.value)}

@@ -44,9 +44,9 @@ export function MonthlyExpensesDashboard() {
             periodShortLabel={state.data.monthShortLabel}
             onPrev={state.actions.prevMonth}
             onNext={state.actions.nextMonth}
-            ariaLabel="Selecionar mês"
-            prevAriaLabel="Mês anterior"
-            nextAriaLabel="Próximo mês"
+            ariaLabel="Select month"
+            prevAriaLabel="Previous month"
+            nextAriaLabel="Next month"
           />
         }
         statsSlot={
