@@ -31,9 +31,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Prisma client for API compile
-        run: npm run prisma:generate -w app/api
-
       - name: Build desktop installer
         run: npm run build:desktop
 

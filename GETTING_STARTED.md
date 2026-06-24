@@ -279,18 +279,36 @@ powershell -ExecutionPolicy Bypass -File .\scripts\backup-desktop-data.ps1 -Labe
 
 #### Publicar uma nova versão (maintainer)
 
-1. Atualize a versão em `app/desktop/package.json` (ex.: `1.2.0`).
+**Antes de publicar**, valide o build local (mesmo fluxo do CI):
+
+```powershell
+Copy-Item "app/api/.env.example" "app/api/.env"
+Copy-Item "app/web/.env.example" "app/web/.env.local"
+npm run build:desktop
+```
+
+Confirme que existem:
+
+```txt
+app/desktop/dist/New-Era Setup.exe
+app/desktop/dist/latest.yml
+```
+
+Depois:
+
+1. Atualize a versão em `app/desktop/package.json` e `package.json` (raiz) — ex.: `1.1.3`.
 2. Commit, crie a tag alinhada e faça push:
 
    ```bash
-   git tag desktop-v1.2.0
-   git push origin desktop-v1.2.0
+   git push origin main
+   git tag desktop-v1.1.3
+   git push origin desktop-v1.1.3
    ```
 
-3. O workflow **Desktop Build** gera o instalador, publica o **GitHub Release** (`New-Era Setup.exe` + `latest.yml`) e mantém o artifact para download manual.
-4. Apps já instalados detectam a release e exibem o prompt de update.
+3. Acompanhe **Actions → Desktop Build** (~15–20 min). O workflow publica a **GitHub Release** com `New-Era Setup.exe` + `latest.yml`.
+4. Apps instalados com versão anterior detectam a release e exibem o prompt de update.
 
-> **Importante:** enquanto não existir nenhuma release publicada no GitHub, o app **não** mostra erro de update — simplesmente não há nada para baixar. A primeira release precisa ser criada via tag `desktop-v*` (ou workflow manual).
+> **Importante:** o auto-update só funciona **depois** da primeira release publicada com `latest.yml`. Enquanto não houver release no GitHub, o app não exibe erro — simplesmente não há update disponível.
 
 Para build local **sem** publicar release:
 
@@ -298,11 +316,7 @@ Para build local **sem** publicar release:
 npm run build:desktop
 ```
 
-Para build local **com** publish (requer `GH_TOKEN` com escopo `repo`):
-
-```bash
-npm run build:desktop:release
-```
+O CI usa o mesmo script (`build:desktop`) e publica a release via GitHub Actions — não é necessário rodar publish manualmente.
 
 ### Desinstalar
 
@@ -341,8 +355,8 @@ Remove-Item -LiteralPath "$env:APPDATA\New-Era" -Recurse -Force
 | `npm run dev` | Web: Next + API |
 | `npm run dev:desktop` | Desktop Electron em dev |
 | `npm run db:up` / `db:down` | Sobe/derruba Postgres |
-| `npm run build:desktop` | Gera `New-Era Setup.exe` |
-| `npm run build:desktop:release` | Build + publica GitHub Release (CI usa este script) |
+| `npm run build:desktop` | Gera `New-Era Setup.exe` + `latest.yml` |
+| `npm run build:desktop:release` | Alias de `build:desktop` (publicação é feita pelo CI na tag) |
 | `npm run lint` | ESLint web + API |
 | `npm run format:write` | Prettier em todo o repo |
 
