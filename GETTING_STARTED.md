@@ -290,6 +290,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\backup-desktop-data.ps1 -Labe
 3. O workflow **Desktop Build** gera o instalador, publica o **GitHub Release** (`New-Era Setup.exe` + `latest.yml`) e mantém o artifact para download manual.
 4. Apps já instalados detectam a release e exibem o prompt de update.
 
+> **Importante:** enquanto não existir nenhuma release publicada no GitHub, o app **não** mostra erro de update — simplesmente não há nada para baixar. A primeira release precisa ser criada via tag `desktop-v*` (ou workflow manual).
+
 Para build local **sem** publicar release:
 
 ```bash

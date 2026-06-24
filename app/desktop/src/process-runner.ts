@@ -7,10 +7,13 @@ import {
   getCacheDir,
   getPrismaRoot,
   getWebRoot,
+  isPackaged,
   resolveNextServerCwd,
   resolveNextServerEntry,
   IPC_PORT,
 } from './paths';
+
+export const SERVICE_STARTUP_TIMEOUT_MS = isPackaged() ? 180_000 : 60_000;
 import { toDatabaseUrl, type DesktopConfig } from './config-store';
 
 export type ManagedProcess = {
@@ -133,7 +136,11 @@ export function spawnNextWeb(
   });
 }
 
-export async function waitForHttp(url: string, timeoutMs = 60_000, intervalMs = 250) {
+export async function waitForHttp(
+  url: string,
+  timeoutMs = SERVICE_STARTUP_TIMEOUT_MS,
+  intervalMs = 250,
+) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     try {

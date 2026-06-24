@@ -20,6 +20,7 @@ import {
 } from './paths';
 import {
   runPrismaMigrate,
+  SERVICE_STARTUP_TIMEOUT_MS,
   spawnNestApi,
   spawnNextWeb,
   stopManagedProcess,
@@ -89,6 +90,10 @@ if (!gotLock) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       log.error(`Bootstrap failed: ${message}`);
+      stopManagedProcess(nextProcess);
+      stopManagedProcess(nestProcess);
+      nextProcess = null;
+      nestProcess = null;
       reportLoadingError(splash, message);
     }
   });
@@ -118,11 +123,14 @@ async function bootstrap(onProgress: (step: LoadingStep) => void) {
 
   onProgress(LOADING_STEPS.api);
   nestProcess = spawnNestApi(config, API_PORT, WEB_PORT);
-  await waitForHttp(`http://127.0.0.1:${API_PORT}/health`);
+  await waitForHttp(
+    `http://127.0.0.1:${API_PORT}/health`,
+    SERVICE_STARTUP_TIMEOUT_MS,
+  );
 
   onProgress(LOADING_STEPS.web);
   nextProcess = spawnNextWeb(config, API_PORT, WEB_PORT);
-  await waitForHttp(`${WEB_ORIGIN}/login`);
+  await waitForHttp(`${WEB_ORIGIN}/login`, SERVICE_STARTUP_TIMEOUT_MS);
 
   onProgress(LOADING_STEPS.ready);
 

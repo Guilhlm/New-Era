@@ -47,6 +47,37 @@ function broadcastStatus() {
   }
 }
 
+function isMissingReleaseFeedError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('No published versions')) {
+    return true;
+  }
+  if (message.includes('404') && message.includes('releases')) {
+    return true;
+  }
+  if (typeof error === 'object' && error !== null && 'statusCode' in error) {
+    return (error as { statusCode?: number }).statusCode === 404;
+  }
+  return false;
+}
+
+function handleUpdateCheckError(error: unknown) {
+  if (isMissingReleaseFeedError(error)) {
+    log.info('No published GitHub release yet; in-app update check skipped.');
+    setState({
+      status: 'uptodate',
+      nextVersion: null,
+      progress: null,
+      errorMessage: null,
+    });
+    return;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  log.warn(`Update check failed: ${message}`);
+  setState({ status: 'error', errorMessage: message });
+}
+
 async function checkForUpdates() {
   if (!app.isPackaged || state.disabled) {
     return;
@@ -58,9 +89,7 @@ async function checkForUpdates() {
   try {
     await autoUpdater.checkForUpdates();
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    log.error(`checkForUpdates failed: ${message}`);
-    setState({ status: 'error', errorMessage: message });
+    handleUpdateCheckError(error);
   }
 }
 
@@ -145,11 +174,16 @@ function bindAutoUpdaterEvents() {
   });
 
   autoUpdater.on('error', (error) => {
-    log.error('Auto-update error:', error);
-    setState({
-      status: 'error',
-      errorMessage: error.message,
-    });
+    if (state.status === 'downloading') {
+      log.error('Auto-update download error:', error);
+      setState({
+        status: 'error',
+        errorMessage: error.message,
+      });
+      return;
+    }
+
+    handleUpdateCheckError(error);
   });
 }
 
