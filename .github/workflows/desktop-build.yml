@@ -6,6 +6,9 @@ on:
     tags:
       - 'desktop-v*'
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -22,11 +25,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop installer
-        run: npm run build:desktop
+      - name: Build and publish desktop release
+        run: npm run build:desktop:release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: New-Era-Setup
-          path: app/desktop/dist/New-Era Setup.exe
+          path: |
+            app/desktop/dist/New-Era Setup.exe
+            app/desktop/dist/latest.yml

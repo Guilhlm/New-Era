@@ -32,6 +32,10 @@ export type ProfileHeaderData = {
 
 export type ProfileHeaderProps = {
   data: ProfileHeaderData;
+  actions: {
+    deletingAccount: boolean;
+    onDeleteAccount: () => void;
+  };
 };
 
 export type AvatarPickerProps = {
@@ -65,4 +69,6 @@ export type ProfileFormCardActions = {
   togglePasswordVisibility: () => void;
   onAvatarFileChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   avatarInputRef: RefObject<HTMLInputElement | null>;
+  deletingAccount: boolean;
+  onDeleteAccount: () => void;
 };

@@ -40,5 +40,6 @@ export const CRUD_TOAST = {
   tradeRecorded: 'Trade recorded.',
   loggedIn: 'Logged in.',
   accountCreated: 'Account created.',
+  accountDeleted: 'Account deleted.',
   loggedOut: 'Logged out.',
 } as const;

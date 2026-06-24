@@ -12,3 +12,4 @@ node_modules
 app/desktop/resources/
 app/desktop/dist/
 app/api/prisma/node_modules/
+backups/

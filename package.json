@@ -1,6 +1,6 @@
 {
   "name": "new-era",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "workspaces": [
     "app/web",
@@ -15,7 +15,8 @@
     "lint": "npm run lint -w app/web && npm run lint -w app/api",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "build:desktop": "npm run prisma:generate:desktop -w app/api && npm run build -w app/api && npm run build:desktop -w app/web && npm run prepare-resources -w app/desktop && npm run rebuild-native -w app/desktop && npm run build -w app/desktop && npm run pack -w app/desktop && npm run prisma:restore:web -w app/api"
+    "build:desktop": "npm run prisma:generate:desktop -w app/api && npm run build -w app/api && npm run build:desktop -w app/web && npm run prepare-resources -w app/desktop && npm run rebuild-native -w app/desktop && npm run build -w app/desktop && npm run pack -w app/desktop && npm run prisma:restore:web -w app/api",
+    "build:desktop:release": "npm run prisma:generate:desktop -w app/api && npm run build -w app/api && npm run build:desktop -w app/web && npm run prepare-resources -w app/desktop && npm run rebuild-native -w app/desktop && npm run build -w app/desktop && npm run pack:publish -w app/desktop && npm run prisma:restore:web -w app/api"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

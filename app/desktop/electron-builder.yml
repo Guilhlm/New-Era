@@ -3,6 +3,11 @@ productName: New-Era
 electronVersion: 35.7.5
 afterPack: scripts/after-pack.mjs
 asar: true
+publish:
+  provider: github
+  owner: Guilhlm
+  repo: New-Era
+  releaseType: release
 protocols:
   - name: New-Era
     schemes:

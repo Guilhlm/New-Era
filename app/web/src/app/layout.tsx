@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { AuthToasterClientOnly } from "@/components/auth/auth-toaster-client-only";
 import { DismissToastsOnNavigate } from "@/components/auth/dismiss-toasts-on-navigate";
+import { DesktopUpdatePrompt } from "@/components/desktop/desktop-update-prompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,6 +35,7 @@ export default function RootLayout({
         {children}
         <DismissToastsOnNavigate />
         <AuthToasterClientOnly />
+        <DesktopUpdatePrompt />
       </body>
     </html>
   );

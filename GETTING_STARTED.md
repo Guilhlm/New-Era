@@ -196,7 +196,17 @@ Na próxima execução, um banco e config novos serão criados automaticamente.
 
 ### Limite de contas (desktop)
 
-No modo desktop, o registro permite no máximo **2 contas locais**. Para registrar outra, exclua uma conta em **Profile**.
+No modo desktop, o registro permite no máximo **2 contas locais**. Para registrar outra, exclua uma conta em **Profile** (ícone de lixeira ao lado da badge Member/Admin).
+
+### Backup dos dados (desktop)
+
+Antes de atualizações ou exclusão de conta, você pode gerar backup:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\backup-desktop-data.ps1 -Label "manual"
+```
+
+Os arquivos ficam em `backups/desktop/<timestamp>/`. Veja [backups/README.md](./backups/README.md).
 
 ---
 
@@ -252,6 +262,46 @@ C:\Users\<you>\AppData\Local\Programs\New-Era\New-Era.exe
 
 Atalho na área de trabalho e entrada na bandeja são criados automaticamente.
 
+### Atualizar o app instalado (in-app)
+
+Depois da primeira instalação, **não é necessário baixar o `.exe` manualmente** a cada nova versão.
+
+1. Quando uma release `desktop-v*` for publicada no GitHub, o app instalado verifica automaticamente se há versão nova (na abertura e a cada 6 horas).
+2. Se houver update, aparece um **card fixo no canto inferior direito** com **Atualizar** e **Depois** (opcional — não bloqueia o uso do app).
+3. Ao clicar em **Atualizar**, o app baixa a nova versão do GitHub Releases e, ao concluir, pede **Reiniciar agora**.
+4. Seus dados locais (`%APPDATA%\New-Era`) **não são apagados** — apenas os arquivos do programa em `AppData\Local\Programs\New-Era` são substituídos. Migrations SQLite rodam na próxima abertura.
+
+Antes de atualizar, você pode gerar backup opcional:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\backup-desktop-data.ps1 -Label "pre-update"
+```
+
+#### Publicar uma nova versão (maintainer)
+
+1. Atualize a versão em `app/desktop/package.json` (ex.: `1.2.0`).
+2. Commit, crie a tag alinhada e faça push:
+
+   ```bash
+   git tag desktop-v1.2.0
+   git push origin desktop-v1.2.0
+   ```
+
+3. O workflow **Desktop Build** gera o instalador, publica o **GitHub Release** (`New-Era Setup.exe` + `latest.yml`) e mantém o artifact para download manual.
+4. Apps já instalados detectam a release e exibem o prompt de update.
+
+Para build local **sem** publicar release:
+
+```bash
+npm run build:desktop
+```
+
+Para build local **com** publish (requer `GH_TOKEN` com escopo `repo`):
+
+```bash
+npm run build:desktop:release
+```
+
 ### Desinstalar
 
 - **Configurações do Windows** → Aplicativos → **New-Era**, ou
@@ -290,6 +340,7 @@ Remove-Item -LiteralPath "$env:APPDATA\New-Era" -Recurse -Force
 | `npm run dev:desktop` | Desktop Electron em dev |
 | `npm run db:up` / `db:down` | Sobe/derruba Postgres |
 | `npm run build:desktop` | Gera `New-Era Setup.exe` |
+| `npm run build:desktop:release` | Build + publica GitHub Release (CI usa este script) |
 | `npm run lint` | ESLint web + API |
 | `npm run format:write` | Prettier em todo o repo |
 

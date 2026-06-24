@@ -59,6 +59,8 @@ export function PerfilDashboard() {
           togglePasswordVisibility: profile.form.password.actions.toggleVisibility,
           onAvatarFileChange: profile.avatar.actions.onAvatarFileChange,
           avatarInputRef: profile.avatar.refs.avatarInputRef,
+          deletingAccount: profile.deleteAccount.data.deleting,
+          onDeleteAccount: () => void profile.deleteAccount.actions.runDeleteAccount(),
         }}
       />
 

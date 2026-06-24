@@ -28,7 +28,13 @@ export function ProfileFormCard({ data, actions }: ProfileFormCardProps) {
       className="flex h-full min-h-0 flex-col px-6 py-5 shadow-sm lg:px-7 lg:py-6"
       style={{ gridColumn: '1 / 3', gridRow: '1 / 3' }}
     >
-      <ProfileHeader data={{ isAdmin: data.isAdmin }} />
+      <ProfileHeader
+        data={{ isAdmin: data.isAdmin }}
+        actions={{
+          deletingAccount: actions.deletingAccount,
+          onDeleteAccount: actions.onDeleteAccount,
+        }}
+      />
 
       <AvatarPicker
         userName={data.userName}

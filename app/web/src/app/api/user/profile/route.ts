@@ -97,3 +97,44 @@ export async function PATCH(request: Request) {
     return invalidApiResponse();
   }
 }
+
+export async function DELETE() {
+  const token = (await cookies()).get('auth_token')?.value;
+  if (!token) {
+    return unauthenticatedResponse();
+  }
+
+  const meRes = await fetch(`${API}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+
+  if (!meRes.ok) {
+    return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+  }
+
+  const me = (await meRes.json()) as { id?: string };
+  if (!me?.id) {
+    return NextResponse.json({ error: 'Invalid user' }, { status: 401 });
+  }
+
+  const res = await fetch(`${API}/users/${encodeURIComponent(me.id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    return upstreamErrorResponse(text, res.status, 'Failed to delete account');
+  }
+
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set('auth_token', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+  return response;
+}

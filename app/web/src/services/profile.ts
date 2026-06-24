@@ -1,4 +1,4 @@
-import { getJson, patchJson } from '@/services/http';
+import { deleteJson, getJson, patchJson } from '@/services/http';
 import type { MeUser } from '@/types/profile';
 
 export type UpdateProfileInput = {
@@ -17,4 +17,8 @@ export function getProfile() {
 
 export function updateProfile(input: UpdateProfileInput) {
   return patchJson<MeUser, UpdateProfileInput>('/api/user/profile', input);
+}
+
+export function deleteProfile() {
+  return deleteJson<{ ok: true }>('/api/user/profile');
 }

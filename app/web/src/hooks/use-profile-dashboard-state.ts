@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useDeleteAccount } from '@/hooks/use-delete-account';
 import { useProfileAvatar } from '@/hooks/use-profile-avatar';
 import { useProfileForm } from '@/hooks/use-profile-form';
 import { useProfileQuery } from '@/hooks/use-profile-query';
@@ -17,6 +18,7 @@ export function useProfileDashboardState() {
     photoUser: user?.photoUser,
     onProfileUpdated: profileQuery.actions.reloadUser,
   });
+  const deleteAccount = useDeleteAccount();
 
   const balanceUsd = useMemo(() => numFromDecimal(user?.totalBalance), [user]);
   const disciplineRaw = user?.disciplineLevel != null ? Number(user.disciplineLevel) : 0;
@@ -33,6 +35,7 @@ export function useProfileDashboardState() {
     disciplineLabel,
     form,
     avatar,
+    deleteAccount,
   };
 }
 

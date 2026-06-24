@@ -36,6 +36,7 @@ import {
 } from './splash';
 import { startDesktopNotificationGenerationLoop } from './notification-generation-loop';
 import { extractProtocolUrl, registerDesktopProtocol } from './protocol-registration';
+import { initAutoUpdater } from './auto-updater';
 import { createTray, destroyTray } from './tray';
 
 log.initialize();
@@ -81,6 +82,9 @@ if (!gotLock) {
     try {
       await bootstrap((step) => reportLoadingStep(splash, step));
       await createMainWindow();
+      if (mainWindow) {
+        initAutoUpdater(mainWindow);
+      }
       await closeSplashWindow();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
