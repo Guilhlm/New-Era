@@ -21,6 +21,7 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:generate": "node scripts/ensure-prisma-client.mjs && prisma generate",
     "prisma:generate:desktop": "node scripts/ensure-prisma-client.mjs && node scripts/sync-desktop-schema.mjs && prisma generate --schema=prisma/desktop/schema.prisma",
+    "prisma:use:desktop": "node scripts/copy-prisma-client-desktop.mjs",
     "prisma:migrate:desktop": "prisma migrate dev --schema=prisma/desktop/schema.prisma",
     "prisma:deploy:desktop": "prisma migrate deploy --schema=prisma/desktop/schema.prisma",
     "prisma:restore:web": "node scripts/ensure-prisma-client.mjs && prisma generate --schema=prisma/schema.prisma",

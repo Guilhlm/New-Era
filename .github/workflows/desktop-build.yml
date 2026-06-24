@@ -19,16 +19,41 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
+
+      - name: Prepare build env
+        shell: pwsh
+        run: |
+          Copy-Item "app/api/.env.example" "app/api/.env"
+          Copy-Item "app/web/.env.example" "app/web/.env.local"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and publish desktop release
-        run: npm run build:desktop:release
+      - name: Build desktop installer
+        run: npm run build:desktop
+
+      - name: Verify build artifacts
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "app/desktop/dist/New-Era Setup.exe")) {
+            throw "Missing installer: app/desktop/dist/New-Era Setup.exe"
+          }
+          if (-not (Test-Path "app/desktop/dist/latest.yml")) {
+            throw "Missing update metadata: app/desktop/dist/latest.yml"
+          }
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/desktop/dist/New-Era Setup.exe
+            app/desktop/dist/latest.yml
+          generate_release_notes: true
+          fail_on_unmatched_files: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
