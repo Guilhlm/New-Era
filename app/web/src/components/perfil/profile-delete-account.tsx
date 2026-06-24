@@ -77,7 +77,7 @@ export function ProfileDeleteAccountButton({
         radius="md"
         aria-label="Delete account"
         disabled={deleting}
-        className="h-12 w-12 shrink-0"
+        className="h-12 w-12 shrink-0 bg-layer2"
         onClick={() => setOpen(true)}
       >
         <TbTrash className="h-5 w-5" aria-hidden />
