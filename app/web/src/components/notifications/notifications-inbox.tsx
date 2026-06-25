@@ -43,6 +43,8 @@ type NotificationsInboxProps = {
 const selectClass =
   'h-9 shrink-0 rounded-lg bg-layer2 px-3 text-text outline-none focus-visible:ring-2 focus-visible:ring-red/50';
 
+const NOTIFICATIONS_PAGE_SIZE = 10;
+
 export function NotificationsInbox({
   items,
   filter,
@@ -57,6 +59,7 @@ export function NotificationsInbox({
   const [category, setCategory] = useState<'all' | NotificationCategory>('all');
   const [period, setPeriod] = useState<'all' | NotificationPeriod>('all');
   const [priority, setPriority] = useState<'all' | NotificationPriority>('all');
+  const [visibleLimit, setVisibleLimit] = useState(NOTIFICATIONS_PAGE_SIZE);
 
   const unreadCount = useMemo(() => countUnreadNotifications(items), [items]);
 
@@ -69,6 +72,13 @@ export function NotificationsInbox({
     result = searchNotifications(result, search);
     return sortNotifications(result);
   }, [items, filter, kind, category, period, priority, search]);
+
+  const paginatedItems = useMemo(
+    () => visibleItems.slice(0, visibleLimit),
+    [visibleItems, visibleLimit],
+  );
+
+  const hasMore = visibleItems.length > visibleLimit;
 
   return (
     <Card className={cn('flex h-full min-h-0 flex-col overflow-hidden p-5 lg:p-6', className)}>
@@ -204,7 +214,7 @@ export function NotificationsInbox({
           </div>
         ) : (
           <>
-            {visibleItems.map((item) => (
+            {paginatedItems.map((item) => (
               <NotificationCard
                 key={item.id}
                 item={item}
@@ -215,7 +225,21 @@ export function NotificationsInbox({
 
             <div className="flex items-center gap-3 py-4">
               <span className="h-px flex-1 bg-grey/60" aria-hidden />
-              <p className={cn('shrink-0', typeClass.micro, typeToneClass.muted60)}>End of notifications</p>
+              {hasMore ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  className="shrink-0 px-4"
+                  onClick={() => setVisibleLimit((current) => current + NOTIFICATIONS_PAGE_SIZE)}
+                >
+                  Load more
+                </Button>
+              ) : (
+                <p className={cn('shrink-0', typeClass.micro, typeToneClass.muted60)}>
+                  End of notifications
+                </p>
+              )}
               <span className="h-px flex-1 bg-grey/60" aria-hidden />
             </div>
           </>
