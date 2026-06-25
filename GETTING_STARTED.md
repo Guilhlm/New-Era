@@ -305,10 +305,12 @@ Depois:
    git push origin desktop-v1.1.4
    ```
 
-3. Acompanhe **Actions → Desktop Build** (~15–20 min). O workflow publica a **GitHub Release** com `New-Era Setup.exe` + `latest.yml`.
+3. Acompanhe **Actions → Desktop Build** (~15–20 min). O workflow publica a **GitHub Release** com `New-Era-Setup.exe` + `latest.yml`.
 4. Apps instalados com versão anterior detectam a release e exibem o prompt de update.
 
-> **Importante:** o auto-update só funciona **depois** da primeira release publicada com `latest.yml`. Enquanto não houver release no GitHub, o app não exibe erro — simplesmente não há update disponível.
+> **Repositório privado:** o `electron-updater` não consegue ler releases sem autenticação (404 em `releases.atom`). Para auto-update funcionar, **torne o repo público** ou adicione o secret `DESKTOP_UPDATE_GH_TOKEN` (PAT read-only do GitHub) nos secrets do repositório — o CI embute esse token no instalador. Sem isso, baixe o `.exe` manualmente em Releases (logado no GitHub).
+
+> **Importante:** o auto-update só funciona **depois** da primeira release publicada com `latest.yml`. Abrir o app só **verifica** update; é preciso clicar **Atualizar → Reiniciar agora** (ou reinstalar o `.exe`).
 
 Para build local **sem** publicar release:
 

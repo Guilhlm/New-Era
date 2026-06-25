@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -22,6 +24,8 @@ export type UpdateState = {
 
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const UPDATE_STATUS_CHANNEL = 'desktop:update:status-changed';
+const GITHUB_OWNER = 'Guilhlm';
+const GITHUB_REPO = 'New-Era';
 
 let state: UpdateState = {
   disabled: !app.isPackaged,
@@ -35,6 +39,7 @@ let state: UpdateState = {
 let mainWindowRef: BrowserWindow | null = null;
 let checkInterval: ReturnType<typeof setInterval> | null = null;
 let ipcRegistered = false;
+let updateFeedConfigured = false;
 
 function setState(partial: Partial<UpdateState>) {
   state = { ...state, ...partial };
@@ -47,18 +52,64 @@ function broadcastStatus() {
   }
 }
 
+function loadGithubUpdateToken(): string | undefined {
+  if (!app.isPackaged) {
+    return undefined;
+  }
+
+  const configPath = join(process.resourcesPath, 'update-config.json');
+  if (!existsSync(configPath)) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(configPath, 'utf8')) as {
+      githubToken?: string;
+    };
+    return parsed.githubToken?.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function configureUpdateFeed() {
+  if (updateFeedConfigured) {
+    return;
+  }
+
+  const token = loadGithubUpdateToken();
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: GITHUB_OWNER,
+    repo: GITHUB_REPO,
+    ...(token ? { private: true, token } : {}),
+  });
+
+  updateFeedConfigured = true;
+
+  if (token) {
+    log.info('Auto-update feed configured with GitHub token (private repo).');
+    return;
+  }
+
+  log.info('Auto-update feed configured without token (public repo required).');
+}
+
 function isMissingReleaseFeedError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  if (message.includes('No published versions')) {
-    return true;
-  }
+  return message.includes('No published versions');
+}
+
+function formatUpdateError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
   if (message.includes('404') && message.includes('releases')) {
-    return true;
+    if (!loadGithubUpdateToken()) {
+      return 'Repositório GitHub privado sem token de update. Torne o repo público ou configure o secret DESKTOP_UPDATE_GH_TOKEN no CI. Enquanto isso, baixe o instalador em Releases.';
+    }
   }
-  if (typeof error === 'object' && error !== null && 'statusCode' in error) {
-    return (error as { statusCode?: number }).statusCode === 404;
-  }
-  return false;
+
+  return message;
 }
 
 function handleUpdateCheckError(error: unknown) {
@@ -73,7 +124,7 @@ function handleUpdateCheckError(error: unknown) {
     return;
   }
 
-  const message = error instanceof Error ? error.message : String(error);
+  const message = formatUpdateError(error);
   log.warn(`Update check failed: ${message}`);
   setState({ status: 'error', errorMessage: message });
 }
@@ -87,6 +138,7 @@ async function checkForUpdates() {
   }
 
   try {
+    configureUpdateFeed();
     await autoUpdater.checkForUpdates();
   } catch (error) {
     handleUpdateCheckError(error);
@@ -118,7 +170,7 @@ function registerIpcHandlers() {
       setState({ status: 'downloading', progress: 0, errorMessage: null });
       await autoUpdater.downloadUpdate();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = formatUpdateError(error);
       log.error(`downloadUpdate failed: ${message}`);
       setState({ status: 'error', errorMessage: message });
     }
@@ -140,6 +192,7 @@ function bindAutoUpdaterEvents() {
   autoUpdater.logger = log;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
+  configureUpdateFeed();
 
   autoUpdater.on('checking-for-update', () => {
     setState({ status: 'checking', errorMessage: null, progress: null });
@@ -178,7 +231,7 @@ function bindAutoUpdaterEvents() {
       log.error('Auto-update download error:', error);
       setState({
         status: 'error',
-        errorMessage: error.message,
+        errorMessage: formatUpdateError(error),
       });
       return;
     }

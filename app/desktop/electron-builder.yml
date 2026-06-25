@@ -33,6 +33,8 @@ extraResources:
     to: prisma
   - from: build/icon.ico
     to: brand/icon.ico
+  - from: resources/update-config.json
+    to: update-config.json
 win:
   target:
     - target: nsis
@@ -43,7 +45,7 @@ win:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  artifactName: New-Era Setup.${ext}
+  artifactName: New-Era-Setup.${ext}
   createDesktopShortcut: always
   shortcutName: New-Era
   uninstallDisplayName: New-Era

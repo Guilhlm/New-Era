@@ -32,25 +32,31 @@ jobs:
         run: npm ci
 
       - name: Build desktop installer
+        env:
+          DESKTOP_UPDATE_GH_TOKEN: ${{ secrets.DESKTOP_UPDATE_GH_TOKEN }}
         run: npm run build:desktop
 
       - name: Verify build artifacts
         shell: pwsh
         run: |
-          if (-not (Test-Path "app/desktop/dist/New-Era Setup.exe")) {
-            throw "Missing installer: app/desktop/dist/New-Era Setup.exe"
+          if (-not (Test-Path "app/desktop/dist/New-Era-Setup.exe")) {
+            throw "Missing installer: app/desktop/dist/New-Era-Setup.exe"
           }
           if (-not (Test-Path "app/desktop/dist/latest.yml")) {
             throw "Missing update metadata: app/desktop/dist/latest.yml"
+          }
+          $yml = Get-Content "app/desktop/dist/latest.yml" -Raw
+          if ($yml -notmatch 'New-Era-Setup\.exe') {
+            throw "latest.yml must reference New-Era-Setup.exe"
           }
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: Implementação de número de versão app + testes
+          name: Implementação de número de versão app + testes (${{ github.ref_name }})
           files: |
-            app/desktop/dist/New-Era Setup.exe
+            app/desktop/dist/New-Era-Setup.exe
             app/desktop/dist/latest.yml
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -63,5 +69,5 @@ jobs:
         with:
           name: New-Era-Setup
           path: |
-            app/desktop/dist/New-Era Setup.exe
+            app/desktop/dist/New-Era-Setup.exe
             app/desktop/dist/latest.yml

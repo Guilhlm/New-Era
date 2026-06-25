@@ -90,4 +90,7 @@ console.log('=== prepare-resources: stage prisma desktop ===');
 mkdirSync(resourcesPrisma, { recursive: true });
 copyDir(join(apiRoot, 'prisma', 'desktop'), join(resourcesPrisma, 'desktop'));
 
+console.log('=== prepare-resources: update config (optional private repo token) ===');
+run('node scripts/write-update-config.mjs', desktopRoot);
+
 console.log('=== prepare-resources: done ===');
